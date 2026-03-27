@@ -8,6 +8,19 @@
 
 ---
 
+## 0. Audience, Purpose & Positioning
+
+### What This Is
+A north star demo showing the complete Phalanx vision. It serves three audiences: investors (the opportunity), police departments (the capability), and the internal USAvionix team (the target we're building toward). Hardware derisking happens in parallel in the lab. This demo shows what's possible. The lab proves what's feasible. They converge.
+
+### The Voice Thesis
+Voice is the only viable interface for a field operator who is simultaneously driving, coordinating with dispatch, and directing a drone. This isn't a preference, it's a constraint. Text requires eyes and hands. Joysticks require a dedicated pilot (the bottleneck we're eliminating). Voice is the interface that makes one person capable of operating a drone while doing their actual job. The entire product concept depends on this being true.
+
+### Competitive Positioning
+Skydio and Brinc (Axon) sell hardware + routing: send a drone to a GPS coordinate. USAvionix sells the complete autonomous stack: faster drones with onboard GPU for edge inference, autonomous takeoff/landing, greater range and speed than competitors, AND SARA mission intelligence that understands the situation, not just the address. The moat is vertical integration across hardware + edge AI + mission intelligence, not any single feature. Additional structural advantages: no dependence on Chinese supply chains (a growing regulatory and security concern), and purpose-built for autonomous operations from day one rather than retrofitting piloted drones.
+
+---
+
 ## 1. Executive Summary
 
 Phalanx is an AI-powered drone mission control system for law enforcement and search-and-rescue operations. This document specifies a fully interactive prototype that demonstrates the core user experience: authenticating, selecting a mission, deploying a drone, conducting an AI-assisted search with voice commands, and tracking a target in real-time.
@@ -22,6 +35,17 @@ The prototype must be responsive (desktop 1024×768 + mobile), use real map tile
 
 ### What Phalanx Does
 An operator receives a 911 call about a vehicle pursuit. They open Phalanx, see the active incident, and SARA (the AI assistant) has already analyzed the dispatch transcripts — extracting vehicle description, last known location, speed, and direction. The operator selects the nearest drone, confirms the AI-generated search area, and launches. During the mission, they communicate with SARA via push-to-talk voice commands: "Focus south of Oak," "Get closer to that red car," "Lock on and orbit." SARA responds verbally and visually — the drone moves, the camera zooms, the map updates. Live radio chatter from ground units flows into the chat, and SARA surfaces relevant updates. When the target is found, the operator confirms and SARA maintains visual contact until ground units arrive.
+
+### Long-Range Vision
+The demo shows one operator directing one drone. That's the bridge. The endgame is:
+
+- **Persistent drone swarms always in the air** — not reactive deployment, continuous aerial coverage across a jurisdiction
+- **Two-way integration with law enforcement** — drones feed real-time intel TO officers AND receive tasking FROM dispatch systems automatically, no human operator in the loop
+- **Full autonomy** — SARA runs the entire operation. She monitors radio chatter, identifies incidents, deploys the nearest drone, conducts the search, tracks the target, and coordinates with ground units. The human role shifts from "operator giving commands" to "supervisor monitoring SARA's decisions"
+
+The voice interface we're building is the transitional step. Today: human tells SARA what to do. Tomorrow: SARA tells the human what she's doing. Eventually: SARA just does it and the human reviews after the fact.
+
+Everything we build must be designed with this trajectory in mind. The "operator" UI is a window into SARA's decision-making, not a remote control.
 
 ### Core Principle
 **The map and the conversation tell the same story.** If SARA says "rerouting to Washington and Dupont," the drone visually flies there. If the user says "zoom in," the FPV feed zooms. If dispatch reports the suspect turned west, the search area shifts west. There is never a disconnect between what's said and what's shown.
@@ -606,3 +630,37 @@ The prototype is successful when:
 8. The drone moves realistically on real San Diego streets
 9. When you strip away the demo layer, the platform architecture is ready for real data sources
 10. The codebase is clean enough that a developer could understand it in 30 minutes
+
+---
+
+<!-- AUTONOMOUS DECISION LOG -->
+## Decision Audit Trail
+
+| # | Phase | Decision | Principle | Rationale | Rejected |
+|---|-------|----------|-----------|-----------|----------|
+| 1 | CEO | Mode: SELECTIVE EXPANSION | P1+P2 | Defined scope + cherry-pick improvements | EXPANSION (too broad), HOLD (too rigid) |
+| 2 | CEO | Vanilla JS (no framework) | P5 explicit | State machine + render fn simpler than React for 13 screens | React (overhead), Svelte (less common) |
+| 3 | CEO | API key via .env + Vercel proxy | P3 pragmatic | Client-side key exposure not viable, proxy is standard | URL param (insecure), UI input (clunky) |
+| 4 | CEO | Add Vitest + Playwright tests | P1 completeness | No test strategy in PRD, tests alongside features | No tests (deferred), Jest (heavier) |
+| 5 | Design | Add mobile back navigation | P1 completeness | No way to go back on mobile currently | Deferred (breaks UX) |
+| 6 | Design | Add interaction state table | P1 completeness | Loading/empty/error states unspecified | Deferred (engineer guesses) |
+| 7 | Design | Add SARA greeting on screen 1 | P5 explicit | Cold start with token input, no warmth | Skip (functional but cold) |
+| 8 | Design | Vary incident card fields per type | P5 explicit | Same template for all = AI slop risk | Skip (uniform is fine) |
+| 9 | Design | Generate DESIGN.md from PRD | P1 completeness | Design system exists but not as standalone file | Skip (PRD is enough) |
+| 10 | Design | Add a11y requirements | P1 completeness | 44px touch targets, WCAG AA, keyboard nav | Deferred (demo only) |
+| 11 | Design | Simulated transcription (not Web Speech) | P3 pragmatic | Browser compat issues, simulated proven | Web Speech (inconsistent) |
+| 12 | Design | State-triggered orchestrator events | P5 explicit | Events sync to mission state, not wall clock | Timer (drift risk) |
+| 13 | Eng | Scope accepted as-is | P6 action | Greenfield, minimum viable structure | Reduce (cuts features) |
+| 14 | Eng | 3 parallel implementation lanes | P6 action | Map, API, Chat are independent modules | Sequential (slower) |
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | CLEAR (via /autoplan) | 7 premises confirmed, 1 API key issue resolved |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | N/A (unavailable) | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR (via /autoplan) | 18 test gaps (all new code), 2 high failure mode gaps |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | CLEAR (via /autoplan) | score: 7/10 → 8/10, 10 decisions made |
+
+- **UNRESOLVED:** 1 (city choice — deferred, doesn't block implementation)
+- **VERDICT:** CEO + ENG + DESIGN CLEARED — ready to implement
