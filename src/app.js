@@ -367,6 +367,7 @@ function manageFpvLayer(show) {
       fpv.init(fpvLayer);
     }
     fpvLayer.style.display = 'block';
+    fpv.resize();
   } else if (fpvLayer) {
     fpvLayer.style.display = 'none';
   }
@@ -398,12 +399,12 @@ function manageViewToggle(fpvActive) {
       if (isShowingFpv) {
         fpvLayer.style.display = 'none';
         toggle.innerHTML = '<span class="view-toggle-label">CAM</span>';
+        mapComponent.resize();
       } else {
         fpvLayer.style.display = 'block';
         toggle.innerHTML = '<span class="view-toggle-label">MAP</span>';
+        fpv.resize();
       }
-      // Invalidate map when switching to map view
-      mapComponent.resize();
     });
   } else {
     // Re-append to ensure it's on top of any newly created layers

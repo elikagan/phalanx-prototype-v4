@@ -1,15 +1,15 @@
 /**
  * FPV Component — First Person Video feed
  *
- * Owns: FPV view with aerial.jpg, HUD overlay, scan lines, target bounding box.
- * CSS transforms simulate camera zoom/pan per exchange.
+ * Uses a second Leaflet map at high zoom to simulate drone camera.
+ * HUD overlay, scan lines, target bounding box on top.
  */
 
+import L from 'leaflet';
 import * as state from '../state.js';
 
-let fpvEl = null;
+let fpvMap = null;
 let targetBoxEl = null;
-let currentTransform = { scale: 1, translateX: 0, translateY: 0 };
 
 /** Initialize FPV view inside a container */
 export function init(container) {
@@ -17,7 +17,7 @@ export function init(container) {
 
   container.innerHTML = `
     <div class="fpv-view" id="fpv-view">
-      <div class="fpv-image" id="fpv-image"></div>
+      <div class="fpv-map" id="fpv-map"></div>
       <div class="fpv-scanlines"></div>
       <div class="hud-overlay">
         <div class="hud-corner tl"></div>
@@ -40,25 +40,52 @@ export function init(container) {
     </div>
   `;
 
-  fpvEl = document.getElementById('fpv-image');
+  // Create Leaflet map for FPV at high zoom
+  const fpvEl = document.getElementById('fpv-map');
+  if (fpvEl) {
+    const pos = state.get('dronePosition') || { lat: 32.7210, lng: -117.1498 };
+    fpvMap = L.map(fpvEl, {
+      center: [pos.lat, pos.lng],
+      zoom: 19,
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      keyboard: false,
+    });
+
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 20,
+      maxNativeZoom: 19,
+    }).addTo(fpvMap);
+  }
 
   // Subscribe to telemetry
   state.on('droneAltitude', updateAlt);
   state.on('droneSpeed', updateSpd);
   state.on('droneHeading', updateHdg);
-  state.on('dronePosition', updateCoords);
+  state.on('dronePosition', onDroneMove);
 
   // Update clock
   updateHudTime();
   setInterval(updateHudTime, 1000);
 }
 
-/** Set CSS transform on the aerial image (zoom/pan) */
-export function setTransform({ scale, translateX, translateY }) {
-  currentTransform = { scale, translateX, translateY };
-  if (fpvEl) {
-    fpvEl.style.transform = `scale(${scale}) translate(${translateX}%, ${translateY}%)`;
-  }
+/** Move the FPV map to follow the drone */
+function onDroneMove(pos) {
+  if (!fpvMap || !pos) return;
+  fpvMap.setView([pos.lat, pos.lng], fpvMap.getZoom(), { animate: true, duration: 1 });
+  updateCoords(pos);
+}
+
+/** Set FPV zoom level (simulates altitude change) */
+export function setTransform({ scale }) {
+  if (!fpvMap) return;
+  // Map scale to zoom: scale 1 = zoom 19, scale 1.5 = zoom 20, scale 0.7 = zoom 18
+  const zoom = Math.round(17 + (scale * 2));
+  fpvMap.setZoom(Math.min(20, Math.max(16, zoom)), { animate: true });
 }
 
 /** Show/update target bounding box on FPV */
@@ -66,7 +93,6 @@ export function showTargetBox({ top, left, width, height, status }) {
   const container = document.getElementById('target-box-container');
   if (!container) return;
 
-  // Remove existing
   container.innerHTML = '';
 
   const box = document.createElement('div');
@@ -91,8 +117,15 @@ export function hideTargetBox() {
 
 /** Reset FPV to default state */
 export function reset() {
-  setTransform({ scale: 1, translateX: 0, translateY: 0 });
+  if (fpvMap) fpvMap.setZoom(19, { animate: false });
   hideTargetBox();
+}
+
+/** Invalidate FPV map size (call after layout changes) */
+export function resize() {
+  if (fpvMap) {
+    requestAnimationFrame(() => fpvMap.invalidateSize());
+  }
 }
 
 function updateAlt(val) {
