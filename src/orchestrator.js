@@ -112,6 +112,8 @@ export function preTypeNext() {
       return;
     }
     textarea.value += (i > 0 ? ' ' : '') + words[i];
+    textarea.style.height = 'auto';
+    textarea.style.height = textarea.scrollHeight + 'px';
     i++;
   }, 150);
 }
