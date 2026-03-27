@@ -38,11 +38,8 @@
   gap: 12px;
 }
 
-.topbar-logo {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  color: var(--text-bright);
+.topbar-logo-img {
+  height: 16px;
 }
 
 .topbar-divider {

@@ -11,10 +11,8 @@ import { INCIDENTS, DRONES, SARA_ANALYSIS, MISSION_BRIEFING, PREFLIGHT_CHECKS, M
 export function screen1() {
   return `
     <div class="screen screen-center fade-in">
-      <div class="chat-msg chat-msg-sara" style="max-width:420px;margin-bottom:24px;opacity:1;transform:none">
-        <div class="chat-msg-label">SARA</div>
-        <div class="chat-msg-text">Welcome to Phalanx Mission Control. Enter your organization token to begin.</div>
-      </div>
+      <div class="screen-title">SARA</div>
+      <div class="screen-subtitle">Welcome to Phalanx Mission Control. Enter your organization token to begin.</div>
       <form id="auth-form" style="display:flex;gap:8px;width:100%;max-width:420px;justify-content:center">
         <input type="text" id="auth-token" value="pk_org_9f2a1b8c" class="auth-input"
           style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
@@ -29,10 +27,8 @@ export function screen1() {
 export function screen2() {
   return `
     <div class="screen screen-center fade-in">
-      <div class="chat-msg chat-msg-sara" style="max-width:460px;margin-bottom:32px;opacity:1;transform:none">
-        <div class="chat-msg-label">SARA</div>
-        <div class="chat-msg-text">Authenticated. Welcome, Riverside County SAR. How would you like to proceed?</div>
-      </div>
+      <div class="screen-title">Authenticated</div>
+      <div class="screen-subtitle">Welcome, Riverside County SAR. How would you like to proceed?</div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
         <div class="card card-interactive" data-action="path-911" style="width:240px;text-align:left;cursor:pointer">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">

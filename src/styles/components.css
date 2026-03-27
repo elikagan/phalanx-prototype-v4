@@ -13,11 +13,8 @@
   padding: 48px;
 }
 
-.gate-logo {
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 4px;
-  color: var(--text-bright);
+.gate-logo-img {
+  height: 28px;
   margin-bottom: 8px;
 }
 
@@ -123,6 +120,11 @@
 
 .btn-icon .material-symbols-outlined {
   font-size: 20px;
+}
+
+.btn-icon.recording {
+  color: var(--red);
+  background: rgba(184, 84, 84, 0.15);
 }
 
 /* === Cards === */

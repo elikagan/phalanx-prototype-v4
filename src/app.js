@@ -35,6 +35,7 @@ document.getElementById('gate-form')?.addEventListener('submit', (e) => {
 // ── Boot ───────────────────────────────────────────────────
 function boot() {
   state.init();
+  state.set({ isMobile: window.innerWidth < 768 });
   topbar.init();
   mapComponent.init();
 
@@ -67,6 +68,9 @@ function boot() {
   // Chat input: send button + enter key trigger next exchange
   setupChatInput();
 
+  // Mobile controls: FAB, drawer, toast
+  setupMobileControls();
+
   // Screen routing
   state.on('currentScreen', renderScreen);
 
@@ -97,12 +101,166 @@ function setupChatInput() {
     }
   });
 
-  // Mic button simulates PTT — also triggers next exchange
-  micBtn?.addEventListener('click', () => {
+  // Mic button: hold-to-talk on desktop
+  let micHoldTimer = null;
+  micBtn?.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
     if (orchestrator.isActive()) return;
-    textarea.value = '';
-    orchestrator.next();
+    micBtn.classList.add('recording');
+    micHoldTimer = setTimeout(() => {
+      textarea.value = '';
+      orchestrator.next();
+    }, 150);
   });
+  micBtn?.addEventListener('pointerup', () => {
+    micBtn?.classList.remove('recording');
+    if (micHoldTimer) { clearTimeout(micHoldTimer); micHoldTimer = null; }
+  });
+  micBtn?.addEventListener('pointercancel', () => {
+    micBtn?.classList.remove('recording');
+    if (micHoldTimer) { clearTimeout(micHoldTimer); micHoldTimer = null; }
+  });
+}
+
+// ── Mobile Controls ───────────────────────────────────────
+// Screens that show mobile FAB + controls
+const FAB_SCREENS = new Set([9, 10, 11]);
+// Screens that show drawer (chat on mobile)
+const DRAWER_SCREENS = new Set([9, 10, 11, 12]);
+
+let drawerOpen = false;
+
+function setupMobileControls() {
+  const fab = document.getElementById('fab');
+  const mobileControls = document.getElementById('mobile-controls');
+  const kbBtn = document.getElementById('btn-keyboard');
+  const optBtn = document.getElementById('btn-options');
+  const chatPanel = document.getElementById('chat-panel');
+  const toast = document.getElementById('sara-toast');
+
+  if (!fab) return;
+
+  // FAB press-and-hold PTT
+  let pttTimer = null;
+  let pttActive = false;
+
+  fab.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (orchestrator.isActive()) return;
+    fab.classList.add('recording');
+    pttActive = true;
+
+    // Open drawer if closed
+    if (!drawerOpen) openDrawer();
+
+    // Start PTT after brief hold (150ms prevents accidental taps)
+    pttTimer = setTimeout(() => {
+      if (pttActive) triggerMobilePTT();
+    }, 150);
+  });
+
+  fab.addEventListener('pointerup', () => {
+    fab.classList.remove('recording');
+    pttActive = false;
+    if (pttTimer) { clearTimeout(pttTimer); pttTimer = null; }
+  });
+
+  fab.addEventListener('pointercancel', () => {
+    fab.classList.remove('recording');
+    pttActive = false;
+    if (pttTimer) { clearTimeout(pttTimer); pttTimer = null; }
+  });
+
+  // Toast tap opens drawer
+  toast?.addEventListener('click', () => {
+    openDrawer();
+  });
+
+  // Drawer drag handle (the ::before pseudo-element area)
+  chatPanel?.addEventListener('click', (e) => {
+    // Only close if tapping the drag handle area (top 20px of drawer)
+    const rect = chatPanel.getBoundingClientRect();
+    if (e.clientY - rect.top < 20 && drawerOpen) {
+      closeDrawer();
+    }
+  });
+
+  // Subscribe to SARA messages for toast
+  state.on('lastSaraMessage', (msg) => {
+    if (!state.get('isMobile') || drawerOpen) return;
+    showToast(msg);
+  });
+}
+
+function triggerMobilePTT() {
+  if (orchestrator.isActive()) return;
+  orchestrator.next();
+}
+
+function openDrawer() {
+  const chatPanel = document.getElementById('chat-panel');
+  if (!chatPanel) return;
+  chatPanel.classList.remove('drawer-closed');
+  drawerOpen = true;
+  state.set({ drawerOpen: true });
+  hideToast();
+}
+
+function closeDrawer() {
+  const chatPanel = document.getElementById('chat-panel');
+  if (!chatPanel) return;
+  chatPanel.classList.add('drawer-closed');
+  drawerOpen = false;
+  state.set({ drawerOpen: false });
+}
+
+function showToast(text) {
+  const toast = document.getElementById('sara-toast');
+  if (!toast) return;
+  toast.textContent = text.length > 80 ? text.substring(0, 80) + '…' : text;
+  toast.classList.add('visible');
+  // Auto-hide after 6s
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => hideToast(), 6000);
+}
+
+function hideToast() {
+  const toast = document.getElementById('sara-toast');
+  if (!toast) return;
+  toast.classList.remove('visible');
+}
+
+/** Update mobile control visibility per screen */
+function manageMobileControls(screen) {
+  if (!state.get('isMobile')) return;
+
+  const mobileControls = document.getElementById('mobile-controls');
+  const fab = document.getElementById('fab');
+  const kbBtn = document.getElementById('btn-keyboard');
+  const optBtn = document.getElementById('btn-options');
+  const chatPanel = document.getElementById('chat-panel');
+
+  const showFab = FAB_SCREENS.has(screen);
+  const showDrawer = DRAWER_SCREENS.has(screen);
+
+  // Mobile controls container
+  if (showFab) {
+    mobileControls?.classList.remove('hidden');
+    fab?.classList.remove('hidden');
+    kbBtn?.classList.remove('hidden');
+    optBtn?.classList.remove('hidden');
+  } else {
+    mobileControls?.classList.add('hidden');
+    fab?.classList.add('hidden');
+    kbBtn?.classList.add('hidden');
+    optBtn?.classList.add('hidden');
+  }
+
+  // Drawer: on mobile, chat-panel starts closed
+  if (showDrawer && state.get('isMobile')) {
+    chatPanel?.classList.remove('hidden');
+    if (!drawerOpen) chatPanel?.classList.add('drawer-closed');
+  }
 }
 
 // ── Screen Routing ─────────────────────────────────────────
@@ -158,7 +316,10 @@ function renderScreen(screen) {
     contentEl.classList.remove('hidden');
   }
 
-  if (showInput) {
+  const isMobile = state.get('isMobile');
+
+  // On mobile, chat input is replaced by FAB — always hide it
+  if (showInput && !isMobile) {
     chatInput?.classList.remove('hidden');
   } else {
     chatInput?.classList.add('hidden');
@@ -178,6 +339,9 @@ function renderScreen(screen) {
 
   // Telemetry bar
   manageTelemetryBar(showMap && (screen >= 9));
+
+  // Mobile controls visibility
+  manageMobileControls(screen);
 
   // Screen-specific setup
   setupScreen(screen);

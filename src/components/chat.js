@@ -39,6 +39,7 @@ export function appendSara(text, options = {}) {
 
   el.appendChild(msg);
   scrollToBottom();
+  state.set({ lastSaraMessage: text });
   return msg;
 }
 
@@ -66,6 +67,7 @@ export async function appendSaraWordByWord(text, interval = 120) {
     await wait(interval);
   }
   scrollToBottom();
+  state.set({ lastSaraMessage: text });
   return msg;
 }
 
