@@ -213,7 +213,15 @@ export function removeWaypoint(id) {
 /** Smoothly fly the map view to a location */
 export function flyTo(lat, lng, zoom, duration = 2) {
   if (!map) return;
-  map.flyTo([lat, lng], zoom || map.getZoom(), { duration });
+  // Ensure map knows its current container size (may have been hidden at init)
+  map.invalidateSize({ animate: false });
+  const container = map.getContainer();
+  // Fall back to setView if map has no rendered size (e.g. behind FPV layer)
+  if (!container.offsetWidth || !container.offsetHeight) {
+    map.setView([lat, lng], zoom || map.getZoom());
+  } else {
+    map.flyTo([lat, lng], zoom || map.getZoom(), { duration });
+  }
 }
 
 /** Pan map without animation */

@@ -10,7 +10,9 @@ import * as screens from './screens.js';
 import * as mapComponent from './components/map.js';
 import * as topbar from './components/topbar.js';
 import * as chat from './components/chat.js';
-import { INCIDENTS, DRONES, SEARCH_ZONE, WAYPOINTS, PREFLIGHT_CHECKS } from './scenarios/san-diego-pursuit.js';
+import * as fpv from './components/fpv.js';
+import * as orchestrator from './orchestrator.js';
+import { INCIDENTS, DRONES, SEARCH_ZONE, WAYPOINTS, PREFLIGHT_CHECKS, MISSION_SUMMARY } from './scenarios/san-diego-pursuit.js';
 
 // ── Password Gate ──────────────────────────────────────────
 const PASSWORD = 'phalanx';
@@ -62,11 +64,45 @@ function boot() {
     }
   });
 
+  // Chat input: send button + enter key trigger next exchange
+  setupChatInput();
+
   // Screen routing
   state.on('currentScreen', renderScreen);
 
   // Initial render
   renderScreen(state.get('currentScreen'));
+}
+
+// ── Chat Input ─────────────────────────────────────────────
+function setupChatInput() {
+  const sendBtn = document.getElementById('btn-send');
+  const micBtn = document.getElementById('btn-mic');
+  const textarea = document.getElementById('chat-textarea');
+
+  // Send button triggers next orchestrated exchange
+  sendBtn?.addEventListener('click', () => {
+    if (orchestrator.isActive()) return;
+    textarea.value = '';
+    orchestrator.next();
+  });
+
+  // Enter key (without shift) also sends
+  textarea?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (orchestrator.isActive()) return;
+      textarea.value = '';
+      orchestrator.next();
+    }
+  });
+
+  // Mic button simulates PTT — also triggers next exchange
+  micBtn?.addEventListener('click', () => {
+    if (orchestrator.isActive()) return;
+    textarea.value = '';
+    orchestrator.next();
+  });
 }
 
 // ── Screen Routing ─────────────────────────────────────────
@@ -86,12 +122,14 @@ const screenRenderers = {
   13: screens.screen13,
 };
 
-// Screens that show the map
+// Screens that show the map or FPV
 const MAP_SCREENS = new Set([7, 8, 9, 10, 11, 12]);
 // Screens that show the chat panel
 const CHAT_SCREENS = new Set([7, 8, 9, 10, 11, 12]);
 // Screens that show the chat input
 const INPUT_SCREENS = new Set([9, 10, 11]);
+// Screens that show FPV as default view
+const FPV_SCREENS = new Set([9, 10, 11]);
 
 function renderScreen(screen) {
   const contentEl = document.getElementById('screen-content');
@@ -102,8 +140,9 @@ function renderScreen(screen) {
   const showMap = MAP_SCREENS.has(screen);
   const showChat = CHAT_SCREENS.has(screen);
   const showInput = INPUT_SCREENS.has(screen);
+  const showFpv = FPV_SCREENS.has(screen);
 
-  state.set({ showMap, showChat, showInput });
+  state.set({ showMap, showChat, showInput, fpvActive: showFpv });
 
   // Update panels
   const chatPanel = document.getElementById('chat-panel');
@@ -131,9 +170,14 @@ function renderScreen(screen) {
     const path = state.get('missionPath');
     contentEl.innerHTML = renderer(path);
   } else {
-    // Map screens: content goes into chat
     contentEl.innerHTML = '';
   }
+
+  // FPV layer
+  manageFpvLayer(showFpv);
+
+  // Telemetry bar
+  manageTelemetryBar(showMap && (screen >= 9));
 
   // Screen-specific setup
   setupScreen(screen);
@@ -142,6 +186,97 @@ function renderScreen(screen) {
   if (showMap) {
     requestAnimationFrame(() => mapComponent.resize());
   }
+}
+
+/** Show/hide FPV layer over the map */
+function manageFpvLayer(show) {
+  const mapContainer = document.getElementById('map-container');
+  let fpvLayer = document.getElementById('fpv-layer');
+
+  if (show) {
+    mapContainer?.classList.remove('hidden');
+    if (!fpvLayer) {
+      fpvLayer = document.createElement('div');
+      fpvLayer.id = 'fpv-layer';
+      fpvLayer.style.cssText = 'position:absolute;inset:0;z-index:5';
+      mapContainer?.appendChild(fpvLayer);
+      fpv.init(fpvLayer);
+    }
+    fpvLayer.style.display = 'block';
+  } else if (fpvLayer) {
+    fpvLayer.style.display = 'none';
+  }
+
+  // Manage view toggle button
+  manageViewToggle(show);
+}
+
+/** Show/hide view toggle thumbnail (FPV ↔ Map) */
+function manageViewToggle(fpvActive) {
+  const mapContainer = document.getElementById('map-container');
+  let toggle = document.getElementById('view-toggle');
+
+  if (!mapContainer) return;
+
+  if (!toggle) {
+    toggle = document.createElement('button');
+    toggle.id = 'view-toggle';
+    toggle.className = 'view-toggle';
+    toggle.innerHTML = '<span class="view-toggle-label">MAP</span>';
+    // Append last so it's on top in the stacking order
+    mapContainer.appendChild(toggle);
+
+    toggle.addEventListener('click', () => {
+      const fpvLayer = document.getElementById('fpv-layer');
+      if (!fpvLayer) return;
+      const isShowingFpv = fpvLayer.style.display !== 'none';
+
+      if (isShowingFpv) {
+        fpvLayer.style.display = 'none';
+        toggle.innerHTML = '<span class="view-toggle-label">CAM</span>';
+      } else {
+        fpvLayer.style.display = 'block';
+        toggle.innerHTML = '<span class="view-toggle-label">MAP</span>';
+      }
+      // Invalidate map when switching to map view
+      mapComponent.resize();
+    });
+  } else {
+    // Re-append to ensure it's on top of any newly created layers
+    mapContainer.appendChild(toggle);
+  }
+
+  // Show toggle only when FPV is available
+  toggle.style.display = fpvActive ? 'flex' : 'none';
+  toggle.innerHTML = `<span class="view-toggle-label">MAP</span>`;
+}
+
+/** Show/hide telemetry bar */
+function manageTelemetryBar(show) {
+  let bar = document.getElementById('telemetry-bar');
+  const mapContainer = document.getElementById('map-container');
+
+  if (show && !bar) {
+    bar = document.createElement('div');
+    bar.id = 'telemetry-bar';
+    bar.className = 'telemetry-bar-map';
+    bar.innerHTML = `
+      <div class="telem-item"><span class="telem-label">BAT</span><span class="telem-value" id="telem-bat">98%</span></div>
+      <div class="telem-item"><span class="telem-label">ALT</span><span class="telem-value" id="telem-alt">120m</span></div>
+      <div class="telem-item"><span class="telem-label">SPD</span><span class="telem-value" id="telem-spd">35 km/h</span></div>
+      <div class="telem-item"><span class="telem-label">HDG</span><span class="telem-value" id="telem-hdg">180°</span></div>
+      <div class="telem-item"><span class="telem-label">SIG</span><span class="telem-value" id="telem-sig">Strong</span></div>
+    `;
+    mapContainer?.appendChild(bar);
+
+    // Subscribe to state updates for telemetry
+    state.on('droneBattery', v => { const el = document.getElementById('telem-bat'); if (el) el.textContent = v + '%'; });
+    state.on('droneAltitude', v => { const el = document.getElementById('telem-alt'); if (el) el.textContent = v + 'm'; });
+    state.on('droneSpeed', v => { const el = document.getElementById('telem-spd'); if (el) el.textContent = v + ' km/h'; });
+    state.on('droneHeading', v => { const el = document.getElementById('telem-hdg'); if (el) el.textContent = v + '°'; });
+  }
+
+  if (bar) bar.style.display = show ? 'flex' : 'none';
 }
 
 function handleAction(action, dataset) {
@@ -153,7 +288,7 @@ function handleAction(action, dataset) {
 
     case 'path-manual':
       state.set({ missionPath: 'manual' });
-      state.goToScreen(5); // Skip to drone select for manual
+      state.goToScreen(5);
       break;
 
     case 'select-incident': {
@@ -176,7 +311,7 @@ function handleAction(action, dataset) {
         if (state.get('missionPath') === '911') {
           state.goToScreen(6);
         } else {
-          state.goToScreen(7); // Manual: skip briefing, go to search area
+          state.goToScreen(7);
         }
       }
       break;
@@ -195,15 +330,14 @@ function handleAction(action, dataset) {
       break;
 
     case 'new-mission':
-      // Reset and restart
+      orchestrator.reset();
+      fpv.reset();
       state.init();
       renderScreen(1);
       break;
 
-    // Auth form
-    case 'authenticate':
-      state.set({ authenticated: true, orgName: 'Riverside County SAR' });
-      state.goToScreen(2);
+    case 'view-summary':
+      state.goToScreen(13);
       break;
   }
 }
@@ -220,6 +354,18 @@ function setupScreen(screen) {
     case 9:
       setupMissionScreen();
       break;
+    case 10:
+      setupTargetSpottedScreen();
+      break;
+    case 11:
+      setupOrbitScreen();
+      break;
+    case 12:
+      setupReturningScreen();
+      break;
+    case 13:
+      setupCompleteScreen();
+      break;
   }
 }
 
@@ -228,13 +374,11 @@ function setupSearchAreaScreen() {
   chat.clear();
 
   if (path === '911') {
-    // Pre-configured search zone
     state.set({
       searchZone: SEARCH_ZONE,
       dronePosition: { lat: 32.7210, lng: -117.1498 },
     });
 
-    // Delay map operations until map is sized (was hidden before this screen)
     requestAnimationFrame(() => {
       mapComponent.resize();
       requestAnimationFrame(() => {
@@ -266,7 +410,6 @@ function setupSearchAreaScreen() {
 async function setupPreflightScreen() {
   chat.appendSara("Running pre-flight checks...");
 
-  // Animate checks appearing
   await wait(500);
   for (const check of PREFLIGHT_CHECKS) {
     chat.appendSara(`${check.label}: ${check.value} ✓`);
@@ -283,18 +426,66 @@ async function setupPreflightScreen() {
 
 function setupMissionScreen() {
   state.set({
-    showInput: true,
     dronePosition: { lat: 32.7210, lng: -117.1498 },
     droneHeading: 180,
     droneAltitude: 120,
     droneSpeed: 35,
   });
 
-  const chatInput = document.getElementById('chat-input');
-  chatInput?.classList.remove('hidden');
-
   chat.appendSara("Mission active. Drone is airborne and heading to search area. I'll monitor dispatch frequencies for updates.");
-  chat.appendSara("Use the mic button or type to communicate with me.");
+  chat.appendSara("Use the mic button or type to communicate. I'll pre-type suggested commands.");
+
+  // Pre-type first exchange into textarea after a delay
+  setTimeout(() => orchestrator.preTypeNext(), 2000);
+}
+
+function setupTargetSpottedScreen() {
+  // Screen 10: target detected, waiting for user confirmation
+  // Chat already has the exchange messages from orchestrator
+  chat.appendSara("Potential target identified. Confirm or continue search.", {
+    choices: [
+      { label: 'Yes, Confirm Target', primary: true, action: () => {
+        state.set({ targetStatus: 'confirmed' });
+        orchestrator.next(); // Trigger exchange 6
+      }},
+      { label: 'No, Continue Search', primary: false, action: () => {
+        state.set({ targetStatus: 'none' });
+        fpv.hideTargetBox();
+      }},
+    ],
+  });
+}
+
+function setupOrbitScreen() {
+  // Screen 11: confirmed target, orbiting
+  // Orchestrator continues driving exchanges 6-7
+  setTimeout(() => orchestrator.preTypeNext(), 1500);
+}
+
+async function setupReturningScreen() {
+  // Screen 12: returning home
+  await wait(2000);
+  chat.appendSara("Touchdown confirmed. Motors disarmed.", {
+    choices: [
+      { label: 'View Mission Summary', primary: true, action: () => state.goToScreen(13) },
+    ],
+  });
+}
+
+function setupCompleteScreen() {
+  // Screen 13: full-width chat with summary
+  // Hide map, show content area with summary screen
+  const contentEl = document.getElementById('screen-content');
+  const chatPanel = document.getElementById('chat-panel');
+  const mapContainer = document.getElementById('map-container');
+
+  mapContainer?.classList.add('hidden');
+  chatPanel?.classList.add('hidden');
+  contentEl?.classList.remove('hidden');
+  contentEl.innerHTML = screens.screen13();
+
+  // Re-bind click handler for new-mission button
+  // (already handled by delegated click on screen-content)
 }
 
 // ── Utility ────────────────────────────────────────────────
