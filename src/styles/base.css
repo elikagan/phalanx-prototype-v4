@@ -1,0 +1,112 @@
+/* === Design System v2.0 — Phalanx === */
+
+:root {
+  /* Backgrounds (5-tier layering) */
+  --bg-sidebar: #141417;
+  --bg-base: #18181b;
+  --bg-content: #1c1c1f;
+  --bg-card: #212126;
+  --bg-hover: #28282e;
+
+  /* Text (5-tier hierarchy) */
+  --text-bright: #d0d0d6;
+  --text: #b4b4bc;
+  --text-muted: #6e6e78;
+  --text-dim: #4e4e56;
+  --text-ghost: #3a3a42;
+
+  /* Accent */
+  --accent: #5f8fad;
+  --accent-btn: #3d6b85;
+  --accent-btn-text: #d4e0e8;
+
+  /* Semantic (muted, professional) */
+  --green: #4a9a65;
+  --red: #b85454;
+  --amber: #a89540;
+  --blue: #5a8fbf;
+
+  /* Borders */
+  --border-subtle: #242429;
+  --border: #2c2c33;
+  --border-strong: #3a3a42;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 8px;
+
+  /* Easing */
+  --ease: cubic-bezier(.32, .72, 0, 1);
+  --ease-dramatic: cubic-bezier(.25, .1, .25, 1);
+
+  /* Layout */
+  --topbar-height: 48px;
+  --chat-width: 380px;
+  --drawer-height: 30vh;
+
+  /* Typography */
+  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', 'JetBrains Mono', monospace;
+}
+
+/* === Reset === */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: #111113;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === Typography === */
+h1, h2, h3, h4 {
+  color: var(--text-bright);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.mono {
+  font-family: var(--font-mono);
+}
+
+.text-bright { color: var(--text-bright); }
+.text-muted { color: var(--text-muted); }
+.text-dim { color: var(--text-dim); }
+
+/* === Utility === */
+.hidden {
+  display: none !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}

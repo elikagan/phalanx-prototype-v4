@@ -1,0 +1,304 @@
+/* === Leaflet Base === */
+@import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+
+/* === Map Overlays === */
+.map-container {
+  background: #0a0a0c;
+}
+
+/* Drone marker */
+.drone-marker {
+  width: 32px;
+  height: 32px;
+  transition: transform 300ms var(--ease);
+}
+
+.drone-marker svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+/* Search zone label */
+.search-zone-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+  background: rgba(24, 24, 27, 0.8);
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Waypoint marker */
+.waypoint-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.waypoint-crosshair {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--text-muted);
+  border-radius: 50%;
+  position: relative;
+}
+
+.waypoint-crosshair::before,
+.waypoint-crosshair::after {
+  content: '';
+  position: absolute;
+  background: var(--text-muted);
+}
+
+.waypoint-crosshair::before {
+  width: 1px;
+  height: 24px;
+  left: 50%;
+  top: -4px;
+  transform: translateX(-50%);
+}
+
+.waypoint-crosshair::after {
+  width: 24px;
+  height: 1px;
+  top: 50%;
+  left: -4px;
+  transform: translateY(-50%);
+}
+
+.waypoint-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  background: rgba(24, 24, 27, 0.8);
+  padding: 1px 6px;
+  border-radius: 2px;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+
+/* Target marker */
+.target-marker {
+  width: 20px;
+  height: 20px;
+  background: var(--red);
+  border-radius: 50%;
+  border: 2px solid rgba(184, 84, 84, 0.4);
+  animation: target-pulse 2s ease-in-out infinite;
+}
+
+.target-marker.confirmed {
+  background: var(--green);
+  border-color: rgba(74, 154, 101, 0.4);
+  animation: target-pulse-green 2s ease-in-out infinite;
+}
+
+/* Target label */
+.target-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--red);
+  background: rgba(24, 24, 27, 0.85);
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.target-label.confirmed {
+  color: var(--green);
+}
+
+/* FPV/Map toggle thumbnail */
+.view-toggle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 120px;
+  height: 80px;
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  overflow: hidden;
+  cursor: pointer;
+  z-index: 30;
+  background: var(--bg-card);
+  transition: border-color 200ms var(--ease);
+}
+
+.view-toggle:hover {
+  border-color: var(--border-strong);
+}
+
+.view-toggle img,
+.view-toggle .mini-map {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* HUD overlay on FPV */
+.hud-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.hud-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+}
+
+.hud-crosshair::before,
+.hud-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(208, 208, 214, 0.5);
+}
+
+.hud-crosshair::before {
+  width: 1px;
+  height: 100%;
+  left: 50%;
+}
+
+.hud-crosshair::after {
+  width: 100%;
+  height: 1px;
+  top: 50%;
+}
+
+/* Corner brackets */
+.hud-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: rgba(208, 208, 214, 0.4);
+  border-style: solid;
+  border-width: 0;
+}
+
+.hud-corner.tl { top: 8px; left: 8px; border-top-width: 1px; border-left-width: 1px; }
+.hud-corner.tr { top: 8px; right: 8px; border-top-width: 1px; border-right-width: 1px; }
+.hud-corner.bl { bottom: 8px; left: 8px; border-bottom-width: 1px; border-left-width: 1px; }
+.hud-corner.br { bottom: 8px; right: 8px; border-bottom-width: 1px; border-right-width: 1px; }
+
+/* HUD telemetry text */
+.hud-text {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(208, 208, 214, 0.6);
+  letter-spacing: 0.5px;
+}
+
+.hud-text.top-right { top: 12px; right: 32px; text-align: right; }
+.hud-text.bottom-left { bottom: 12px; left: 32px; }
+.hud-text.bottom-right { bottom: 12px; right: 32px; text-align: right; }
+
+/* Recording indicator */
+.hud-rec {
+  position: absolute;
+  top: 12px;
+  left: 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--red);
+}
+
+.hud-rec-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--red);
+  border-radius: 50%;
+  animation: rec-blink 1.5s ease-in-out infinite;
+}
+
+/* Scan lines on FPV */
+.fpv-scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+}
+
+/* Target bounding box on FPV */
+.target-box {
+  position: absolute;
+  border: 2px solid var(--red);
+  border-radius: 2px;
+  pointer-events: none;
+  transition: all 500ms var(--ease);
+}
+
+.target-box.confirmed {
+  border-color: var(--green);
+}
+
+.target-box-label {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 1px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.target-box-label.potential {
+  background: rgba(184, 84, 84, 0.2);
+  color: var(--red);
+}
+
+.target-box-label.confirmed {
+  background: rgba(74, 154, 101, 0.2);
+  color: var(--green);
+}
+
+/* Mobile map gradients */
+@media (max-width: 767px) {
+  .map-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(to bottom, var(--bg-base), transparent);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .map-container::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: linear-gradient(to top, var(--bg-base), transparent);
+    z-index: 2;
+    pointer-events: none;
+  }
+}

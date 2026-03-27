@@ -1,0 +1,249 @@
+/* === App Shell === */
+.shell {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Desktop: fixed frame centered */
+@media (min-width: 768px) {
+  .shell {
+    width: 1024px;
+    height: 768px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+  }
+}
+
+/* === Topbar === */
+.topbar {
+  height: var(--topbar-height);
+  min-height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-subtle);
+  z-index: 100;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-logo {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--text-bright);
+}
+
+.topbar-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border);
+}
+
+.topbar-status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.topbar-center {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-pills {
+  display: flex;
+  gap: 6px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topbar-clock {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.topbar-radio-btn {
+  position: relative;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.topbar-radio-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  background: var(--amber);
+  color: var(--bg-base);
+  font-size: 10px;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* === Screen Container === */
+.screen-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+}
+
+/* === Screen Content === */
+.screen-content {
+  flex: 1;
+  position: relative;
+  overflow-y: auto;
+  z-index: 10;
+}
+
+/* Full-width chat screens (no map) */
+.screen-content.full-width {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === Map Container === */
+.map-container {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+/* === Chat Panel (Desktop) === */
+.chat-panel {
+  width: var(--chat-width);
+  min-width: var(--chat-width);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-sidebar);
+  border-left: 1px solid var(--border-subtle);
+  z-index: 20;
+}
+
+.chat-history {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.chat-input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-sidebar);
+}
+
+.chat-input-area textarea {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  padding: 8px 12px;
+  resize: none;
+  outline: none;
+  line-height: 1.4;
+  max-height: 120px;
+}
+
+.chat-input-area textarea:focus {
+  border-color: var(--border-strong);
+}
+
+.chat-input-area textarea::placeholder {
+  color: var(--text-ghost);
+}
+
+/* === Mobile: Override layout below 768px === */
+@media (max-width: 767px) {
+  .shell {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+  }
+
+  .topbar-center {
+    display: none;
+  }
+
+  .map-container {
+    z-index: 1;
+  }
+
+  .screen-content {
+    z-index: 10;
+  }
+
+  /* Chat becomes bottom drawer on mobile */
+  .chat-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-width: unset;
+    height: var(--drawer-height);
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    transform: translateY(0);
+    transition: transform 400ms var(--ease);
+    z-index: 50;
+  }
+
+  .chat-panel.drawer-closed {
+    transform: translateY(100%);
+  }
+
+  .chat-panel::before {
+    content: '';
+    display: block;
+    width: 32px;
+    height: 4px;
+    background: var(--border-strong);
+    border-radius: 2px;
+    margin: 8px auto 4px;
+  }
+}

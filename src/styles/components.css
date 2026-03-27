@@ -1,0 +1,475 @@
+/* === Password Gate === */
+.gate {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+}
+
+.gate-card {
+  text-align: center;
+  padding: 48px;
+}
+
+.gate-logo {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  color: var(--text-bright);
+  margin-bottom: 8px;
+}
+
+.gate-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+
+.gate-card form {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.gate-card input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  padding: 10px 16px;
+  width: 220px;
+  outline: none;
+  transition: border-color 200ms var(--ease);
+}
+
+.gate-card input:focus {
+  border-color: var(--accent);
+}
+
+.gate-card input::placeholder {
+  color: var(--text-ghost);
+}
+
+.gate-error {
+  color: var(--red);
+  font-size: 12px;
+  margin-top: 12px;
+  min-height: 18px;
+}
+
+/* === Buttons === */
+.btn-primary {
+  background: var(--accent-btn);
+  color: var(--accent-btn-text);
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 200ms var(--ease);
+  white-space: nowrap;
+}
+
+.btn-primary:hover {
+  background: var(--accent);
+}
+
+.btn-primary:active {
+  background: #345a70;
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 200ms var(--ease);
+  white-space: nowrap;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 200ms var(--ease), background 200ms var(--ease);
+}
+
+.btn-icon:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.btn-icon .material-symbols-outlined {
+  font-size: 20px;
+}
+
+/* === Cards === */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: border-color 200ms var(--ease), background 200ms var(--ease);
+}
+
+.card-interactive {
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  border-color: var(--border);
+  background: var(--bg-hover);
+}
+
+.card-interactive.selected {
+  border-color: var(--accent);
+}
+
+/* === Chat Messages === */
+.chat-msg {
+  max-width: 82%;
+  margin-bottom: 12px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: msg-appear 300ms var(--ease) forwards;
+}
+
+.chat-msg-sara {
+  margin-right: auto;
+  border-left: 2px solid var(--accent);
+  padding-left: 12px;
+}
+
+.chat-msg-sara .chat-msg-text {
+  color: var(--text);
+}
+
+.chat-msg-user {
+  margin-left: auto;
+  text-align: right;
+  border-right: 2px solid var(--border);
+  padding-right: 12px;
+}
+
+.chat-msg-user .chat-msg-text {
+  color: var(--text-muted);
+}
+
+.chat-msg-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chat-msg-text {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* === Radio Chatter Message === */
+.chat-msg-radio {
+  margin-right: auto;
+  max-width: 88%;
+  border-left: 2px solid var(--border);
+  padding-left: 12px;
+}
+
+.chat-msg-radio .chat-msg-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.chat-msg-radio .chat-msg-text {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* === Pill === */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 200ms var(--ease);
+}
+
+.pill:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.pill .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* === Priority Badges === */
+.priority-p1 {
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.priority-p2 {
+  background: var(--amber);
+  color: var(--bg-base);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.priority-p3 {
+  background: var(--border-strong);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+/* === Screen Layouts === */
+.screen {
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.screen-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 100%;
+}
+
+.screen-title {
+  font-size: 16px;
+  color: var(--text-bright);
+  margin-bottom: 8px;
+}
+
+.screen-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+}
+
+/* === Incident Cards === */
+.incident-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+}
+
+.incident-card .incident-info {
+  flex: 1;
+}
+
+.incident-card .incident-type {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-bright);
+  margin-bottom: 2px;
+}
+
+.incident-card .incident-location {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.incident-card .incident-time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.incident-card .incident-narrative {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.incident-card .incident-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+/* === Drone Cards === */
+.drone-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+}
+
+.drone-card .drone-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-bright);
+}
+
+.drone-card .drone-status {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.drone-card .drone-status.available {
+  background: rgba(74, 154, 101, 0.15);
+  color: var(--green);
+}
+
+.drone-card .drone-status.in-mission {
+  background: rgba(168, 149, 64, 0.15);
+  color: var(--amber);
+}
+
+.drone-card .drone-status.offline {
+  background: rgba(62, 62, 66, 0.3);
+  color: var(--text-dim);
+}
+
+.drone-card .drone-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.drone-card .drone-stats .stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.drone-card .drone-stats .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* === Checklist === */
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.checklist-item .material-symbols-outlined {
+  font-size: 18px;
+  color: var(--green);
+}
+
+/* === Choice Buttons (in chat) === */
+.chat-choices {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.chat-choices .btn-primary,
+.chat-choices .btn-secondary {
+  font-size: 12px;
+  padding: 8px 16px;
+}
+
+/* === Telemetry Bar === */
+.telemetry-bar {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--bg-sidebar);
+  border-top: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.telemetry-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.telemetry-item .value {
+  color: var(--text-muted);
+}
+
+/* === Summary Card === */
+.summary-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-stat .label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-stat .value {
+  font-size: 14px;
+  color: var(--text-bright);
+  font-family: var(--font-mono);
+}
