@@ -470,52 +470,100 @@ The app is driven by state, not DOM manipulation. State includes:
 
 When state changes, views update reactively. The demo script changes state; the UI renders from state.
 
-### Demo Orchestration Layer
-A single `demo-script.js` file defines the entire demo narrative:
-```javascript
-const demoScript = {
-  incidents: [...],
-  drones: [...],
-  exchanges: [...],
-  radioEvents: [...],
-  mapActions: {
-    'redirectSouth': (state) => { state.searchZone.center.lat -= 0.002; ... },
-    'targetAcquired': (state) => { state.targetPosition = {...}; state.targetStatus = 'detected'; ... },
-    ...
-  }
-};
-```
+### LLM Agent Architecture
 
-Changing the demo = editing this one file. The UI adapts automatically.
+The system uses two LLM agents to drive the experience. This makes the demo realistic AND builds toward production — when real data sources come online, agents get swapped for real feeds. The UI doesn't change.
+
+**SARA Agent (Claude API):**
+- System prompt defines her role: Phalanx mission AI for drone operations
+- Receives: user messages, current mission state (drone position, altitude, target status, search zone), radio chatter context
+- Returns: text response + structured commands:
+  ```json
+  {
+    "text": "Confirmed. Rerouting to Washington and Dupont for observation.",
+    "commands": [
+      {"type": "flyTo", "lat": 32.7157, "lng": -117.1611, "zoom": 18},
+      {"type": "setSearchZone", "center": [32.7157, -117.1611], "radius": 500, "bias": "south"},
+      {"type": "rotateDrone", "heading": 180}
+    ]
+  }
+  ```
+- Commands are executed by the state machine, which updates the map reactively
+- **Fallback:** Pre-cached responses for each demo exchange in case API is unavailable or slow. The demo works offline with cached responses that match the expected flow.
+
+**Orchestrator Agent (Claude API):**
+- Scripted backbone: core events are pre-defined (suspect turns west, vehicle stops, suspect exits on foot)
+- Live improvisation: orchestrator fills in details, generates realistic radio chatter, adapts to timing
+- Delivers events as:
+  ```json
+  {
+    "type": "radio",
+    "time": "9:25 PM",
+    "unit": "Unit 38",
+    "text": "Suspect vehicle turned west on Elm, speed about 30, headlights off.",
+    "coordinates": [32.7145, -117.1598],
+    "targetUpdate": {"heading": "west", "speed": 30}
+  }
+  ```
+- Events trigger map updates (target path, unit markers) and appear as radio chatter in chat
+- **Fallback:** Full scripted timeline that plays regardless of API availability
+
+### Demo Layer (thin, removable)
+- Pre-seeds the orchestrator with the San Diego vehicle pursuit scenario
+- Compresses real timelines (12 min pursuit → 3 min demo)
+- Provides scripted PTT exchanges (word-by-word transcription) but SARA responds via LLM
+- The demo layer is a configuration file, not code. Remove it and the platform works with real inputs.
+
+### Realism: San Diego
+- Real Leaflet satellite tiles of San Diego
+- Real street names: Madison Ave, Oak St, Elm St, Dupont — mapped to actual San Diego streets
+- Real coordinates for all waypoints, incidents, drone positions
+- Incident addresses resolve to real locations on the map
+
+### Drone Animation
+- Drone marker moves **continuously at realistic speed** along computed paths
+- During search: lawnmower pattern plays out visually in real-time
+- During transit: drone flies along a straight line to waypoint
+- During orbit: drone continuously circles the target
+- Speed, altitude, and heading update smoothly as the drone moves
+- Position is interpolated frame-by-frame with requestAnimationFrame
 
 ### File Structure
 ```
-index.html          — Entry point, password gate
-app.js              — State machine, screen routing, event handling
-components/
-  chat.js           — Chat rendering (append-only, no innerHTML)
-  map.js            — Leaflet map, markers, overlays
-  fpv.js            — FPV view, CSS transforms, HUD
-  topbar.js         — Status bar, pills, radio badge
-  drawer.js         — Mobile drawer, FAB, toast
-  input.js          — Textarea, mic, send (desktop + mobile)
-styles/
-  base.css          — Reset, variables, typography
-  layout.css        — Responsive grid, breakpoints
-  components.css    — Chat, cards, buttons, inputs
-  map.css           — Map overlays, markers, HUD
-  mobile.css        — Drawer, FAB, gradients, toast
-  animations.css    — All transitions and keyframes
-demo-script.js      — Narrative, exchanges, radio events, map actions
+index.html                — Entry point, password gate
+src/
+  app.js                  — State machine, screen routing, event bus
+  api/
+    sara.js               — SARA agent (Claude API + cached fallback)
+    orchestrator.js        — Orchestrator agent (scripted backbone + LLM)
+    cache.json            — Pre-cached responses for offline demo
+  components/
+    chat.js               — Chat rendering (append-only, no innerHTML)
+    map.js                — Leaflet map, markers, overlays, drone animation
+    fpv.js                — FPV view, CSS transforms, HUD
+    topbar.js             — Status bar, pills, radio badge
+    drawer.js             — Mobile drawer, FAB, toast
+    input.js              — Textarea, mic, send (desktop + mobile)
+  scenarios/
+    san-diego-pursuit.js  — Demo scenario: incidents, timeline, coordinates
+  styles/
+    base.css              — Reset, variables, typography
+    layout.css            — Responsive grid, breakpoints
+    components.css        — Chat, cards, buttons, inputs
+    map.css               — Map overlays, markers, HUD
+    mobile.css            — Drawer, FAB, gradients, toast
+    animations.css        — All transitions and keyframes
 ```
 
 ### Tech Stack
 - **Build:** Vite (fast dev server, HMR)
 - **Language:** Vanilla JS (no framework — keep it simple)
-- **Map:** Leaflet + Esri World Imagery tiles
+- **LLM:** Anthropic Claude API (via fetch or SDK)
+- **Map:** Leaflet + Esri World Imagery satellite tiles
+- **Location:** San Diego, CA (real streets, real coordinates)
 - **Icons:** Google Material Symbols Outlined
 - **Fonts:** System sans-serif + JetBrains Mono (CDN)
-- **Deploy:** GitHub Pages
+- **Deploy:** GitHub Pages (static) or Vercel (if API proxy needed)
 
 ---
 
@@ -539,6 +587,9 @@ Toggle via `?wireframe` URL parameter. CSS-only override:
 4. What happens if drone battery gets critical during a 911 response?
 5. Should there be an "evidence capture" button that bookmarks moments in the recording?
 6. Should the summary screen include a timeline/replay of the mission?
+7. API key management — should the Anthropic API key be entered in the UI, stored in .env, or passed via URL param for demos?
+8. Should the orchestrator run on a timer (events every N seconds) or be triggered by mission state changes?
+9. Real speech-to-text integration — Web Speech API for actual voice input vs. simulated transcription?
 
 ---
 
@@ -546,7 +597,12 @@ Toggle via `?wireframe` URL parameter. CSS-only override:
 
 The prototype is successful when:
 1. A non-technical person can walk through the 911 demo path and understand what's happening without explanation
-2. Every map/video visual matches the corresponding chat text at every moment
+2. Every map/video visual matches the corresponding chat text at every moment — the map and the conversation tell the same story
 3. The PTT voice interaction feels natural and high-end on both desktop and mobile
 4. Transitions are smooth enough that you don't notice them — they just feel right
 5. The app feels like a real product, not a prototype
+6. SARA's responses feel intelligent and contextual (LLM-powered, not canned scripts)
+7. Radio chatter feels like a real evolving situation, not a static timeline
+8. The drone moves realistically on real San Diego streets
+9. When you strip away the demo layer, the platform architecture is ready for real data sources
+10. The codebase is clean enough that a developer could understand it in 30 minutes
