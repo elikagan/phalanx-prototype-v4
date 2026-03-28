@@ -10,7 +10,7 @@
 .drone-marker {
   width: 32px;
   height: 32px;
-  transition: transform 300ms var(--ease);
+  transition: transform 300ms var(--ease-out);
 }
 
 .drone-marker svg {
@@ -25,7 +25,7 @@
   font-size: 10px;
   letter-spacing: 1px;
   color: var(--text-muted);
-  background: rgba(24, 24, 27, 0.8);
+  background: rgba(17, 17, 19, 0.8);
   padding: 2px 8px;
   border-radius: 3px;
   white-space: nowrap;
@@ -75,7 +75,7 @@
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-muted);
-  background: rgba(24, 24, 27, 0.8);
+  background: rgba(17, 17, 19, 0.8);
   padding: 1px 6px;
   border-radius: 2px;
   margin-top: 4px;
@@ -104,7 +104,7 @@
   font-size: 10px;
   letter-spacing: 1px;
   color: var(--red);
-  background: rgba(24, 24, 27, 0.85);
+  background: rgba(17, 17, 19, 0.85);
   padding: 2px 8px;
   border-radius: 3px;
   white-space: nowrap;
@@ -126,14 +126,14 @@
   width: auto;
   height: auto;
   padding: 6px 12px;
-  border-radius: var(--radius);
+  border-radius: var(--r-md);
   border: 1px solid var(--border);
   cursor: pointer;
   z-index: 30;
-  background: rgba(20, 20, 23, 0.85);
+  background: rgba(17, 17, 19, 0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  transition: border-color 200ms var(--ease), background 200ms var(--ease);
+  transition: border-color var(--dur-micro) var(--ease-out), background var(--dur-micro) var(--ease-out);
 }
 
 .view-toggle:hover {
@@ -169,7 +169,7 @@
 .hud-crosshair::after {
   content: '';
   position: absolute;
-  background: rgba(208, 208, 214, 0.5);
+  background: rgba(224, 224, 228, 0.5);
 }
 
 .hud-crosshair::before {
@@ -189,7 +189,7 @@
   position: absolute;
   width: 20px;
   height: 20px;
-  border-color: rgba(208, 208, 214, 0.4);
+  border-color: rgba(224, 224, 228, 0.4);
   border-style: solid;
   border-width: 0;
 }
@@ -204,7 +204,7 @@
   position: absolute;
   font-family: var(--font-mono);
   font-size: 10px;
-  color: rgba(208, 208, 214, 0.6);
+  color: rgba(224, 224, 228, 0.6);
   letter-spacing: 0.5px;
 }
 
@@ -253,7 +253,7 @@
   border: 2px solid var(--red);
   border-radius: 2px;
   pointer-events: none;
-  transition: all 500ms var(--ease);
+  transition: all 500ms var(--ease-out);
 }
 
 .target-box.confirmed {
@@ -314,7 +314,7 @@
   z-index: 30;
 }
 
-/* === Telemetry Bar === */
+/* === Telemetry Bar (Map Overlay) === */
 .telemetry-bar-map {
   position: absolute;
   bottom: 0;
@@ -323,13 +323,13 @@
   display: flex;
   gap: 16px;
   padding: 6px 16px;
-  background: rgba(20, 20, 23, 0.85);
+  background: rgba(17, 17, 19, 0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-top: 1px solid var(--border-subtle);
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--text-muted);
   z-index: 15;
 }
 
@@ -340,12 +340,103 @@
 }
 
 .telemetry-bar-map .telem-value {
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .telemetry-bar-map .telem-label {
   font-size: 9px;
   letter-spacing: 0.5px;
+}
+
+/* === Incident Map Markers === */
+.incident-map-marker {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.incident-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--dot-color, var(--red));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dot-color, var(--red)) 30%, transparent);
+  animation: incident-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes incident-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--dot-color, var(--red)) 30%, transparent); }
+  50% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--dot-color, var(--red)) 0%, transparent); }
+}
+
+.incident-map-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+  background: rgba(17, 17, 19, 0.85);
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  margin-top: 4px;
+  backdrop-filter: blur(4px);
+}
+
+/* === Fleet Drone Markers === */
+.fleet-drone-marker {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.fleet-drone-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(17, 17, 19, 0.7);
+  border: 1.5px solid var(--drone-color, var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fleet-drone-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  background: rgba(17, 17, 19, 0.85);
+  padding: 2px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+  margin-top: 4px;
+  backdrop-filter: blur(4px);
+}
+
+/* === Map Tooltips === */
+.map-tooltip {
+  background: rgba(17, 17, 19, 0.92);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.map-tooltip strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Override Leaflet default tooltip arrow */
+.leaflet-tooltip.map-tooltip::before {
+  border-top-color: rgba(17, 17, 19, 0.92);
 }
 
 /* Mobile overrides */

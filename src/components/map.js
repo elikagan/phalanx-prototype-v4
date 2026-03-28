@@ -20,6 +20,11 @@ let flightTrail = null;
 let trailCoords = [];
 const waypointMarkers = new Map();
 
+// Overlay marker layers (incidents, fleet drones)
+let incidentMarkers = [];
+let fleetMarkers = [];
+let distanceLines = [];
+
 // Drone SVG icon
 const DRONE_SVG = `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
   <path d="M16 4 L20 12 L28 16 L20 20 L16 28 L12 20 L4 16 L12 12 Z"
@@ -115,16 +120,30 @@ function onSearchZone(zone) {
 
   if (!zone) return;
 
-  searchCircle = L.circle(zone.center, {
-    radius: zone.radius,
-    color: '#5f8fad',
-    weight: 1.5,
-    dashArray: '8 6',
-    fillColor: '#5f8fad',
-    fillOpacity: 0.06,
-  }).addTo(map);
+  if (zone.bias) {
+    // Oblong search zone: stretched in the direction of travel from the origin point
+    const origin = zone.origin || zone.center;
+    const pts = generateOblong(origin, zone.center, zone.radius, zone.bias);
+    searchCircle = L.polygon(pts, {
+      color: '#7ab0d0',
+      weight: 2.5,
+      dashArray: '10 6',
+      fillColor: '#5f8fad',
+      fillOpacity: 0.18,
+      smoothFactor: 2,
+    }).addTo(map);
+  } else {
+    searchCircle = L.circle(zone.center, {
+      radius: zone.radius,
+      color: '#5f8fad',
+      weight: 2,
+      dashArray: '8 6',
+      fillColor: '#5f8fad',
+      fillOpacity: 0.12,
+    }).addTo(map);
+  }
 
-  // Label
+  // Label at the widest part of the zone
   const labelText = zone.bias
     ? `SEARCH ZONE — ${zone.bias.toUpperCase()}BOUND`
     : 'SEARCH ZONE';
@@ -133,10 +152,70 @@ function onSearchZone(zone) {
       className: 'search-zone-label',
       html: labelText,
       iconSize: [200, 20],
-      iconAnchor: [100, -zone.radius * 0.0004], // approximate offset above circle
+      iconAnchor: [100, 10],
     }),
     interactive: false,
   }).addTo(map);
+}
+
+/**
+ * Generate a teardrop/oblong shape from origin stretching toward center.
+ * Narrow at origin (last known), widens toward the search center, rounded at far end.
+ * Total length ~2x radius, max width ~1x radius.
+ */
+function generateOblong(origin, center, radius, bias) {
+  const segments = 64;
+  const rLat = radius / 111320;
+  const rLng = radius / (111320 * Math.cos(center[0] * Math.PI / 180));
+
+  // Direction angle from origin to center
+  // In lat/lng: lat is Y (north+), lng is X (east+)
+  const dLat = center[0] - origin[0];
+  const dLng = center[1] - origin[1];
+  const angle = Math.atan2(dLng, dLat);
+  const cosA = Math.cos(angle);
+  const sinA = Math.sin(angle);
+
+  // Total length of shape: from origin to 2x radius past origin
+  const length = rLat * 2.5;
+  const maxWidth = rLng * 1.2;
+
+  const right = [];
+  const left = [];
+
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+
+    // Position along the travel axis from origin
+    const along = t * length;
+
+    // Width profile: teardrop — starts at 0, widens to max around 60%, rounds off
+    let w;
+    if (t < 0.08) {
+      // Point at origin
+      w = maxWidth * 0.05 * (t / 0.08);
+    } else if (t < 0.6) {
+      // Expanding — smooth ease-out curve
+      const mt = (t - 0.08) / 0.52;
+      w = maxWidth * (0.05 + 0.95 * (1 - (1 - mt) * (1 - mt)));
+    } else {
+      // Rounded far end — semicircle
+      const ft = (t - 0.6) / 0.4;
+      w = maxWidth * Math.cos(ft * Math.PI / 2);
+    }
+
+    // Generate points on both sides, rotated to match travel direction
+    right.push([
+      origin[0] + along * cosA - w * sinA,
+      origin[1] + along * sinA + w * cosA,
+    ]);
+    left.unshift([
+      origin[0] + along * cosA + w * sinA,
+      origin[1] + along * sinA - w * cosA,
+    ]);
+  }
+
+  return [...right, ...left];
 }
 
 function onTargetPosition(pos) {
@@ -246,4 +325,160 @@ export function clearTrail() {
 /** Get the raw Leaflet map instance (for advanced usage) */
 export function getMap() {
   return map;
+}
+
+// ── Incident Markers ──────────────────────────────────────
+
+const INCIDENT_ICONS = {
+  1: { color: '#b85454', icon: 'P1' },
+  2: { color: '#a89540', icon: 'P2' },
+  3: { color: '#5c5c66', icon: 'P3' },
+};
+
+/** Show incident markers on the map. Returns cleanup function. */
+export function showIncidents(incidents, onSelect) {
+  clearIncidentMarkers();
+  if (!map) return;
+
+  const bounds = [];
+
+  for (const inc of incidents) {
+    if (!inc.coordinates) continue;
+    const { color } = INCIDENT_ICONS[inc.priority] || INCIDENT_ICONS[3];
+    const marker = L.marker(inc.coordinates, {
+      icon: L.divIcon({
+        className: 'incident-map-marker',
+        html: `<div class="incident-dot" style="--dot-color:${color}">
+          <span class="material-symbols-outlined" style="font-size:16px;color:#fff">${inc.icon || 'location_on'}</span>
+        </div>
+        <div class="incident-map-label">${inc.type}</div>`,
+        iconSize: [120, 44],
+        iconAnchor: [18, 18],
+      }),
+      zIndexOffset: 800,
+    }).addTo(map);
+
+    marker.on('click', () => onSelect?.(inc));
+
+    // Hover tooltip
+    const tooltip = L.tooltip({
+      direction: 'top',
+      offset: [0, -20],
+      className: 'map-tooltip',
+    });
+    tooltip.setContent(`<strong>P${inc.priority} · ${inc.type}</strong><br>${inc.location} · ${inc.elapsed}<br>${inc.units} unit${inc.units !== 1 ? 's' : ''} responding`);
+    marker.bindTooltip(tooltip);
+
+    incidentMarkers.push(marker);
+    bounds.push(inc.coordinates);
+  }
+
+  if (bounds.length > 1) {
+    map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+  } else if (bounds.length === 1) {
+    map.setView(bounds[0], 15);
+  }
+}
+
+/** Clear all incident markers */
+export function clearIncidentMarkers() {
+  for (const m of incidentMarkers) map?.removeLayer(m);
+  incidentMarkers = [];
+}
+
+/** Highlight a specific incident (zoom to it) */
+export function focusIncident(coordinates, zoom = 16) {
+  if (!map || !coordinates) return;
+  // Delay to ensure map container has proper dimensions after layout change
+  requestAnimationFrame(() => {
+    map.invalidateSize();
+    map.flyTo(coordinates, zoom, { duration: 1 });
+  });
+}
+
+// ── Fleet Drone Markers ───────────────────────────────────
+
+const FLEET_COLORS = {
+  available: '#5f8fad',
+  'in-mission': '#a89540',
+  offline: '#3a3a42',
+};
+
+/** Show drone fleet markers on map with optional distance lines to a point */
+export function showFleetDrones(drones, incidentCoords, onSelect) {
+  clearFleetMarkers();
+  if (!map) return;
+
+  const bounds = [];
+  if (incidentCoords) bounds.push(incidentCoords);
+
+  for (const drone of drones) {
+    if (!drone.coordinates) continue;
+    const color = FLEET_COLORS[drone.status] || FLEET_COLORS.offline;
+    const isAvailable = drone.status === 'available';
+
+    const marker = L.marker(drone.coordinates, {
+      icon: L.divIcon({
+        className: 'fleet-drone-marker',
+        html: `<div class="fleet-drone-dot" style="--drone-color:${color}">
+          <svg viewBox="0 0 24 24" width="16" height="16">
+            <path d="M12 3L15 9L21 12L15 15L12 21L9 15L3 12L9 9Z" fill="${color}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="fleet-drone-label">${drone.name}${drone.distanceFromIncident != null ? ' · ' + drone.distanceFromIncident + ' km' : ''}</div>`,
+        iconSize: [140, 44],
+        iconAnchor: [18, 18],
+      }),
+      zIndexOffset: isAvailable ? 850 : 700,
+      interactive: isAvailable,
+    }).addTo(map);
+
+    if (isAvailable) {
+      marker.on('click', () => onSelect?.(drone));
+    }
+
+    // Hover tooltip
+    const statusLabel = drone.status === 'available' ? 'Available'
+      : drone.status === 'in-mission' ? `In Mission (${drone.operator})`
+      : 'Offline';
+    const tooltip = L.tooltip({
+      direction: 'top',
+      offset: [0, -20],
+      className: 'map-tooltip',
+    });
+    tooltip.setContent(`<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`);
+    marker.bindTooltip(tooltip);
+
+    // Distance line from drone to incident
+    if (incidentCoords && isAvailable) {
+      const line = L.polyline([drone.coordinates, incidentCoords], {
+        color,
+        weight: 1,
+        opacity: 0.4,
+        dashArray: '6 4',
+      }).addTo(map);
+      distanceLines.push(line);
+    }
+
+    fleetMarkers.push(marker);
+    bounds.push(drone.coordinates);
+  }
+
+  if (bounds.length > 1) {
+    map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+  }
+}
+
+/** Clear fleet drone markers and distance lines */
+export function clearFleetMarkers() {
+  for (const m of fleetMarkers) map?.removeLayer(m);
+  for (const l of distanceLines) map?.removeLayer(l);
+  fleetMarkers = [];
+  distanceLines = [];
+}
+
+/** Clear all overlay markers (incidents + fleet) */
+export function clearOverlays() {
+  clearIncidentMarkers();
+  clearFleetMarkers();
 }

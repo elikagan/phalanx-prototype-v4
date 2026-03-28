@@ -1,6 +1,5 @@
 /* === Keyframes === */
 
-/* Message appear */
 @keyframes msg-appear {
   from {
     opacity: 0;
@@ -12,7 +11,6 @@
   }
 }
 
-/* Target pulse (red) */
 @keyframes target-pulse {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(184, 84, 84, 0.4);
@@ -22,7 +20,6 @@
   }
 }
 
-/* Target pulse (green) */
 @keyframes target-pulse-green {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(74, 154, 101, 0.4);
@@ -32,62 +29,56 @@
   }
 }
 
-/* REC blink */
 @keyframes rec-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
 
-/* Screen fade in */
 @keyframes screen-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Scan line sweep */
 @keyframes scan-sweep {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(100%);
-  }
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
 }
 
-/* Waveform pulse */
 @keyframes waveform-pulse {
-  0%, 100% {
-    transform: scaleY(0.3);
-  }
-  50% {
-    transform: scaleY(1);
-  }
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
 }
 
-/* Spinner */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
+@keyframes check-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* === Transition Classes === */
 
 .fade-in {
-  animation: screen-fade-in 300ms var(--ease) forwards;
+  animation: screen-fade-in 300ms var(--ease-out) forwards;
 }
 
-/* Scan line element */
+/* Scan line */
 .scan-line {
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
   overflow: hidden;
   margin: 8px 0;
   opacity: 0;
-  transition: opacity 300ms var(--ease);
+  transition: opacity 300ms var(--ease-out);
 }
 
 .scan-line.active {
@@ -100,7 +91,7 @@
   width: 100%;
   height: 100%;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  animation: scan-sweep 1200ms var(--ease) forwards;
+  animation: scan-sweep 1200ms var(--ease-out) forwards;
 }
 
 /* Waveform bars */
@@ -149,16 +140,5 @@
 .check-animate {
   opacity: 0;
   transform: translateX(-8px);
-  animation: check-slide 300ms var(--ease) forwards;
-}
-
-@keyframes check-slide {
-  from {
-    opacity: 0;
-    transform: translateX(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  animation: check-slide 300ms var(--ease-out) forwards;
 }

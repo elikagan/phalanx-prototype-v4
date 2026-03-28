@@ -19,8 +19,9 @@
 }
 
 .gate-sub {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
+  letter-spacing: 0.5px;
   margin-bottom: 32px;
 }
 
@@ -33,18 +34,18 @@
 .gate-card input {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
+  border-radius: var(--r-md);
+  color: var(--text-primary);
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 13px;
   padding: 10px 16px;
   width: 220px;
   outline: none;
-  transition: border-color 200ms var(--ease);
+  transition: border-color var(--dur-micro) var(--ease-out);
 }
 
 .gate-card input:focus {
-  border-color: var(--accent);
+  border-color: var(--border-strong);
 }
 
 .gate-card input::placeholder {
@@ -53,23 +54,23 @@
 
 .gate-error {
   color: var(--red);
-  font-size: 12px;
+  font-size: 11px;
   margin-top: 12px;
-  min-height: 18px;
+  min-height: 16px;
 }
 
 /* === Buttons === */
 .btn-primary {
-  background: var(--accent-btn);
-  color: var(--accent-btn-text);
+  background: var(--accent-dim);
+  color: var(--accent-text);
   border: none;
-  border-radius: var(--radius);
+  border-radius: var(--r-md);
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 500;
   padding: 10px 20px;
   cursor: pointer;
-  transition: background 200ms var(--ease);
+  transition: background var(--dur-micro) var(--ease-out);
   white-space: nowrap;
 }
 
@@ -83,20 +84,20 @@
 
 .btn-secondary {
   background: var(--bg-card);
-  color: var(--text);
+  color: var(--text-secondary);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--r-md);
   font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 500;
   padding: 10px 20px;
   cursor: pointer;
-  transition: all 200ms var(--ease);
+  transition: all var(--dur-micro) var(--ease-out);
   white-space: nowrap;
 }
 
 .btn-secondary:hover {
-  background: var(--bg-hover);
+  background: var(--bg-elevated);
   border-color: var(--border-strong);
 }
 
@@ -106,16 +107,16 @@
   color: var(--text-muted);
   cursor: pointer;
   padding: 6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 200ms var(--ease), background 200ms var(--ease);
+  transition: color var(--dur-micro) var(--ease-out), background var(--dur-micro) var(--ease-out);
 }
 
 .btn-icon:hover {
-  color: var(--text);
-  background: var(--bg-hover);
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
 }
 
 .btn-icon .material-symbols-outlined {
@@ -131,9 +132,9 @@
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius);
+  border-radius: var(--r-md);
   padding: 16px;
-  transition: border-color 200ms var(--ease), background 200ms var(--ease);
+  transition: border-color var(--dur-micro) var(--ease-out), background var(--dur-micro) var(--ease-out);
 }
 
 .card-interactive {
@@ -142,7 +143,7 @@
 
 .card-interactive:hover {
   border-color: var(--border);
-  background: var(--bg-hover);
+  background: var(--bg-elevated);
 }
 
 .card-interactive.selected {
@@ -155,7 +156,7 @@
   margin-bottom: 12px;
   opacity: 0;
   transform: translateY(8px);
-  animation: msg-appear 300ms var(--ease) forwards;
+  animation: msg-appear 300ms var(--ease-out) forwards;
 }
 
 .chat-msg-sara {
@@ -165,7 +166,7 @@
 }
 
 .chat-msg-sara .chat-msg-text {
-  color: var(--text);
+  color: var(--text-primary);
 }
 
 .chat-msg-user {
@@ -181,7 +182,7 @@
 
 .chat-msg-label {
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--text-muted);
   margin-bottom: 4px;
   font-weight: 500;
   text-transform: uppercase;
@@ -193,7 +194,7 @@
   line-height: 1.5;
 }
 
-/* === Radio Chatter Message === */
+/* === Radio Chatter === */
 .chat-msg-radio {
   margin-right: auto;
   max-width: 88%;
@@ -212,7 +213,7 @@
   font-size: 12px;
 }
 
-/* === Pill === */
+/* === Pills === */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -225,12 +226,12 @@
   border: 1px solid var(--border);
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 200ms var(--ease);
+  transition: all var(--dur-micro) var(--ease-out);
 }
 
 .pill:hover {
   border-color: var(--border-strong);
-  color: var(--text);
+  color: var(--text-secondary);
 }
 
 .pill .material-symbols-outlined {
@@ -239,8 +240,8 @@
 
 /* === Priority Badges === */
 .priority-p1 {
-  background: var(--red);
-  color: #fff;
+  background: rgba(184, 84, 84, 0.15);
+  color: var(--red);
   font-size: 10px;
   font-weight: 600;
   padding: 2px 8px;
@@ -249,8 +250,8 @@
 }
 
 .priority-p2 {
-  background: var(--amber);
-  color: var(--bg-base);
+  background: rgba(168, 149, 64, 0.15);
+  color: var(--amber);
   font-size: 10px;
   font-weight: 600;
   padding: 2px 8px;
@@ -259,13 +260,21 @@
 }
 
 .priority-p3 {
-  background: var(--border-strong);
+  background: rgba(92, 92, 102, 0.15);
   color: var(--text-muted);
   font-size: 10px;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 3px;
   letter-spacing: 0.5px;
+}
+
+/* === Chat Content Blocks (rich cards inside chat) === */
+.chat-content-block {
+  margin-bottom: 12px;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: msg-appear 300ms var(--ease-out) forwards;
 }
 
 /* === Screen Layouts === */
@@ -286,7 +295,8 @@
 
 .screen-title {
   font-size: 16px;
-  color: var(--text-bright);
+  font-weight: 500;
+  color: var(--text-primary);
   margin-bottom: 8px;
 }
 
@@ -296,7 +306,25 @@
   margin-bottom: 24px;
 }
 
-/* === Incident Cards === */
+/* === Incident Cards (compact — hover to expand) === */
+.incident-card-compact {
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.incident-card-compact .incident-expand {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 200ms var(--ease-out), opacity 200ms var(--ease-out);
+}
+
+.incident-card-compact:hover .incident-expand {
+  max-height: 80px;
+  opacity: 1;
+}
+
+/* === Incident Cards (full — used on analysis screen) === */
 .incident-card {
   display: flex;
   gap: 12px;
@@ -308,9 +336,9 @@
 }
 
 .incident-card .incident-type {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--text-bright);
+  color: var(--text-primary);
   margin-bottom: 2px;
 }
 
@@ -323,13 +351,13 @@
 .incident-card .incident-time {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--text-muted);
   margin-bottom: 6px;
 }
 
 .incident-card .incident-narrative {
   font-size: 12px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   line-height: 1.4;
 }
 
@@ -349,16 +377,17 @@
 }
 
 .drone-card .drone-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  color: var(--text-bright);
+  color: var(--text-primary);
 }
 
 .drone-card .drone-status {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   padding: 2px 8px;
   border-radius: 3px;
+  letter-spacing: 0.3px;
 }
 
 .drone-card .drone-status.available {
@@ -372,8 +401,8 @@
 }
 
 .drone-card .drone-status.offline {
-  background: rgba(62, 62, 66, 0.3);
-  color: var(--text-dim);
+  background: rgba(92, 92, 102, 0.15);
+  color: var(--text-muted);
 }
 
 .drone-card .drone-stats {
@@ -400,7 +429,7 @@
   gap: 10px;
   padding: 8px 0;
   font-size: 13px;
-  color: var(--text);
+  color: var(--text-secondary);
 }
 
 .checklist-item .material-symbols-outlined {
@@ -408,7 +437,7 @@
   color: var(--green);
 }
 
-/* === Choice Buttons (in chat) === */
+/* === Choice Buttons (chat) === */
 .chat-choices {
   display: flex;
   gap: 8px;
@@ -427,11 +456,11 @@
   display: flex;
   gap: 16px;
   padding: 8px 16px;
-  background: var(--bg-sidebar);
+  background: var(--bg-surface);
   border-top: 1px solid var(--border-subtle);
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .telemetry-item {
@@ -441,14 +470,14 @@
 }
 
 .telemetry-item .value {
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 /* === Summary Card === */
 .summary-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius);
+  border-radius: var(--r-md);
   padding: 20px;
 }
 
@@ -465,13 +494,13 @@
 
 .summary-stat .label {
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .summary-stat .value {
   font-size: 14px;
-  color: var(--text-bright);
+  color: var(--text-primary);
   font-family: var(--font-mono);
 }

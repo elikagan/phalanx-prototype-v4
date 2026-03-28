@@ -11,13 +11,22 @@ import { INCIDENTS, DRONES, SARA_ANALYSIS, MISSION_BRIEFING, PREFLIGHT_CHECKS, M
 export function screen1() {
   return `
     <div class="screen screen-center fade-in">
-      <div class="screen-title">SARA</div>
-      <div class="screen-subtitle">Welcome to Phalanx Mission Control. Enter your organization token to begin.</div>
-      <form id="auth-form" style="display:flex;gap:8px;width:100%;max-width:420px;justify-content:center">
-        <input type="text" id="auth-token" value="pk_org_9f2a1b8c" class="auth-input"
-          style="flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
-          color:var(--text);font-family:var(--font-mono);font-size:13px;padding:10px 16px;outline:none">
-        <button type="submit" class="btn-primary">Authenticate</button>
+      <form id="auth-form" style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px">
+        <div style="text-align:center;margin-bottom:8px">
+          <div style="font-size:11px;color:var(--text-ghost);text-transform:uppercase;letter-spacing:1px;font-family:var(--font-mono)">Riverside County SAR</div>
+        </div>
+        <input type="email" id="auth-email" value="j.martinez@riverside-sar.gov"
+          style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-md);
+          color:var(--text-primary);font-family:var(--font-ui);font-size:13px;padding:10px 14px;outline:none;width:100%;box-sizing:border-box"
+          placeholder="Email">
+        <input type="password" id="auth-password" value="password123"
+          style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-md);
+          color:var(--text-primary);font-family:var(--font-ui);font-size:13px;padding:10px 14px;outline:none;width:100%;box-sizing:border-box"
+          placeholder="Password">
+        <button type="submit" class="btn-primary" style="width:100%;margin-top:4px">Sign In</button>
+        <div style="text-align:center">
+          <a href="#" style="font-size:12px;color:var(--text-muted);text-decoration:none" onclick="event.preventDefault()">Forgot password?</a>
+        </div>
       </form>
     </div>
   `;
@@ -33,14 +42,14 @@ export function screen2() {
         <div class="card card-interactive" data-action="path-911" style="width:240px;text-align:left;cursor:pointer">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
             <span class="material-symbols-outlined" style="color:var(--red);font-size:20px">emergency</span>
-            <span style="font-size:14px;font-weight:500;color:var(--text-bright)">Active Incidents</span>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary)">Active Incidents</span>
           </div>
           <div style="font-size:12px;color:var(--text-muted)">Select from current 911 dispatches with AI-analyzed intelligence</div>
         </div>
         <div class="card card-interactive" data-action="path-manual" style="width:240px;text-align:left;cursor:pointer">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
             <span class="material-symbols-outlined" style="color:var(--accent);font-size:20px">flight_takeoff</span>
-            <span style="font-size:14px;font-weight:500;color:var(--text-bright)">Manual Mission</span>
+            <span style="font-size:14px;font-weight:500;color:var(--text-primary)">Manual Mission</span>
           </div>
           <div style="font-size:12px;color:var(--text-muted)">Configure a custom search with target description and area</div>
         </div>
@@ -49,7 +58,7 @@ export function screen2() {
   `;
 }
 
-// Screen 3: Incident List (911 path)
+// Screen 3: Incident Map (911 path) — panel content for chat-history
 export function screen3() {
   const cards = INCIDENTS.map(inc => {
     const priorityClass = `priority-p${inc.priority}`;
@@ -68,7 +77,7 @@ export function screen3() {
           <div class="incident-time">${inc.time} · ${inc.elapsed}</div>
           <div class="incident-narrative">${inc.narrative}</div>
           <div class="incident-meta">
-            <span style="font-size:11px;color:var(--text-dim)">${inc.units} unit${inc.units !== 1 ? 's' : ''} responding</span>
+            <span style="font-size:11px;color:var(--text-muted)">${inc.units} unit${inc.units !== 1 ? 's' : ''} responding</span>
           </div>
         </div>
       </div>
@@ -76,62 +85,53 @@ export function screen3() {
   }).join('');
 
   return `
-    <div class="screen fade-in" style="padding:24px;max-width:560px;margin:0 auto">
-      <div class="chat-msg chat-msg-sara" style="margin-bottom:20px;opacity:1;transform:none">
-        <div class="chat-msg-label">SARA</div>
-        <div class="chat-msg-text">I'm tracking ${INCIDENTS.length} active incidents. Select one for mission intelligence.</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${cards}
-      </div>
+    <div class="panel-header">
+      <div class="panel-title">Active Incidents</div>
+      <div class="panel-subtitle">${INCIDENTS.length} tracked · San Diego County</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${cards}
     </div>
   `;
 }
 
-// Screen 4: SARA Analysis (911 path)
+// Screen 4: SARA Analysis (911 path) — panel content
 export function screen4() {
   const t = SARA_ANALYSIS.target;
   return `
-    <div class="screen fade-in" style="padding:24px;max-width:560px;margin:0 auto">
-      <div class="chat-msg chat-msg-sara" style="margin-bottom:16px;opacity:1;transform:none">
-        <div class="chat-msg-label">SARA</div>
-        <div class="chat-msg-text">I've analyzed ${SARA_ANALYSIS.transcriptsAnalyzed} dispatch recordings for incident #4471.</div>
-      </div>
+    <div class="panel-header">
+      <div class="panel-title">Incident Analysis</div>
+      <div class="panel-subtitle">SARA processed ${SARA_ANALYSIS.transcriptsAnalyzed} dispatch recordings</div>
+    </div>
 
-      <details class="card" style="margin-bottom:16px;cursor:pointer">
-        <summary style="font-size:12px;color:var(--text-muted);padding:4px 0">View source transcripts</summary>
-        <pre style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);line-height:1.6;
-          margin-top:12px;white-space:pre-wrap">${SARA_ANALYSIS.transcriptText}</pre>
-      </details>
-
-      <div class="card" style="margin-bottom:16px">
-        <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">
-          Extracted Target Profile
-        </div>
-        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
-          <span style="color:var(--text-dim)">Vehicle</span><span style="color:var(--text-bright)">${t.vehicle}</span>
-          <span style="color:var(--text-dim)">Plate</span><span style="color:var(--text-bright);font-family:var(--font-mono)">${t.plate}</span>
-          <span style="color:var(--text-dim)">Last seen</span><span style="color:var(--text-bright)">${t.lastSeen} — ${t.lastSeenTime}</span>
-          <span style="color:var(--text-dim)">Speed</span><span style="color:var(--text-bright)">${t.speed}</span>
-          <span style="color:var(--text-dim)">Suspect</span><span style="color:var(--text-bright)">${t.suspect}</span>
-          <span style="color:var(--text-dim)">Units</span><span style="color:var(--text-bright)">${t.respondingUnits} responding</span>
-        </div>
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:500">
+        Extracted Target Profile
       </div>
-
-      <div class="chat-msg chat-msg-sara" style="margin-bottom:16px;opacity:1;transform:none">
-        <div class="chat-msg-label">SARA</div>
-        <div class="chat-msg-text">Ready to select a drone for this mission?</div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
+        <span style="color:var(--text-muted)">Vehicle</span><span style="color:var(--text-primary)">${t.vehicle}</span>
+        <span style="color:var(--text-muted)">Plate</span><span style="color:var(--text-primary);font-family:var(--font-mono)">${t.plate}</span>
+        <span style="color:var(--text-muted)">Last seen</span><span style="color:var(--text-primary)">${t.lastSeen} — ${t.lastSeenTime}</span>
+        <span style="color:var(--text-muted)">Speed</span><span style="color:var(--text-primary)">${t.speed}</span>
+        <span style="color:var(--text-muted)">Suspect</span><span style="color:var(--text-primary)">${t.suspect}</span>
+        <span style="color:var(--text-muted)">Units</span><span style="color:var(--text-primary)">${t.respondingUnits} responding</span>
       </div>
+    </div>
 
-      <div style="display:flex;gap:8px">
-        <button class="btn-primary" data-action="to-drone-select">Select Drone</button>
-        <button class="btn-secondary" data-action="edit-target">Edit Target Info</button>
-      </div>
+    <details class="card" style="margin-bottom:12px;cursor:pointer">
+      <summary style="font-size:12px;color:var(--text-muted);padding:4px 0">View source transcripts</summary>
+      <pre style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);line-height:1.6;
+        margin-top:12px;white-space:pre-wrap">${SARA_ANALYSIS.transcriptText}</pre>
+    </details>
+
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn-primary" data-action="to-drone-select">Select Drone</button>
+      <button class="btn-secondary" data-action="edit-target">Edit Target Info</button>
     </div>
   `;
 }
 
-// Screen 5: Drone Selection
+// Screen 5: Drone Selection — panel content
 export function screen5() {
   const path = arguments[0] || '911';
   const sorted = path === '911'
@@ -167,51 +167,40 @@ export function screen5() {
   }).join('');
 
   return `
-    <div class="screen fade-in" style="padding:24px;max-width:560px;margin:0 auto">
-      <div class="chat-msg chat-msg-sara" style="margin-bottom:20px;opacity:1;transform:none">
-        <div class="chat-msg-label">SARA</div>
-        <div class="chat-msg-text">${path === '911'
-          ? 'Here are available drones, sorted by distance from the incident. I recommend Delta SA-128 — closest at 1.2 km.'
-          : 'Select a drone for your mission.'}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${cards}
-      </div>
+    <div class="panel-header">
+      <div class="panel-title">Select Drone</div>
+      <div class="panel-subtitle">${path === '911' ? 'Sorted by distance from incident' : 'Available fleet'}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${cards}
     </div>
   `;
 }
 
-// Screen 6: Mission Briefing (911 path)
+// Screen 6: Mission Briefing (911 path) — panel content
 export function screen6() {
   const b = MISSION_BRIEFING;
   return `
-    <div class="screen fade-in" style="padding:24px;max-width:560px;margin:0 auto">
-      <div class="chat-msg chat-msg-sara" style="margin-bottom:16px;opacity:1;transform:none">
-        <div class="chat-msg-label">SARA</div>
-        <div class="chat-msg-text">Based on the incident data, here's the mission plan:</div>
-      </div>
-
-      <div class="card" style="margin-bottom:16px">
-        <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">
-          Mission Summary
-        </div>
-        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
-          <span style="color:var(--text-dim)">Target</span><span style="color:var(--text-bright)">${b.target}</span>
-          <span style="color:var(--text-dim)">Last known</span><span style="color:var(--text-bright)">${b.lastKnown}</span>
-          <span style="color:var(--text-dim)">Direction</span><span style="color:var(--text-bright)">${b.direction}</span>
-          <span style="color:var(--text-dim)">Search area</span><span style="color:var(--text-bright)">${b.searchArea}</span>
-          <span style="color:var(--text-dim)">Drone</span><span style="color:var(--text-bright)">${b.drone}</span>
-          <span style="color:var(--text-dim)">Units</span><span style="color:var(--text-bright)">${b.respondingUnits.join(', ')}</span>
-        </div>
-      </div>
-
-      <div class="chat-msg chat-msg-sara" style="margin-bottom:16px;opacity:1;transform:none">
-        <div class="chat-msg-label">SARA</div>
-        <div class="chat-msg-text">Confirm to proceed to search area setup.</div>
-      </div>
-
-      <button class="btn-primary" data-action="confirm-mission">Confirm Mission</button>
+    <div class="panel-header">
+      <div class="panel-title">Mission Briefing</div>
+      <div class="panel-subtitle">Review and confirm to proceed</div>
     </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:500">
+        Mission Plan
+      </div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
+        <span style="color:var(--text-muted)">Target</span><span style="color:var(--text-primary)">${b.target}</span>
+        <span style="color:var(--text-muted)">Last known</span><span style="color:var(--text-primary)">${b.lastKnown}</span>
+        <span style="color:var(--text-muted)">Direction</span><span style="color:var(--text-primary)">${b.direction}</span>
+        <span style="color:var(--text-muted)">Search area</span><span style="color:var(--text-primary)">${b.searchArea}</span>
+        <span style="color:var(--text-muted)">Drone</span><span style="color:var(--text-primary)">${b.drone}</span>
+        <span style="color:var(--text-muted)">Units</span><span style="color:var(--text-primary)">${b.respondingUnits.join(', ')}</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" data-action="confirm-mission" style="width:100%">Confirm & Configure Search Area</button>
   `;
 }
 
@@ -268,7 +257,7 @@ export function screen13() {
       </div>
 
       <div class="summary-card" style="margin-bottom:20px;width:100%">
-        <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">
+        <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">
           Mission Summary
         </div>
         <div class="summary-grid">

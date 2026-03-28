@@ -152,6 +152,49 @@ export async function appendScanLine(duration = 1200) {
   await wait(300);
 }
 
+/** Append a SARA message followed by rich HTML content (cards, etc) */
+export function appendSaraWithContent(text, html, options = {}) {
+  const el = chatEl();
+  if (!el) return null;
+
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg chat-msg-sara';
+  msg.innerHTML = `
+    <div class="chat-msg-label">SARA</div>
+    <div class="chat-msg-text">${escapeHtml(text)}</div>
+  `;
+  el.appendChild(msg);
+
+  // Append rich content block
+  if (html) {
+    const content = document.createElement('div');
+    content.className = 'chat-content-block';
+    content.innerHTML = html;
+    el.appendChild(content);
+  }
+
+  if (options.choices) {
+    const choices = document.createElement('div');
+    choices.className = 'chat-choices';
+    choices.style.padding = '0 0 8px 0';
+    for (const choice of options.choices) {
+      const btn = document.createElement('button');
+      btn.className = choice.primary ? 'btn-primary' : 'btn-secondary';
+      btn.textContent = choice.label;
+      btn.addEventListener('click', () => {
+        choices.remove();
+        choice.action();
+      });
+      choices.appendChild(btn);
+    }
+    el.appendChild(choices);
+  }
+
+  scrollToBottom();
+  state.set({ lastSaraMessage: text });
+  return msg;
+}
+
 /** Clear all chat messages */
 export function clear() {
   const el = chatEl();

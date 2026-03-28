@@ -95,6 +95,20 @@ export function init() {
 }
 
 /** Transition to a screen. Central routing point. */
-export function goToScreen(screen) {
+export function goToScreen(screen, { pushHistory = true } = {}) {
+  const prev = state.currentScreen;
   set({ currentScreen: screen });
+  if (pushHistory && prev !== screen) {
+    history.pushState({ screen }, '', '');
+  }
 }
+
+// Replace initial history entry with screen 1 so back button stays in-app
+history.replaceState({ screen: 1 }, '', '');
+
+// Browser back/forward button support
+window.addEventListener('popstate', (e) => {
+  if (e.state?.screen != null) {
+    goToScreen(e.state.screen, { pushHistory: false });
+  }
+});

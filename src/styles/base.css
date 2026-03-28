@@ -1,44 +1,43 @@
-/* === Design System v2.0 — Phalanx === */
+/* === Phalanx v4 Design System === */
 
 :root {
-  /* Backgrounds (5-tier layering) */
-  --bg-sidebar: #141417;
-  --bg-base: #18181b;
-  --bg-content: #1c1c1f;
-  --bg-card: #212126;
-  --bg-hover: #28282e;
+  /* Backgrounds — 4 tiers */
+  --bg-base: #111113;
+  --bg-surface: #161618;
+  --bg-card: #1c1c1f;
+  --bg-elevated: #232327;
 
-  /* Text (5-tier hierarchy) */
-  --text-bright: #d0d0d6;
-  --text: #b4b4bc;
-  --text-muted: #6e6e78;
-  --text-dim: #4e4e56;
+  /* Text — 4 levels */
+  --text-primary: #e0e0e4;
+  --text-secondary: #9898a0;
+  --text-muted: #5c5c66;
   --text-ghost: #3a3a42;
 
   /* Accent */
   --accent: #5f8fad;
-  --accent-btn: #3d6b85;
-  --accent-btn-text: #d4e0e8;
+  --accent-dim: #3d6b85;
+  --accent-text: #d4e0e8;
 
-  /* Semantic (muted, professional) */
+  /* Status — muted, professional */
   --green: #4a9a65;
   --red: #b85454;
   --amber: #a89540;
-  --blue: #5a8fbf;
 
   /* Borders */
-  --border-subtle: #242429;
-  --border: #2c2c33;
+  --border-subtle: #1e1e22;
+  --border: #28282e;
   --border-strong: #3a3a42;
 
   /* Radii */
-  --radius-sm: 4px;
-  --radius: 6px;
-  --radius-lg: 8px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
 
-  /* Easing */
-  --ease: cubic-bezier(.32, .72, 0, 1);
-  --ease-dramatic: cubic-bezier(.25, .1, .25, 1);
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-micro: 150ms;
+  --dur-state: 250ms;
+  --dur-panel: 400ms;
 
   /* Layout */
   --topbar-height: 48px;
@@ -46,8 +45,8 @@
   --drawer-height: 30vh;
 
   /* Typography */
-  --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', 'JetBrains Mono', monospace;
+  --font-ui: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Geist Mono', 'SF Mono', monospace;
 }
 
 /* === Reset === */
@@ -60,10 +59,10 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  background: #111113;
-  color: var(--text);
+  background: #0a0a0c;
+  color: var(--text-secondary);
   font-family: var(--font-ui);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -78,7 +77,7 @@ html, body {
 
 /* === Typography === */
 h1, h2, h3, h4 {
-  color: var(--text-bright);
+  color: var(--text-primary);
   font-weight: 500;
   line-height: 1.2;
 }
@@ -87,16 +86,12 @@ h1, h2, h3, h4 {
   font-family: var(--font-mono);
 }
 
-.text-bright { color: var(--text-bright); }
-.text-muted { color: var(--text-muted); }
-.text-dim { color: var(--text-dim); }
-
 /* === Utility === */
 .hidden {
   display: none !important;
 }
 
-/* Scrollbar styling */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;
 }

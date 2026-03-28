@@ -12,7 +12,7 @@ import * as topbar from './components/topbar.js';
 import * as chat from './components/chat.js';
 import * as fpv from './components/fpv.js';
 import * as orchestrator from './orchestrator.js';
-import { INCIDENTS, DRONES, SEARCH_ZONE, WAYPOINTS, PREFLIGHT_CHECKS, MISSION_SUMMARY } from './scenarios/san-diego-pursuit.js';
+import { INCIDENTS, DRONES, SEARCH_ZONE, WAYPOINTS, PREFLIGHT_CHECKS, MISSION_SUMMARY, SARA_ANALYSIS, MISSION_BRIEFING } from './scenarios/san-diego-pursuit.js';
 
 // ── Password Gate ──────────────────────────────────────────
 const PASSWORD = 'phalanx';
@@ -45,8 +45,15 @@ function boot() {
     mapComponent.resize();
   });
 
-  // Single delegated click handler on screen-content (set up once)
+  // Delegated click handler on screen-content
   document.getElementById('screen-content')?.addEventListener('click', (e) => {
+    const action = e.target.closest('[data-action]');
+    if (!action) return;
+    handleAction(action.dataset.action, action.dataset);
+  });
+
+  // Delegated click handler on chat-history (for panel screens)
+  document.getElementById('chat-history')?.addEventListener('click', (e) => {
     const action = e.target.closest('[data-action]');
     if (!action) return;
     handleAction(action.dataset.action, action.dataset);
@@ -57,11 +64,9 @@ function boot() {
     e.preventDefault();
     const form = e.target;
     if (form.id === 'auth-form') {
-      const token = form.querySelector('#auth-token')?.value;
-      if (token === 'pk_org_9f2a1b8c') {
-        state.set({ authenticated: true, orgName: 'Riverside County SAR' });
-        state.goToScreen(2);
-      }
+      // Demo: any submission logs in
+      state.set({ authenticated: true, orgName: 'Riverside County SAR', userName: 'J. Martinez', missionPath: '911' });
+      state.goToScreen(3);
     }
   });
 
@@ -84,20 +89,31 @@ function setupChatInput() {
   const micBtn = document.getElementById('btn-mic');
   const textarea = document.getElementById('chat-textarea');
 
-  // Send button triggers next orchestrated exchange
-  sendBtn?.addEventListener('click', () => {
-    if (orchestrator.isActive()) return;
+  // Send message
+  const sendMessage = () => {
+    const text = textarea.value.trim();
+    if (!text) return;
     textarea.value = '';
-    orchestrator.next();
-  });
 
-  // Enter key (without shift) also sends
+    const screen = state.get('currentScreen');
+
+    // On mission screens (9-11), trigger orchestrator
+    if (screen >= 9 && screen <= 11) {
+      if (orchestrator.isActive()) return;
+      orchestrator.next();
+      return;
+    }
+
+    // On setup screens (3-6), handle typed commands
+    handleChatCommand(text, screen);
+  };
+
+  sendBtn?.addEventListener('click', sendMessage);
+
   textarea?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (orchestrator.isActive()) return;
-      textarea.value = '';
-      orchestrator.next();
+      sendMessage();
     }
   });
 
@@ -281,11 +297,11 @@ const screenRenderers = {
 };
 
 // Screens that show the map or FPV
-const MAP_SCREENS = new Set([7, 8, 9, 10, 11, 12]);
-// Screens that show the chat panel
-const CHAT_SCREENS = new Set([7, 8, 9, 10, 11, 12]);
+const MAP_SCREENS = new Set([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+// Screens that show the right panel (chat)
+const CHAT_SCREENS = new Set([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
 // Screens that show the chat input
-const INPUT_SCREENS = new Set([9, 10, 11]);
+const INPUT_SCREENS = new Set([3, 4, 5, 6, 9, 10, 11]);
 // Screens that show FPV as default view
 const FPV_SCREENS = new Set([9, 10, 11]);
 
@@ -325,13 +341,21 @@ function renderScreen(screen) {
     chatInput?.classList.add('hidden');
   }
 
-  // Render screen content (for non-map screens)
+  // Render screen content
   if (!showMap) {
     contentEl.classList.remove('hidden');
     const path = state.get('missionPath');
     contentEl.innerHTML = renderer(path);
   } else {
     contentEl.innerHTML = '';
+    // Show map
+    const mapContainer = document.getElementById('map-container');
+    mapContainer?.classList.remove('hidden');
+  }
+
+  // Clear overlay markers when entering non-setup screens
+  if (screen >= 7) {
+    mapComponent.clearOverlays();
   }
 
   // FPV layer
@@ -444,6 +468,68 @@ function manageTelemetryBar(show) {
   if (bar) bar.style.display = show ? 'flex' : 'none';
 }
 
+/** Handle typed text commands on setup screens */
+function handleChatCommand(text, screen) {
+  const lower = text.toLowerCase();
+
+  // Show user message in chat
+  chat.appendUser(text);
+
+  // Screen 3: incident selection
+  if (screen === 3) {
+    // Match incident by ID fragment, type, or number
+    const match = INCIDENTS.find(inc =>
+      inc.id.includes(lower) ||
+      inc.type.toLowerCase().includes(lower) ||
+      lower.includes(inc.id.replace('inc-', ''))
+    );
+    if (match) {
+      state.set({ selectedIncident: match });
+      state.goToScreen(4);
+      return;
+    }
+    chat.appendSara(`No incident matching "${text}". Try selecting from the list or clicking a marker on the map.`);
+    return;
+  }
+
+  // Screen 4: move to drone select
+  if (screen === 4) {
+    if (lower.includes('drone') || lower.includes('select') || lower.includes('next') || lower.includes('yes')) {
+      state.goToScreen(5);
+      return;
+    }
+    chat.appendSara("Ready to select a drone? Say \"select drone\" or click the button.");
+    return;
+  }
+
+  // Screen 5: drone selection
+  if (screen === 5) {
+    const match = DRONES.find(d =>
+      d.status === 'available' && (
+        d.name.toLowerCase().includes(lower) ||
+        d.id.includes(lower)
+      )
+    );
+    if (match) {
+      state.set({ selectedDrone: match });
+      state.goToScreen(state.get('missionPath') === '911' ? 6 : 7);
+      return;
+    }
+    chat.appendSara(`No available drone matching "${text}". Select from the list or click a drone on the map.`);
+    return;
+  }
+
+  // Screen 6: confirm mission
+  if (screen === 6) {
+    if (lower.includes('confirm') || lower.includes('go') || lower.includes('yes') || lower.includes('launch')) {
+      state.goToScreen(7);
+      return;
+    }
+    chat.appendSara("Say \"confirm\" to proceed to search area configuration.");
+    return;
+  }
+}
+
 function handleAction(action, dataset) {
   switch (action) {
     case 'path-911':
@@ -510,6 +596,18 @@ function handleAction(action, dataset) {
 // ── Screen-Specific Setup ──────────────────────────────────
 function setupScreen(screen) {
   switch (screen) {
+    case 3:
+      setupIncidentMapScreen();
+      break;
+    case 4:
+      setupAnalysisScreen();
+      break;
+    case 5:
+      setupDroneMapScreen();
+      break;
+    case 6:
+      setupBriefingScreen();
+      break;
     case 7:
       setupSearchAreaScreen();
       break;
@@ -534,11 +632,194 @@ function setupScreen(screen) {
   }
 }
 
+async function setupIncidentMapScreen() {
+  chat.clear();
+  mapComponent.clearOverlays();
+
+  // Show incidents on map
+  mapComponent.showIncidents(INCIDENTS, (inc) => {
+    state.set({ selectedIncident: inc });
+    state.goToScreen(4);
+  });
+
+  // Show active drones on map too
+  mapComponent.showFleetDrones(DRONES, null, () => {});
+
+  // Fleet status
+  const inFlight = DRONES.filter(d => d.status === 'in-mission').length;
+  const available = DRONES.filter(d => d.status === 'available').length;
+
+  // Welcome message — typed out for a live feel
+  await chat.appendSaraWordByWord(
+    `Welcome back, Riverside County SAR. ${inFlight} drone${inFlight !== 1 ? 's' : ''} in flight. ${available} more available for immediate launch.`
+  );
+
+  // Compact incident cards — one line each, expandable on hover
+  const cardsHtml = INCIDENTS.map(inc => {
+    const priorityClass = `priority-p${inc.priority}`;
+    const droneOnScene = DRONES.find(d => d.status === 'in-mission' && d.assignedIncident === inc.id);
+    const droneTag = droneOnScene
+      ? `<span style="font-size:10px;color:var(--amber);margin-left:auto;font-family:var(--font-mono)">${droneOnScene.name} on scene</span>`
+      : '';
+    return `
+      <div class="card card-interactive incident-card-compact" data-action="select-incident" data-id="${inc.id}">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="${priorityClass}">P${inc.priority}</span>
+          <span style="font-size:13px;font-weight:500;color:var(--text-primary)">${inc.type}</span>
+          <span style="font-size:11px;color:var(--text-muted)">${inc.location}</span>
+          <span style="font-size:10px;color:var(--text-ghost);font-family:var(--font-mono)">${inc.elapsed}</span>
+          ${droneTag}
+        </div>
+        <div class="incident-expand">
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.4;margin-top:6px">${inc.narrative}</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${inc.units} unit${inc.units !== 1 ? 's' : ''} responding · ${inc.time}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  chat.appendSaraWithContent(
+    `I'm tracking ${INCIDENTS.length} active incidents in San Diego County.`,
+    `<div style="display:flex;flex-direction:column;gap:4px">${cardsHtml}</div>`
+  );
+}
+
+function setupAnalysisScreen() {
+  chat.clear();
+  mapComponent.clearOverlays();
+  const inc = state.get('selectedIncident');
+  if (inc?.coordinates) {
+    mapComponent.focusIncident(inc.coordinates, 16);
+    mapComponent.showIncidents([inc], () => {});
+  }
+
+  const t = SARA_ANALYSIS.target;
+  const profileHtml = `
+    <div class="card" style="margin-bottom:8px">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:500">
+        Extracted Target Profile
+      </div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
+        <span style="color:var(--text-muted)">Vehicle</span><span style="color:var(--text-primary)">${t.vehicle}</span>
+        <span style="color:var(--text-muted)">Plate</span><span style="color:var(--text-primary);font-family:var(--font-mono)">${t.plate}</span>
+        <span style="color:var(--text-muted)">Last seen</span><span style="color:var(--text-primary)">${t.lastSeen} — ${t.lastSeenTime}</span>
+        <span style="color:var(--text-muted)">Speed</span><span style="color:var(--text-primary)">${t.speed}</span>
+        <span style="color:var(--text-muted)">Suspect</span><span style="color:var(--text-primary)">${t.suspect}</span>
+        <span style="color:var(--text-muted)">Units</span><span style="color:var(--text-primary)">${t.respondingUnits} responding</span>
+      </div>
+    </div>`;
+
+  chat.appendSaraWithContent(
+    `I've analyzed ${SARA_ANALYSIS.transcriptsAnalyzed} dispatch recordings for this incident.`,
+    profileHtml,
+    {
+      choices: [
+        { label: 'Select Drone', primary: true, action: () => state.goToScreen(5) },
+        { label: 'Edit Target Info', primary: false, action: () => {} },
+      ],
+    }
+  );
+}
+
+function setupDroneMapScreen() {
+  chat.clear();
+  mapComponent.clearOverlays();
+  const inc = state.get('selectedIncident');
+  const incCoords = inc?.coordinates || null;
+  if (inc) mapComponent.showIncidents([inc], () => {});
+  mapComponent.showFleetDrones(DRONES, incCoords, (drone) => {
+    state.set({ selectedDrone: drone });
+    if (state.get('missionPath') === '911') {
+      state.goToScreen(6);
+    } else {
+      state.goToScreen(7);
+    }
+  });
+
+  const path = state.get('missionPath');
+  const sorted = path === '911'
+    ? [...DRONES].sort((a, b) => (a.distanceFromIncident ?? Infinity) - (b.distanceFromIncident ?? Infinity))
+    : DRONES;
+
+  const cardsHtml = sorted.map((drone, i) => {
+    const isAvailable = drone.status === 'available';
+    const isClosest = path === '911' && i === 0 && isAvailable;
+    const statusLabel = drone.status === 'available' ? 'Available'
+      : drone.status === 'in-mission' ? `In Mission (${drone.operator})`
+      : 'Offline';
+    const distText = drone.distanceFromIncident != null ? `${drone.distanceFromIncident} km` : '—';
+    return `
+      <div class="card ${isAvailable ? 'card-interactive' : ''} drone-card ${isClosest ? 'selected' : ''}"
+        ${isAvailable ? `data-action="select-drone" data-id="${drone.id}"` : ''}
+        style="${!isAvailable ? 'opacity:0.5;cursor:default' : ''}">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span class="drone-name">${drone.name}</span>
+            <span class="drone-status ${drone.status}">${statusLabel}</span>
+          </div>
+          <div class="drone-stats">
+            <span class="stat"><span class="material-symbols-outlined">battery_full</span>${drone.battery}%</span>
+            <span class="stat"><span class="material-symbols-outlined">signal_cellular_alt</span>${drone.signal}</span>
+            ${path === '911' ? `<span class="stat"><span class="material-symbols-outlined">straighten</span>${distText}</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  chat.appendSaraWithContent(
+    path === '911'
+      ? 'Here are available drones, sorted by distance. I recommend Delta SA-128 — closest at 1.2 km.'
+      : 'Select a drone for your mission.',
+    `<div style="display:flex;flex-direction:column;gap:8px">${cardsHtml}</div>`
+  );
+}
+
+function setupBriefingScreen() {
+  chat.clear();
+  mapComponent.clearOverlays();
+  const inc = state.get('selectedIncident');
+  const drone = state.get('selectedDrone');
+  if (inc) mapComponent.showIncidents([inc], () => {});
+  if (drone) mapComponent.showFleetDrones([drone], inc?.coordinates, () => {});
+  if (inc?.coordinates && drone?.coordinates) {
+    const m = mapComponent.getMap();
+    if (m) m.fitBounds([inc.coordinates, drone.coordinates], { padding: [80, 80], maxZoom: 15 });
+  } else if (inc?.coordinates) {
+    mapComponent.focusIncident(inc.coordinates, 15);
+  }
+
+  const b = MISSION_BRIEFING;
+  const briefingHtml = `
+    <div class="card">
+      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:500">
+        Mission Plan
+      </div>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
+        <span style="color:var(--text-muted)">Target</span><span style="color:var(--text-primary)">${b.target}</span>
+        <span style="color:var(--text-muted)">Last known</span><span style="color:var(--text-primary)">${b.lastKnown}</span>
+        <span style="color:var(--text-muted)">Direction</span><span style="color:var(--text-primary)">${b.direction}</span>
+        <span style="color:var(--text-muted)">Search area</span><span style="color:var(--text-primary)">${b.searchArea}</span>
+        <span style="color:var(--text-muted)">Drone</span><span style="color:var(--text-primary)">${b.drone}</span>
+        <span style="color:var(--text-muted)">Units</span><span style="color:var(--text-primary)">${b.respondingUnits.join(', ')}</span>
+      </div>
+    </div>`;
+
+  chat.appendSaraWithContent(
+    "Based on the incident data, here's the mission plan.",
+    briefingHtml,
+    {
+      choices: [
+        { label: 'Confirm & Configure Search Area', primary: true, action: () => state.goToScreen(7) },
+      ],
+    }
+  );
+}
+
 function setupSearchAreaScreen() {
   const path = state.get('missionPath');
   chat.clear();
 
   if (path === '911') {
+    const inc = state.get('selectedIncident');
     state.set({
       searchZone: SEARCH_ZONE,
       dronePosition: { lat: 32.7210, lng: -117.1498 },
@@ -547,8 +828,15 @@ function setupSearchAreaScreen() {
     requestAnimationFrame(() => {
       mapComponent.resize();
       requestAnimationFrame(() => {
+        // Show incident marker so search zone visually connects to it
+        if (inc) mapComponent.showIncidents([inc], () => {});
         mapComponent.addWaypoint('lastKnown', WAYPOINTS.lastKnown.coordinates, WAYPOINTS.lastKnown.label);
-        mapComponent.flyTo(SEARCH_ZONE.center[0], SEARCH_ZONE.center[1], 15, 1.5);
+        // Zoom to fit both incident and search zone
+        mapComponent.flyTo(
+          (SEARCH_ZONE.origin[0] + SEARCH_ZONE.center[0]) / 2,
+          SEARCH_ZONE.center[1],
+          14, 1.5
+        );
       });
     });
 
