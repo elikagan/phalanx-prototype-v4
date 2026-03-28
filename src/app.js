@@ -841,7 +841,7 @@ function setupSearchAreaScreen() {
     });
 
     chat.appendSara(
-      "Based on dispatch data, I've configured the search area. The suspect was last seen heading southbound at ~45 mph. Search zone is biased south from Madison & Oak.",
+      "Based on dispatch data, I've configured the search area. The suspect was last seen heading southbound at ~45 mph. Search zone is biased south from El Cajon Blvd & 30th.",
       {
         choices: [
           { label: 'Confirm Search Area', primary: true, action: () => state.goToScreen(8) },
