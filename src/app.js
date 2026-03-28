@@ -1032,10 +1032,9 @@ async function setupLiveSceneScreen() {
   await wait(2000);
   chat.appendSara(`${drone?.name} is holding position at 85m AGL with clear line of sight. Target vehicle confirmed, tracking. Battery at ${drone?.battery}%, estimated 40 minutes remaining.`, {
     choices: [
-      { label: 'Take Over Drone', primary: true, action: () => {
-        fpv.reset();
-        state.set({ searchZone: SEARCH_ZONE });
-        state.goToScreen(9);
+      { label: 'Reposition Drone', primary: true, action: () => {
+        chat.appendUser('Reposition to get a better angle on the suspect vehicle.');
+        wait(800).then(() => chat.appendSara(`Adjusting ${drone?.name} position. Moving 20m east and dropping to 60m for a closer look.`));
       }},
       { label: 'Back to Incidents', primary: false, action: () => {
         fpv.reset();
