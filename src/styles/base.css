@@ -1,6 +1,8 @@
 /* === Phalanx v4 Design System === */
 
 :root {
+  color-scheme: dark;
+
   /* Backgrounds — 4 tiers */
   --bg-base: #111113;
   --bg-surface: #161618;
