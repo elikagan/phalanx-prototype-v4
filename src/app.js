@@ -543,9 +543,9 @@ function handleAction(action, dataset) {
       break;
 
     case 'select-incident': {
-      const idx = INCIDENTS.findIndex(i => i.id === dataset.id);
-      if (idx !== -1) {
-        state.set({ selectedIncident: { ...INCIDENTS[idx], _index: idx } });
+      const incident = INCIDENTS.find(i => i.id === dataset.id);
+      if (incident) {
+        state.set({ selectedIncident: incident });
         state.goToScreen(4);
       }
       break;
@@ -636,11 +636,8 @@ async function setupIncidentMapScreen() {
   chat.clear();
   mapComponent.clearOverlays();
 
-  // Tag incidents with their index for numbered map labels
-  const indexedIncidents = INCIDENTS.map((inc, i) => ({ ...inc, _index: i }));
-
   // Show incidents + drones on map, then fit to show everything at metro scale
-  mapComponent.showIncidents(indexedIncidents, (inc) => {
+  mapComponent.showIncidents(INCIDENTS, (inc) => {
     state.set({ selectedIncident: inc });
     state.goToScreen(4);
   }, { skipFitBounds: true });
@@ -669,7 +666,7 @@ async function setupIncidentMapScreen() {
     return `
       <div class="card card-interactive incident-card-compact" data-action="select-incident" data-id="${inc.id}">
         <div class="incident-compact-row">
-          <span class="incident-number">${idx + 1}</span>
+          <span class="incident-number">#${inc.id.replace(/\D/g, '')}</span>
           <span class="${priorityClass}">P${inc.priority}</span>
           <span class="incident-compact-type">${inc.type}</span>
           <span class="incident-compact-meta">${inc.elapsed}</span>

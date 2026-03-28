@@ -346,15 +346,15 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false } = {
     const inc = incidents[i];
     if (!inc.coordinates) continue;
     const { color } = INCIDENT_ICONS[inc.priority] || INCIDENT_ICONS[3];
-    // Use incident index from the full INCIDENTS array if available, otherwise use loop index
-    const incNumber = inc._index != null ? inc._index + 1 : i + 1;
+    // Extract numeric ID from incident id (e.g. "inc-4471" → "4471")
+    const incNumber = inc.id.replace(/\D/g, '');
     const marker = L.marker(inc.coordinates, {
       icon: L.divIcon({
         className: 'incident-map-marker',
         html: `<div class="incident-dot" style="--dot-color:${color}">
           <span class="material-symbols-outlined" style="font-size:16px;color:var(--icon-on-status)">${inc.icon || 'location_on'}</span>
         </div>
-        <div class="incident-map-label">#${incNumber} ${inc.type}</div>`,
+        <div class="incident-map-label">${inc.type} #${incNumber}</div>`,
         iconSize: [160, 44],
         iconAnchor: [18, 18],
       }),
@@ -369,7 +369,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false } = {
       offset: [0, -20],
       className: 'map-tooltip',
     });
-    tooltip.setContent(`<strong>#${incNumber} · P${inc.priority} · ${inc.type}</strong><br>${inc.location} · ${inc.elapsed}<br>${inc.units} unit${inc.units !== 1 ? 's' : ''} responding`);
+    tooltip.setContent(`<strong>P${inc.priority} · ${inc.type} #${incNumber}</strong><br>${inc.location} · ${inc.elapsed}<br>${inc.units} unit${inc.units !== 1 ? 's' : ''} responding`);
     marker.bindTooltip(tooltip);
 
     incidentMarkers.push(marker);
@@ -476,15 +476,19 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
 /** Fit map to show all currently visible markers (incidents + drones) */
 export function fitAllMarkers(padding = [60, 60], maxZoom = 12) {
   if (!map) return;
-  const allCoords = [
-    ...incidentMarkers.map(m => [m.getLatLng().lat, m.getLatLng().lng]),
-    ...fleetMarkers.map(m => [m.getLatLng().lat, m.getLatLng().lng]),
-  ];
-  if (allCoords.length > 1) {
-    map.fitBounds(allCoords, { padding, maxZoom });
-  } else if (allCoords.length === 1) {
-    map.setView(allCoords[0], maxZoom);
-  }
+  // Ensure Leaflet knows the actual container size before fitting
+  requestAnimationFrame(() => {
+    map.invalidateSize();
+    const allCoords = [
+      ...incidentMarkers.map(m => [m.getLatLng().lat, m.getLatLng().lng]),
+      ...fleetMarkers.map(m => [m.getLatLng().lat, m.getLatLng().lng]),
+    ];
+    if (allCoords.length > 1) {
+      map.fitBounds(allCoords, { padding, maxZoom });
+    } else if (allCoords.length === 1) {
+      map.setView(allCoords[0], maxZoom);
+    }
+  });
 }
 
 /** Clear fleet drone markers and distance lines */
