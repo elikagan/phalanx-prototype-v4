@@ -336,7 +336,7 @@ const INCIDENT_ICONS = {
 };
 
 /** Show incident markers on the map. Returns cleanup function. */
-export function showIncidents(incidents, onSelect, { skipFitBounds = false } = {}) {
+export function showIncidents(incidents, onSelect, { skipFitBounds = false, assignedIncidentIds = new Set() } = {}) {
   clearIncidentMarkers();
   if (!map) return;
 
@@ -346,12 +346,12 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false } = {
     const inc = incidents[i];
     if (!inc.coordinates) continue;
     const { color } = INCIDENT_ICONS[inc.priority] || INCIDENT_ICONS[3];
-    // Extract numeric ID from incident id (e.g. "inc-4471" → "4471")
     const incNumber = inc.id.replace(/\D/g, '');
+    const hasLinkedDrone = assignedIncidentIds.has(inc.id);
     const marker = L.marker(inc.coordinates, {
       icon: L.divIcon({
         className: 'incident-map-marker',
-        html: `<div class="incident-dot" style="--dot-color:${color}">
+        html: `<div class="incident-dot${hasLinkedDrone ? ' linked' : ''}" style="--dot-color:${color}">
           <span class="material-symbols-outlined" style="font-size:16px;color:var(--icon-on-status)">${inc.icon || 'location_on'}</span>
         </div>
         <div class="incident-map-label">${inc.type} #${incNumber}</div>`,
@@ -421,10 +421,11 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     const color = FLEET_COLORS[drone.status] || FLEET_COLORS.offline;
     const isAvailable = drone.status === 'available';
 
+    const isAssigned = drone.status === 'in-mission' && drone.assignedIncident;
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
-        html: `<div class="fleet-drone-dot" style="--drone-color:${color}">
+        html: `<div class="fleet-drone-dot${isAssigned ? ' linked' : ''}" style="--drone-color:${color}">
           <svg viewBox="0 0 24 24" width="16" height="16">
             <path d="M12 3L15 9L21 12L15 15L12 21L9 15L3 12L9 9Z" fill="${color}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
           </svg>

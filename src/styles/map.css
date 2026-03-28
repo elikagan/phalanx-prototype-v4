@@ -401,6 +401,13 @@
   justify-content: center;
 }
 
+/* Linked: drone assigned to incident */
+.incident-dot.linked,
+.fleet-drone-dot.linked {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 .fleet-drone-label {
   font-family: var(--font-mono);
   font-size: 10px;

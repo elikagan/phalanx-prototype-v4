@@ -636,11 +636,16 @@ async function setupIncidentMapScreen() {
   chat.clear();
   mapComponent.clearOverlays();
 
+  // Which incidents have drones assigned?
+  const assignedIncidentIds = new Set(
+    DRONES.filter(d => d.assignedIncident).map(d => d.assignedIncident)
+  );
+
   // Show incidents + drones on map, then fit to show everything at metro scale
   mapComponent.showIncidents(INCIDENTS, (inc) => {
     state.set({ selectedIncident: inc });
     state.goToScreen(4);
-  }, { skipFitBounds: true });
+  }, { skipFitBounds: true, assignedIncidentIds });
 
   mapComponent.showFleetDrones(DRONES, null, () => {}, { skipFitBounds: true });
 
@@ -731,7 +736,7 @@ function setupAnalysisScreen() {
     </div>`;
 
   const droneNote = closestDrone
-    ? `${closestDrone.name} is ${closestDrone.distanceFromIncident} km away — approximately ${etaMin} minutes to intercept. Ready to proceed?`
+    ? `${closestDrone.name} is ${closestDrone.distanceFromIncident} km away — approximately ${etaMin} minutes to intercept.`
     : 'No drones currently available.';
 
   chat.appendSaraWithContent(
@@ -739,7 +744,11 @@ function setupAnalysisScreen() {
     profileHtml,
     {
       choices: [
-        { label: 'Confirm & Brief', primary: true, action: () => state.goToScreen(6) },
+        { label: 'Launch', primary: true, action: () => {
+          // Auto-configure search zone and go straight to pre-flight
+          state.set({ searchZone: SEARCH_ZONE });
+          state.goToScreen(8);
+        }},
         { label: 'Choose Different Drone', primary: false, action: () => state.goToScreen(5) },
       ],
     }
@@ -885,18 +894,16 @@ function setupSearchAreaScreen() {
 async function setupPreflightScreen() {
   chat.appendSara("Running pre-flight checks...");
 
-  await wait(500);
+  await wait(400);
   for (const check of PREFLIGHT_CHECKS) {
     chat.appendSara(`${check.label}: ${check.value} ✓`);
-    await wait(300);
+    await wait(200);
   }
 
-  await wait(400);
-  chat.appendSara("All systems go. Drone is ready for takeoff.", {
-    choices: [
-      { label: 'Launch Mission', primary: true, action: () => state.goToScreen(9) },
-    ],
-  });
+  await wait(300);
+  chat.appendSara("All systems go. Launching...");
+  await wait(800);
+  state.goToScreen(9);
 }
 
 function setupMissionScreen() {
