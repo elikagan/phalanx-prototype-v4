@@ -386,7 +386,7 @@ function manageFpvLayer(show) {
     if (!fpvLayer) {
       fpvLayer = document.createElement('div');
       fpvLayer.id = 'fpv-layer';
-      fpvLayer.style.cssText = 'position:absolute;inset:0;z-index:5';
+      fpvLayer.className = 'fpv-view';
       mapContainer?.appendChild(fpvLayer);
       fpv.init(fpvLayer);
     }
@@ -659,27 +659,27 @@ async function setupIncidentMapScreen() {
     const priorityClass = `priority-p${inc.priority}`;
     const droneOnScene = DRONES.find(d => d.status === 'in-mission' && d.assignedIncident === inc.id);
     const droneTag = droneOnScene
-      ? `<span style="font-size:10px;color:var(--amber);margin-left:auto;font-family:var(--font-mono)">${droneOnScene.name} on scene</span>`
+      ? `<span class="mono-sm" style="color:var(--amber);margin-left:auto">${droneOnScene.name} on scene</span>`
       : '';
     return `
       <div class="card card-interactive incident-card-compact" data-action="select-incident" data-id="${inc.id}">
-        <div style="display:flex;align-items:center;gap:8px">
+        <div class="row-center" style="gap:8px">
           <span class="${priorityClass}">P${inc.priority}</span>
-          <span style="font-size:13px;font-weight:500;color:var(--text-primary)">${inc.type}</span>
-          <span style="font-size:11px;color:var(--text-muted)">${inc.location}</span>
-          <span style="font-size:10px;color:var(--text-ghost);font-family:var(--font-mono)">${inc.elapsed}</span>
+          <span class="card-title" style="font-size:13px">${inc.type}</span>
+          <span class="incident-meta-text">${inc.location}</span>
+          <span class="mono-sm" style="color:var(--text-ghost)">${inc.elapsed}</span>
           ${droneTag}
         </div>
         <div class="incident-expand">
-          <div style="font-size:12px;color:var(--text-secondary);line-height:1.4;margin-top:6px">${inc.narrative}</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">${inc.units} unit${inc.units !== 1 ? 's' : ''} responding · ${inc.time}</div>
+          <div class="incident-narrative-text" style="margin-top:6px">${inc.narrative}</div>
+          <div class="incident-meta-text" style="margin-top:4px">${inc.units} unit${inc.units !== 1 ? 's' : ''} responding · ${inc.time}</div>
         </div>
       </div>`;
   }).join('');
 
   chat.appendSaraWithContent(
     `I'm tracking ${INCIDENTS.length} active incidents in San Diego County.`,
-    `<div style="display:flex;flex-direction:column;gap:4px">${cardsHtml}</div>`
+    `<div class="stack-4">${cardsHtml}</div>`
   );
 }
 
@@ -694,17 +694,15 @@ function setupAnalysisScreen() {
 
   const t = SARA_ANALYSIS.target;
   const profileHtml = `
-    <div class="card" style="margin-bottom:8px">
-      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:500">
-        Extracted Target Profile
-      </div>
-      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
-        <span style="color:var(--text-muted)">Vehicle</span><span style="color:var(--text-primary)">${t.vehicle}</span>
-        <span style="color:var(--text-muted)">Plate</span><span style="color:var(--text-primary);font-family:var(--font-mono)">${t.plate}</span>
-        <span style="color:var(--text-muted)">Last seen</span><span style="color:var(--text-primary)">${t.lastSeen} — ${t.lastSeenTime}</span>
-        <span style="color:var(--text-muted)">Speed</span><span style="color:var(--text-primary)">${t.speed}</span>
-        <span style="color:var(--text-muted)">Suspect</span><span style="color:var(--text-primary)">${t.suspect}</span>
-        <span style="color:var(--text-muted)">Units</span><span style="color:var(--text-primary)">${t.respondingUnits} responding</span>
+    <div class="card mb-8">
+      <div class="section-label">Extracted Target Profile</div>
+      <div class="data-grid">
+        <span class="data-label">Vehicle</span><span class="data-value">${t.vehicle}</span>
+        <span class="data-label">Plate</span><span class="data-value mono">${t.plate}</span>
+        <span class="data-label">Last seen</span><span class="data-value">${t.lastSeen} — ${t.lastSeenTime}</span>
+        <span class="data-label">Speed</span><span class="data-value">${t.speed}</span>
+        <span class="data-label">Suspect</span><span class="data-value">${t.suspect}</span>
+        <span class="data-label">Units</span><span class="data-value">${t.respondingUnits} responding</span>
       </div>
     </div>`;
 
@@ -748,11 +746,10 @@ function setupDroneMapScreen() {
       : 'Offline';
     const distText = drone.distanceFromIncident != null ? `${drone.distanceFromIncident} km` : '—';
     return `
-      <div class="card ${isAvailable ? 'card-interactive' : ''} drone-card ${isClosest ? 'selected' : ''}"
-        ${isAvailable ? `data-action="select-drone" data-id="${drone.id}"` : ''}
-        style="${!isAvailable ? 'opacity:0.5;cursor:default' : ''}">
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <div class="card ${isAvailable ? 'card-interactive' : ''} drone-card ${isClosest ? 'selected' : ''} ${!isAvailable ? 'disabled' : ''}"
+        ${isAvailable ? `data-action="select-drone" data-id="${drone.id}"` : ''}>
+        <div class="flex-1">
+          <div class="card-header-row tight">
             <span class="drone-name">${drone.name}</span>
             <span class="drone-status ${drone.status}">${statusLabel}</span>
           </div>
@@ -769,7 +766,7 @@ function setupDroneMapScreen() {
     path === '911'
       ? 'Here are available drones, sorted by distance. I recommend Delta SA-128 — closest at 1.2 km.'
       : 'Select a drone for your mission.',
-    `<div style="display:flex;flex-direction:column;gap:8px">${cardsHtml}</div>`
+    `<div class="stack-8">${cardsHtml}</div>`
   );
 }
 
@@ -790,16 +787,14 @@ function setupBriefingScreen() {
   const b = MISSION_BRIEFING;
   const briefingHtml = `
     <div class="card">
-      <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;font-weight:500">
-        Mission Plan
-      </div>
-      <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13px">
-        <span style="color:var(--text-muted)">Target</span><span style="color:var(--text-primary)">${b.target}</span>
-        <span style="color:var(--text-muted)">Last known</span><span style="color:var(--text-primary)">${b.lastKnown}</span>
-        <span style="color:var(--text-muted)">Direction</span><span style="color:var(--text-primary)">${b.direction}</span>
-        <span style="color:var(--text-muted)">Search area</span><span style="color:var(--text-primary)">${b.searchArea}</span>
-        <span style="color:var(--text-muted)">Drone</span><span style="color:var(--text-primary)">${b.drone}</span>
-        <span style="color:var(--text-muted)">Units</span><span style="color:var(--text-primary)">${b.respondingUnits.join(', ')}</span>
+      <div class="section-label">Mission Plan</div>
+      <div class="data-grid">
+        <span class="data-label">Target</span><span class="data-value">${b.target}</span>
+        <span class="data-label">Last known</span><span class="data-value">${b.lastKnown}</span>
+        <span class="data-label">Direction</span><span class="data-value">${b.direction}</span>
+        <span class="data-label">Search area</span><span class="data-value">${b.searchArea}</span>
+        <span class="data-label">Drone</span><span class="data-value">${b.drone}</span>
+        <span class="data-label">Units</span><span class="data-value">${b.respondingUnits.join(', ')}</span>
       </div>
     </div>`;
 

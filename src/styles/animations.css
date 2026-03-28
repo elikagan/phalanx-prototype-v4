@@ -68,7 +68,7 @@
 /* === Transition Classes === */
 
 .fade-in {
-  animation: screen-fade-in 300ms var(--ease-out) forwards;
+  animation: screen-fade-in var(--dur-normal) var(--ease-out) forwards;
 }
 
 /* Scan line */
@@ -78,7 +78,7 @@
   overflow: hidden;
   margin: 8px 0;
   opacity: 0;
-  transition: opacity 300ms var(--ease-out);
+  transition: opacity var(--dur-normal) var(--ease-out);
 }
 
 .scan-line.active {
@@ -140,7 +140,7 @@
 .check-animate {
   opacity: 0;
   transform: translateX(-8px);
-  animation: check-slide 300ms var(--ease-out) forwards;
+  animation: check-slide var(--dur-normal) var(--ease-out) forwards;
 }
 
 /* Respect reduced motion preference */

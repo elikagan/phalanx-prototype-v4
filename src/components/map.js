@@ -349,7 +349,7 @@ export function showIncidents(incidents, onSelect) {
       icon: L.divIcon({
         className: 'incident-map-marker',
         html: `<div class="incident-dot" style="--dot-color:${color}">
-          <span class="material-symbols-outlined" style="font-size:16px;color:#fff">${inc.icon || 'location_on'}</span>
+          <span class="material-symbols-outlined" style="font-size:16px;color:var(--icon-on-status)">${inc.icon || 'location_on'}</span>
         </div>
         <div class="incident-map-label">${inc.type}</div>`,
         iconSize: [120, 44],
