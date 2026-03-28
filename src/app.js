@@ -401,44 +401,55 @@ function manageFpvLayer(show) {
   manageViewToggle(show);
 }
 
-/** Show/hide view toggle thumbnail (FPV ↔ Map) */
+/** Show/hide view toggle thumbnail (FPV ↔ Map) — v3 thumbnail style */
 function manageViewToggle(fpvActive) {
   const mapContainer = document.getElementById('map-container');
-  let toggle = document.getElementById('view-toggle');
+  let wrapper = document.getElementById('view-toggle-wrapper');
 
   if (!mapContainer) return;
 
-  if (!toggle) {
-    toggle = document.createElement('button');
-    toggle.id = 'view-toggle';
-    toggle.className = 'view-toggle';
-    toggle.innerHTML = '<span class="view-toggle-label">MAP</span>';
-    // Append last so it's on top in the stacking order
-    mapContainer.appendChild(toggle);
+  if (!wrapper) {
+    wrapper = document.createElement('div');
+    wrapper.id = 'view-toggle-wrapper';
+    wrapper.className = 'view-toggle-wrapper';
+    wrapper.innerHTML = `
+      <div class="view-thumb" id="view-thumb">
+        <div class="view-thumb-label" id="view-thumb-label">MAP</div>
+        <button class="view-toggle" title="Toggle map/video">
+          <span class="material-symbols-outlined" style="font-size:16px">swap_horiz</span>
+        </button>
+      </div>
+    `;
+    mapContainer.appendChild(wrapper);
 
-    toggle.addEventListener('click', () => {
+    wrapper.addEventListener('click', () => {
       const fpvLayer = document.getElementById('fpv-layer');
+      const thumb = document.getElementById('view-thumb');
+      const thumbLabel = document.getElementById('view-thumb-label');
       if (!fpvLayer) return;
       const isShowingFpv = fpvLayer.style.display !== 'none';
 
       if (isShowingFpv) {
         fpvLayer.style.display = 'none';
-        toggle.innerHTML = '<span class="view-toggle-label">CAM</span>';
+        thumb.classList.add('showing-map');
+        thumbLabel.textContent = 'CAM';
         mapComponent.resize();
       } else {
         fpvLayer.style.display = 'block';
-        toggle.innerHTML = '<span class="view-toggle-label">MAP</span>';
+        thumb.classList.remove('showing-map');
+        thumbLabel.textContent = 'MAP';
         fpv.resize();
       }
     });
   } else {
-    // Re-append to ensure it's on top of any newly created layers
-    mapContainer.appendChild(toggle);
+    mapContainer.appendChild(wrapper);
   }
 
-  // Show toggle only when FPV is available
-  toggle.style.display = fpvActive ? 'flex' : 'none';
-  toggle.innerHTML = `<span class="view-toggle-label">MAP</span>`;
+  wrapper.style.display = fpvActive ? 'block' : 'none';
+  const thumb = document.getElementById('view-thumb');
+  const thumbLabel = document.getElementById('view-thumb-label');
+  if (thumb) thumb.classList.remove('showing-map');
+  if (thumbLabel) thumbLabel.textContent = 'MAP';
 }
 
 /** Show/hide telemetry bar */
@@ -990,19 +1001,18 @@ async function setupLiveSceneScreen() {
   // Use static aerial image for the FPV feed
   fpv.setStaticImage(`${import.meta.env.BASE_URL}aerial_view_red_car.png`);
 
-  // Show target bounding box on the FPV — highlight the red car
+  // Show target bounding box on the FPV — highlight the red car (clickable)
   await wait(400);
   fpv.showTargetBox({
-    top: '38%', left: '42%', width: '16%', height: '22%',
+    top: '50%', left: '50%', size: '18%',
     status: 'confirmed',
-  });
+  }, handleTargetAction);
 
   // Show incident + drone on the underlying map (visible via toggle)
   if (inc) mapComponent.showIncidents([inc], () => {});
   if (drone) mapComponent.showFleetDrones([drone], inc?.coordinates, () => {});
 
   const incNumber = inc?.id?.replace(/\D/g, '') || '—';
-  const operatorName = drone?.operator || 'Unknown';
 
   // Status header
   chat.appendSaraWithContent(
@@ -1014,7 +1024,6 @@ async function setupLiveSceneScreen() {
         <span class="data-label">Location</span><span class="data-value">${inc?.location}</span>
         <span class="data-label">Priority</span><span class="data-value">${inc?.priority || 'P1'}</span>
         <span class="data-label">Drone</span><span class="data-value">${drone?.name} · ${drone?.battery}% battery</span>
-        <span class="data-label">Operator</span><span class="data-value">${operatorName}</span>
         <span class="data-label">On scene</span><span class="data-value">${inc?.elapsed}</span>
         <span class="data-label">Altitude</span><span class="data-value">85m AGL</span>
         <span class="data-label">Target</span><span class="data-value" style="color:var(--green)">CONFIRMED · Tracking</span>
@@ -1037,6 +1046,64 @@ async function setupLiveSceneScreen() {
 
   await wait(4000);
   chat.appendMessage('radio', `${drone?.name?.toUpperCase() || 'DRONE'}`, `Visual on foot traffic near target vehicle. One individual matching description moving east on sidewalk.`);
+}
+
+function handleTargetAction(actionId, label) {
+  const drone = state.get('selectedDrone');
+  const droneName = drone?.name || 'Drone';
+
+  // When the compass menu opens, show action buttons in the chat panel
+  if (actionId === 'menu-opened') {
+    showTargetActionsPanel();
+    return;
+  }
+
+  const responses = {
+    'reposition': `Repositioning ${droneName} to view from the ${label} side. Adjusting heading and altitude.`,
+    'lock-follow': `Lock & Follow engaged. ${droneName} will auto-track the target vehicle if it moves. You'll be notified of any movement.`,
+    'orbit': `Initiating 360° orbit around target at current altitude. Full sweep in 45 seconds.`,
+    'zoom-in': `Dropping altitude to 40m for closer inspection. Zoom enhanced.`,
+    'thermal': `Switching to thermal imaging. Two heat signatures detected inside the vehicle.`,
+    'read-plate': `Enhancing plate capture... Plate reads: 7XFR-291, California. Running through NCIC.`,
+    'spotlight': `Spotlight activated. Target vehicle illuminated. Be advised, this will alert the subject.`,
+    'track-foot': `Switching tracking priority to the suspect on foot. ${droneName} will follow the individual heading eastbound.`,
+    'geofence': `Geofence set at 200m radius around target. Alert will trigger if the vehicle crosses the boundary.`,
+    'log-evidence': `Evidence logged. Timestamp ${new Date().toLocaleTimeString()}, screenshot captured and saved to incident #${state.get('selectedIncident')?.id?.replace(/\D/g, '') || '—'} report.`,
+  };
+
+  const response = responses[actionId] || `Command "${label}" acknowledged.`;
+  chat.appendSara(response);
+}
+
+function showTargetActionsPanel() {
+  // Remove existing panel
+  document.getElementById('target-actions-panel')?.remove();
+
+  const actions = [
+    { id: 'lock-follow', icon: 'my_location', label: 'Lock & Follow' },
+    { id: 'orbit', icon: '360', label: 'Orbit Target' },
+    { id: 'zoom-in', icon: 'zoom_in', label: 'Zoom In' },
+    { id: 'thermal', icon: 'thermostat', label: 'Thermal View' },
+    { id: 'read-plate', icon: 'badge', label: 'Read Plate' },
+    { id: 'spotlight', icon: 'flashlight_on', label: 'Spotlight' },
+    { id: 'track-foot', icon: 'directions_walk', label: 'Track Suspect' },
+    { id: 'geofence', icon: 'fence', label: 'Set Geofence' },
+    { id: 'log-evidence', icon: 'photo_camera', label: 'Log Evidence' },
+  ];
+
+  const panel = document.createElement('div');
+  panel.id = 'target-actions-panel';
+  panel.className = 'target-actions-panel';
+
+  for (const a of actions) {
+    const btn = document.createElement('button');
+    btn.className = 'target-action-item';
+    btn.innerHTML = `<span class="material-symbols-outlined">${a.icon}</span><span>${a.label}</span>`;
+    btn.addEventListener('click', () => handleTargetAction(a.id, a.label));
+    panel.appendChild(btn);
+  }
+
+  document.getElementById('target-box-container')?.appendChild(panel);
 }
 
 function setupCompleteScreen() {

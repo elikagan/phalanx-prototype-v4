@@ -305,7 +305,6 @@
 
 .chat-msg-dispatch .chat-msg-text {
   color: var(--text-secondary);
-  font-size: 12px;
 }
 
 .chat-msg-label {
@@ -338,7 +337,6 @@
 
 .chat-msg-radio .chat-msg-text {
   color: var(--text-muted);
-  font-size: 12px;
 }
 
 /* === Pills === */

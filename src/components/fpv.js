@@ -11,6 +11,7 @@ import * as state from '../state.js';
 let fpvMap = null;
 let targetBoxEl = null;
 let staticMode = false;
+let onTargetAction = null; // callback for target menu actions
 
 /** Initialize FPV view inside a container */
 export function init(container) {
@@ -89,28 +90,105 @@ export function setTransform({ scale }) {
   fpvMap.setZoom(Math.min(20, Math.max(16, zoom)), { animate: true });
 }
 
-/** Show/update target bounding box on FPV */
-export function showTargetBox({ top, left, width, height, status }) {
+/** Show/update target circle on FPV */
+export function showTargetBox({ top, left, size, status }, actionCallback) {
   const container = document.getElementById('target-box-container');
   if (!container) return;
 
   container.innerHTML = '';
+  onTargetAction = actionCallback || null;
 
-  const box = document.createElement('div');
-  box.className = `target-box ${status === 'confirmed' ? 'confirmed' : ''}`;
-  box.style.cssText = `top:${top};left:${left};width:${width};height:${height}`;
+  const circle = document.createElement('div');
+  circle.className = `target-circle ${status === 'confirmed' ? 'confirmed' : ''}`;
+  circle.style.cssText = `top:${top};left:${left};width:${size};cursor:pointer;pointer-events:auto`;
 
   const label = document.createElement('div');
   label.className = `target-box-label ${status === 'confirmed' ? 'confirmed' : 'potential'}`;
   label.textContent = status === 'confirmed' ? 'TARGET CONFIRMED' : 'POTENTIAL TARGET';
-  box.appendChild(label);
+  circle.appendChild(label);
 
-  container.appendChild(box);
-  targetBoxEl = box;
+  circle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleTargetMenu(circle);
+  });
+
+  container.appendChild(circle);
+  targetBoxEl = circle;
+
+  // Click anywhere on the FPV view to close menu
+  document.getElementById('fpv-view')?.addEventListener('click', (e) => {
+    if (!e.target.closest('.target-circle') && !e.target.closest('.compass-point')) {
+      closeTargetMenu();
+    }
+  });
+}
+
+/** Toggle the radial compass menu around the target circle */
+function toggleTargetMenu(circle) {
+  // Remove existing compass points
+  const existing = circle.parentElement.querySelectorAll('.compass-point');
+  if (existing.length > 0) {
+    closeTargetMenu();
+    return;
+  }
+
+  const directions = [
+    { label: 'N', angle: 0 },
+    { label: 'NE', angle: 45 },
+    { label: 'E', angle: 90 },
+    { label: 'SE', angle: 135 },
+    { label: 'S', angle: 180 },
+    { label: 'SW', angle: 225 },
+    { label: 'W', angle: 270 },
+    { label: 'NW', angle: 315 },
+  ];
+
+  // Get circle center in container coordinates
+  const circleRect = circle.getBoundingClientRect();
+  const containerRect = circle.parentElement.getBoundingClientRect();
+  const cx = circleRect.left - containerRect.left + circleRect.width / 2;
+  const cy = circleRect.top - containerRect.top + circleRect.height / 2;
+  const arrowRadius = circleRect.width / 2 + 24; // just outside the circle
+
+  // Hide the label while compass arrows are showing
+  const label = circle.querySelector('.target-box-label');
+  if (label) label.style.display = 'none';
+
+  for (const dir of directions) {
+    const btn = document.createElement('button');
+    btn.className = 'compass-point';
+    btn.title = `View from ${dir.label}`;
+    btn.innerHTML = `<span class="material-symbols-outlined" style="transform:rotate(${dir.angle}deg);font-size:16px">arrow_upward</span>`;
+    const rad = (dir.angle - 90) * Math.PI / 180;
+    btn.style.left = `${cx + Math.cos(rad) * arrowRadius}px`;
+    btn.style.top = `${cy + Math.sin(rad) * arrowRadius}px`;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (onTargetAction) onTargetAction('reposition', dir.label);
+      closeTargetMenu();
+    });
+    circle.parentElement.appendChild(btn);
+  }
+
+  // Show action buttons in the chat panel (not on the FPV)
+  if (onTargetAction) onTargetAction('menu-opened', null);
+}
+
+/** Close the compass arrows and action panel */
+function closeTargetMenu() {
+  const container = document.getElementById('target-box-container');
+  if (container) {
+    container.querySelectorAll('.compass-point').forEach(el => el.remove());
+    document.getElementById('target-actions-panel')?.remove();
+  }
+  // Restore the label
+  const label = targetBoxEl?.querySelector('.target-box-label');
+  if (label) label.style.display = '';
 }
 
 /** Hide target bounding box */
 export function hideTargetBox() {
+  closeTargetMenu();
   const container = document.getElementById('target-box-container');
   if (container) container.innerHTML = '';
   targetBoxEl = null;
