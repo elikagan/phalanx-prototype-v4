@@ -342,17 +342,20 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false } = {
 
   const bounds = [];
 
-  for (const inc of incidents) {
+  for (let i = 0; i < incidents.length; i++) {
+    const inc = incidents[i];
     if (!inc.coordinates) continue;
     const { color } = INCIDENT_ICONS[inc.priority] || INCIDENT_ICONS[3];
+    // Use incident index from the full INCIDENTS array if available, otherwise use loop index
+    const incNumber = inc._index != null ? inc._index + 1 : i + 1;
     const marker = L.marker(inc.coordinates, {
       icon: L.divIcon({
         className: 'incident-map-marker',
         html: `<div class="incident-dot" style="--dot-color:${color}">
           <span class="material-symbols-outlined" style="font-size:16px;color:var(--icon-on-status)">${inc.icon || 'location_on'}</span>
         </div>
-        <div class="incident-map-label">${inc.type}</div>`,
-        iconSize: [120, 44],
+        <div class="incident-map-label">#${incNumber} ${inc.type}</div>`,
+        iconSize: [160, 44],
         iconAnchor: [18, 18],
       }),
       zIndexOffset: 800,
@@ -366,7 +369,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false } = {
       offset: [0, -20],
       className: 'map-tooltip',
     });
-    tooltip.setContent(`<strong>P${inc.priority} · ${inc.type}</strong><br>${inc.location} · ${inc.elapsed}<br>${inc.units} unit${inc.units !== 1 ? 's' : ''} responding`);
+    tooltip.setContent(`<strong>#${incNumber} · P${inc.priority} · ${inc.type}</strong><br>${inc.location} · ${inc.elapsed}<br>${inc.units} unit${inc.units !== 1 ? 's' : ''} responding`);
     marker.bindTooltip(tooltip);
 
     incidentMarkers.push(marker);
@@ -377,7 +380,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false } = {
     if (bounds.length > 1) {
       map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
     } else if (bounds.length === 1) {
-      map.setView(bounds[0], 15);
+      focusIncident(bounds[0], 15);
     }
   }
 }
@@ -388,19 +391,12 @@ export function clearIncidentMarkers() {
   incidentMarkers = [];
 }
 
-/** Highlight a specific incident (zoom to it), offset for chat panel */
+/** Highlight a specific incident (zoom to it) */
 export function focusIncident(coordinates, zoom = 16) {
   if (!map || !coordinates) return;
-  // Delay to ensure map container has proper dimensions after layout change
   requestAnimationFrame(() => {
     map.invalidateSize();
-    // Offset center so the point lands in the visible map area (right of chat panel)
-    const chatPanel = document.getElementById('chat-panel');
-    const chatWidth = chatPanel ? chatPanel.offsetWidth : 0;
-    const targetPoint = map.project(coordinates, zoom);
-    const offsetPoint = L.point(targetPoint.x - chatWidth / 2, targetPoint.y);
-    const offsetLatLng = map.unproject(offsetPoint, zoom);
-    map.flyTo(offsetLatLng, zoom, { duration: 1 });
+    map.flyTo(coordinates, zoom, { duration: 1 });
   });
 }
 

@@ -543,9 +543,9 @@ function handleAction(action, dataset) {
       break;
 
     case 'select-incident': {
-      const incident = INCIDENTS.find(i => i.id === dataset.id);
-      if (incident) {
-        state.set({ selectedIncident: incident });
+      const idx = INCIDENTS.findIndex(i => i.id === dataset.id);
+      if (idx !== -1) {
+        state.set({ selectedIncident: { ...INCIDENTS[idx], _index: idx } });
         state.goToScreen(4);
       }
       break;
@@ -636,8 +636,11 @@ async function setupIncidentMapScreen() {
   chat.clear();
   mapComponent.clearOverlays();
 
+  // Tag incidents with their index for numbered map labels
+  const indexedIncidents = INCIDENTS.map((inc, i) => ({ ...inc, _index: i }));
+
   // Show incidents + drones on map, then fit to show everything at metro scale
-  mapComponent.showIncidents(INCIDENTS, (inc) => {
+  mapComponent.showIncidents(indexedIncidents, (inc) => {
     state.set({ selectedIncident: inc });
     state.goToScreen(4);
   }, { skipFitBounds: true });
@@ -806,8 +809,7 @@ function setupBriefingScreen() {
   if (inc) mapComponent.showIncidents([inc], () => {});
   if (drone) mapComponent.showFleetDrones([drone], inc?.coordinates, () => {});
   if (inc?.coordinates && drone?.coordinates) {
-    const m = mapComponent.getMap();
-    if (m) m.fitBounds([inc.coordinates, drone.coordinates], { padding: [80, 80], maxZoom: 15 });
+    mapComponent.fitAllMarkers([80, 80], 15);
   } else if (inc?.coordinates) {
     mapComponent.focusIncident(inc.coordinates, 15);
   }
