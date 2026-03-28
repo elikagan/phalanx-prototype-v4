@@ -425,10 +425,56 @@
   cursor: pointer;
 }
 
+.incident-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.incident-number {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 16px;
+}
+
+.incident-compact-type {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.incident-compact-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-ghost);
+  white-space: nowrap;
+}
+
+.incident-compact-location {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  padding-left: 24px;
+}
+
+.incident-drone-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--amber);
+  white-space: nowrap;
+}
+
 .incident-card-compact .incident-expand {
   max-height: 0;
   overflow: hidden;
   opacity: 0;
+  padding-left: 24px;
   transition: max-height var(--dur-state) var(--ease-out), opacity var(--dur-state) var(--ease-out);
 }
 

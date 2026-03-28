@@ -656,25 +656,26 @@ async function setupIncidentMapScreen() {
     `Welcome back, Riverside County SAR. ${inFlight} drone${inFlight !== 1 ? 's' : ''} in flight. ${available} more available for immediate launch.`
   );
 
-  // Compact incident cards — one line each, expandable on hover
-  const cardsHtml = INCIDENTS.map(inc => {
+  // Compact incident cards — numbered, structured rows, expandable on hover
+  const cardsHtml = INCIDENTS.map((inc, idx) => {
     const priorityClass = `priority-p${inc.priority}`;
     const droneOnScene = DRONES.find(d => d.status === 'in-mission' && d.assignedIncident === inc.id);
     const droneTag = droneOnScene
-      ? `<span class="mono-sm" style="color:var(--amber);margin-left:auto">${droneOnScene.name} on scene</span>`
+      ? `<span class="incident-drone-tag">${droneOnScene.name}</span>`
       : '';
     return `
       <div class="card card-interactive incident-card-compact" data-action="select-incident" data-id="${inc.id}">
-        <div class="row-center" style="gap:8px">
+        <div class="incident-compact-row">
+          <span class="incident-number">${idx + 1}</span>
           <span class="${priorityClass}">P${inc.priority}</span>
-          <span class="card-title" style="font-size:13px">${inc.type}</span>
-          <span class="incident-meta-text">${inc.location}</span>
-          <span class="mono-sm" style="color:var(--text-ghost)">${inc.elapsed}</span>
+          <span class="incident-compact-type">${inc.type}</span>
+          <span class="incident-compact-meta">${inc.elapsed}</span>
           ${droneTag}
         </div>
+        <div class="incident-compact-location">${inc.location}</div>
         <div class="incident-expand">
-          <div class="incident-narrative-text" style="margin-top:6px">${inc.narrative}</div>
-          <div class="incident-meta-text" style="margin-top:4px">${inc.units} unit${inc.units !== 1 ? 's' : ''} responding · ${inc.time}</div>
+          <div class="incident-narrative-text">${inc.narrative}</div>
+          <div class="incident-meta-text">${inc.units} unit${inc.units !== 1 ? 's' : ''} responding · ${inc.time}</div>
         </div>
       </div>`;
   }).join('');
@@ -690,11 +691,32 @@ function setupAnalysisScreen() {
   mapComponent.clearOverlays();
   const inc = state.get('selectedIncident');
   if (inc?.coordinates) {
-    mapComponent.focusIncident(inc.coordinates, 16);
     mapComponent.showIncidents([inc], () => {});
   }
 
+  // Show available drones on map with distance lines to incident
+  const availableDrones = DRONES.filter(d => d.status === 'available');
+  const closestDrone = [...availableDrones].sort((a, b) =>
+    (a.distanceFromIncident ?? Infinity) - (b.distanceFromIncident ?? Infinity)
+  )[0];
+
+  mapComponent.showFleetDrones(availableDrones, inc?.coordinates, (drone) => {
+    state.set({ selectedDrone: drone });
+    state.goToScreen(6);
+  }, { skipFitBounds: true });
+
+  // Fit map to show incident + drones
+  if (inc?.coordinates) {
+    mapComponent.fitAllMarkers([60, 60], 14);
+  }
+
+  // Auto-select closest drone
+  if (closestDrone) {
+    state.set({ selectedDrone: closestDrone });
+  }
+
   const t = SARA_ANALYSIS.target;
+  const etaMin = closestDrone ? Math.ceil(closestDrone.distanceFromIncident * 1.3) : null;
   const profileHtml = `
     <div class="card mb-8">
       <div class="section-label">Extracted Target Profile</div>
@@ -708,13 +730,17 @@ function setupAnalysisScreen() {
       </div>
     </div>`;
 
+  const droneNote = closestDrone
+    ? `${closestDrone.name} is ${closestDrone.distanceFromIncident} km away — approximately ${etaMin} minutes to intercept. Ready to proceed?`
+    : 'No drones currently available.';
+
   chat.appendSaraWithContent(
-    `I've analyzed ${SARA_ANALYSIS.transcriptsAnalyzed} dispatch recordings for this incident.`,
+    `I've analyzed ${SARA_ANALYSIS.transcriptsAnalyzed} dispatch recordings for this incident. ${droneNote}`,
     profileHtml,
     {
       choices: [
-        { label: 'Select Drone', primary: true, action: () => state.goToScreen(5) },
-        { label: 'Edit Target Info', primary: false, action: () => {} },
+        { label: 'Confirm & Brief', primary: true, action: () => state.goToScreen(6) },
+        { label: 'Choose Different Drone', primary: false, action: () => state.goToScreen(5) },
       ],
     }
   );

@@ -388,13 +388,19 @@ export function clearIncidentMarkers() {
   incidentMarkers = [];
 }
 
-/** Highlight a specific incident (zoom to it) */
+/** Highlight a specific incident (zoom to it), offset for chat panel */
 export function focusIncident(coordinates, zoom = 16) {
   if (!map || !coordinates) return;
   // Delay to ensure map container has proper dimensions after layout change
   requestAnimationFrame(() => {
     map.invalidateSize();
-    map.flyTo(coordinates, zoom, { duration: 1 });
+    // Offset center so the point lands in the visible map area (right of chat panel)
+    const chatPanel = document.getElementById('chat-panel');
+    const chatWidth = chatPanel ? chatPanel.offsetWidth : 0;
+    const targetPoint = map.project(coordinates, zoom);
+    const offsetPoint = L.point(targetPoint.x - chatWidth / 2, targetPoint.y);
+    const offsetLatLng = map.unproject(offsetPoint, zoom);
+    map.flyTo(offsetLatLng, zoom, { duration: 1 });
   });
 }
 
