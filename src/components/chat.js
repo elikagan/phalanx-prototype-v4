@@ -71,6 +71,23 @@ export async function appendSaraWordByWord(text, interval = 120) {
   return msg;
 }
 
+/** Append a dispatch/radio message */
+export function appendMessage(type, label, text) {
+  const el = chatEl();
+  if (!el) return null;
+
+  const msg = document.createElement('div');
+  msg.className = `chat-msg chat-msg-${type}`;
+  msg.innerHTML = `
+    <div class="chat-msg-label">${escapeHtml(label)}</div>
+    <div class="chat-msg-text">${escapeHtml(text)}</div>
+  `;
+
+  el.appendChild(msg);
+  scrollToBottom();
+  return msg;
+}
+
 /** Append a user message */
 export function appendUser(text) {
   const el = chatEl();

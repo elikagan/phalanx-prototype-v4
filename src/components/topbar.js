@@ -49,6 +49,7 @@ function updateStatus(screen) {
     11: 'Orbiting Target',
     12: 'Returning Home',
     13: 'Mission Complete',
+    14: 'Live Scene',
   };
 
   el.textContent = labels[screen] || '';

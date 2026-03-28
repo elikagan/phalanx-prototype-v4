@@ -236,6 +236,11 @@ export function screen12() {
   return `<div class="screen fade-in" id="screen-12-content"></div>`;
 }
 
+// Screen 14: Live Scene (drone on scene at incident)
+export function screen14() {
+  return `<div class="screen fade-in" id="screen-14-content"></div>`;
+}
+
 // Screen 13: Mission Complete
 export function screen13() {
   const s = MISSION_SUMMARY;

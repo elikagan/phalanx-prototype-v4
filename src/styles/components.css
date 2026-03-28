@@ -293,6 +293,21 @@
   color: var(--text-muted);
 }
 
+.chat-msg-dispatch {
+  margin-right: auto;
+  border-left: 2px solid var(--amber);
+  padding-left: 12px;
+}
+
+.chat-msg-dispatch .chat-msg-label {
+  color: var(--amber);
+}
+
+.chat-msg-dispatch .chat-msg-text {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 .chat-msg-label {
   font-size: 11px;
   color: var(--text-muted);

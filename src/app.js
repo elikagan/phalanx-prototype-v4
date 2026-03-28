@@ -294,16 +294,17 @@ const screenRenderers = {
   11: screens.screen11,
   12: screens.screen12,
   13: screens.screen13,
+  14: screens.screen14,
 };
 
 // Screens that show the map or FPV
-const MAP_SCREENS = new Set([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+const MAP_SCREENS = new Set([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14]);
 // Screens that show the right panel (chat)
-const CHAT_SCREENS = new Set([3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+const CHAT_SCREENS = new Set([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14]);
 // Screens that show the chat input
-const INPUT_SCREENS = new Set([3, 4, 5, 6, 9, 10, 11]);
+const INPUT_SCREENS = new Set([3, 4, 5, 6, 9, 10, 11, 14]);
 // Screens that show FPV as default view
-const FPV_SCREENS = new Set([9, 10, 11]);
+const FPV_SCREENS = new Set([9, 10, 11, 14]);
 
 function renderScreen(screen) {
   const contentEl = document.getElementById('screen-content');
@@ -353,8 +354,8 @@ function renderScreen(screen) {
     mapContainer?.classList.remove('hidden');
   }
 
-  // Clear overlay markers when entering non-setup screens
-  if (screen >= 7) {
+  // Clear overlay markers when entering non-setup screens (not live scene)
+  if (screen >= 7 && screen !== 14) {
     mapComponent.clearOverlays();
   }
 
@@ -362,7 +363,7 @@ function renderScreen(screen) {
   manageFpvLayer(showFpv);
 
   // Telemetry bar
-  manageTelemetryBar(showMap && (screen >= 9));
+  manageTelemetryBar(showMap && (screen >= 9 || screen === 14));
 
   // Mobile controls visibility
   manageMobileControls(screen);
@@ -544,7 +545,13 @@ function handleAction(action, dataset) {
 
     case 'select-incident': {
       const incident = INCIDENTS.find(i => i.id === dataset.id);
-      if (incident) {
+      if (!incident) break;
+      const assignedDrone = DRONES.find(d => d.assignedIncident === incident.id);
+      if (assignedDrone) {
+        // Drone already on scene — show live feed
+        state.set({ selectedIncident: incident, selectedDrone: assignedDrone });
+        state.goToScreen(14);
+      } else {
         state.set({ selectedIncident: incident });
         state.goToScreen(4);
       }
@@ -629,6 +636,9 @@ function setupScreen(screen) {
     case 13:
       setupCompleteScreen();
       break;
+    case 14:
+      setupLiveSceneScreen();
+      break;
   }
 }
 
@@ -643,8 +653,14 @@ async function setupIncidentMapScreen() {
 
   // Show incidents + drones on map, then fit to show everything at metro scale
   mapComponent.showIncidents(INCIDENTS, (inc) => {
-    state.set({ selectedIncident: inc });
-    state.goToScreen(4);
+    const assignedDrone = DRONES.find(d => d.assignedIncident === inc.id);
+    if (assignedDrone) {
+      state.set({ selectedIncident: inc, selectedDrone: assignedDrone });
+      state.goToScreen(14);
+    } else {
+      state.set({ selectedIncident: inc });
+      state.goToScreen(4);
+    }
   }, { skipFitBounds: true, assignedIncidentIds });
 
   mapComponent.showFleetDrones(DRONES, null, () => {}, { skipFitBounds: true });
@@ -952,6 +968,87 @@ async function setupReturningScreen() {
       { label: 'View Mission Summary', primary: true, action: () => state.goToScreen(13) },
     ],
   });
+}
+
+async function setupLiveSceneScreen() {
+  chat.clear();
+  mapComponent.clearOverlays();
+
+  const inc = state.get('selectedIncident');
+  const drone = state.get('selectedDrone');
+
+  // Position drone at incident location for the FPV view
+  if (inc?.coordinates) {
+    state.set({
+      dronePosition: { lat: inc.coordinates[0], lng: inc.coordinates[1] },
+      droneHeading: 220,
+      droneAltitude: 85,
+      droneSpeed: 0,
+    });
+  }
+
+  // Use static aerial image for the FPV feed
+  fpv.setStaticImage(`${import.meta.env.BASE_URL}aerial_view_red_car.png`);
+
+  // Show target bounding box on the FPV — highlight the red car
+  await wait(400);
+  fpv.showTargetBox({
+    top: '38%', left: '42%', width: '16%', height: '22%',
+    status: 'confirmed',
+  });
+
+  // Show incident + drone on the underlying map (visible via toggle)
+  if (inc) mapComponent.showIncidents([inc], () => {});
+  if (drone) mapComponent.showFleetDrones([drone], inc?.coordinates, () => {});
+
+  const incNumber = inc?.id?.replace(/\D/g, '') || '—';
+  const operatorName = drone?.operator || 'Unknown';
+
+  // Status header
+  chat.appendSaraWithContent(
+    `Live feed from ${drone?.name || 'Unknown Drone'} on scene at ${inc?.type || 'Incident'} #${incNumber}.`,
+    `<div class="card" style="margin-bottom:8px">
+      <div class="section-label">Scene Status</div>
+      <div class="data-grid">
+        <span class="data-label">Incident</span><span class="data-value">${inc?.type} #${incNumber}</span>
+        <span class="data-label">Location</span><span class="data-value">${inc?.location}</span>
+        <span class="data-label">Priority</span><span class="data-value">${inc?.priority || 'P1'}</span>
+        <span class="data-label">Drone</span><span class="data-value">${drone?.name} · ${drone?.battery}% battery</span>
+        <span class="data-label">Operator</span><span class="data-value">${operatorName}</span>
+        <span class="data-label">On scene</span><span class="data-value">${inc?.elapsed}</span>
+        <span class="data-label">Altitude</span><span class="data-value">85m AGL</span>
+        <span class="data-label">Target</span><span class="data-value" style="color:var(--green)">CONFIRMED · Tracking</span>
+      </div>
+    </div>`
+  );
+
+  // Simulated live dispatch feed
+  await wait(1500);
+  chat.appendMessage('dispatch', 'DISPATCH', `Unit 7-Adam, be advised suspect vehicle is a red sedan, partial plate 7-X-ray-Foxtrot. Reporting party states vehicle has not moved in 20 minutes.`);
+
+  await wait(2500);
+  chat.appendMessage('dispatch', '7-ADAM', `Copy dispatch. We're 3 minutes out. Can the drone hold position?`);
+
+  await wait(2000);
+  chat.appendSara(`${drone?.name} is holding position at 85m AGL with clear line of sight. Target vehicle confirmed, tracking. Battery at ${drone?.battery}%, estimated 40 minutes remaining.`, {
+    choices: [
+      { label: 'Take Over Drone', primary: true, action: () => {
+        fpv.reset();
+        state.set({ searchZone: SEARCH_ZONE });
+        state.goToScreen(9);
+      }},
+      { label: 'Back to Incidents', primary: false, action: () => {
+        fpv.reset();
+        state.goToScreen(3);
+      }},
+    ],
+  });
+
+  await wait(3000);
+  chat.appendMessage('dispatch', 'DISPATCH', `All units, update — neighbor reports a male subject exited the red sedan and is walking eastbound on foot. Subject is wearing a dark hoodie.`);
+
+  await wait(4000);
+  chat.appendMessage('radio', `${drone?.name?.toUpperCase() || 'DRONE'}`, `Visual on foot traffic near target vehicle. One individual matching description moving east on sidewalk.`);
 }
 
 function setupCompleteScreen() {

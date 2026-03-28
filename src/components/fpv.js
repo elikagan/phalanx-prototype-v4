@@ -10,6 +10,7 @@ import * as state from '../state.js';
 
 let fpvMap = null;
 let targetBoxEl = null;
+let staticMode = false;
 
 /** Initialize FPV view inside a container */
 export function init(container) {
@@ -115,8 +116,39 @@ export function hideTargetBox() {
   targetBoxEl = null;
 }
 
+/** Switch FPV to a static image instead of satellite tiles */
+export function setStaticImage(imageSrc) {
+  const fpvEl = document.getElementById('fpv-map');
+  if (!fpvEl) return;
+  staticMode = true;
+  // Hide the Leaflet map, show a static image background
+  fpvEl.style.background = `url('${imageSrc}') center/cover no-repeat`;
+  // Hide all Leaflet panes so they don't cover the background image
+  const panes = fpvEl.querySelectorAll('.leaflet-pane');
+  panes.forEach(p => p.style.display = 'none');
+}
+
+/** Clear static image and restore satellite tiles */
+function clearStaticImage() {
+  const fpvEl = document.getElementById('fpv-map');
+  if (!fpvEl || !staticMode) return;
+  staticMode = false;
+  fpvEl.style.background = '';
+  // Restore Leaflet panes
+  const panes = fpvEl.querySelectorAll('.leaflet-pane');
+  panes.forEach(p => p.style.display = '');
+  // Re-add the tile layer
+  if (fpvMap) {
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 20,
+      maxNativeZoom: 19,
+    }).addTo(fpvMap);
+  }
+}
+
 /** Reset FPV to default state */
 export function reset() {
+  clearStaticImage();
   if (fpvMap) fpvMap.setZoom(19, { animate: false });
   hideTargetBox();
 }
