@@ -1030,18 +1030,7 @@ async function setupLiveSceneScreen() {
   chat.appendMessage('dispatch', '7-ADAM', `Copy dispatch. We're 3 minutes out. Can the drone hold position?`);
 
   await wait(2000);
-  chat.appendSara(`${drone?.name} is holding position at 85m AGL with clear line of sight. Target vehicle confirmed, tracking. Battery at ${drone?.battery}%, estimated 40 minutes remaining.`, {
-    choices: [
-      { label: 'Reposition Drone', primary: true, action: () => {
-        chat.appendUser('Reposition to get a better angle on the suspect vehicle.');
-        wait(800).then(() => chat.appendSara(`Adjusting ${drone?.name} position. Moving 20m east and dropping to 60m for a closer look.`));
-      }},
-      { label: 'Back to Incidents', primary: false, action: () => {
-        fpv.reset();
-        state.goToScreen(3);
-      }},
-    ],
-  });
+  chat.appendSara(`${drone?.name} is holding position at 85m AGL with clear line of sight. Target vehicle confirmed, tracking. Battery at ${drone?.battery}%, estimated 40 minutes remaining.`);
 
   await wait(3000);
   chat.appendMessage('dispatch', 'DISPATCH', `All units, update — neighbor reports a male subject exited the red sedan and is walking eastbound on foot. Subject is wearing a dark hoodie.`);
