@@ -636,14 +636,16 @@ async function setupIncidentMapScreen() {
   chat.clear();
   mapComponent.clearOverlays();
 
-  // Show incidents on map
+  // Show incidents + drones on map, then fit to show everything at metro scale
   mapComponent.showIncidents(INCIDENTS, (inc) => {
     state.set({ selectedIncident: inc });
     state.goToScreen(4);
-  });
+  }, { skipFitBounds: true });
 
-  // Show active drones on map too
-  mapComponent.showFleetDrones(DRONES, null, () => {});
+  mapComponent.showFleetDrones(DRONES, null, () => {}, { skipFitBounds: true });
+
+  // Fit all markers with max zoom 12 so the full metro spread is visible
+  mapComponent.fitAllMarkers([60, 60], 12);
 
   // Fleet status
   const inFlight = DRONES.filter(d => d.status === 'in-mission').length;

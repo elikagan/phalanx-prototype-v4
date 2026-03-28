@@ -336,7 +336,7 @@ const INCIDENT_ICONS = {
 };
 
 /** Show incident markers on the map. Returns cleanup function. */
-export function showIncidents(incidents, onSelect) {
+export function showIncidents(incidents, onSelect, { skipFitBounds = false } = {}) {
   clearIncidentMarkers();
   if (!map) return;
 
@@ -373,10 +373,12 @@ export function showIncidents(incidents, onSelect) {
     bounds.push(inc.coordinates);
   }
 
-  if (bounds.length > 1) {
-    map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
-  } else if (bounds.length === 1) {
-    map.setView(bounds[0], 15);
+  if (!skipFitBounds) {
+    if (bounds.length > 1) {
+      map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
+    } else if (bounds.length === 1) {
+      map.setView(bounds[0], 15);
+    }
   }
 }
 
@@ -405,7 +407,7 @@ const FLEET_COLORS = {
 };
 
 /** Show drone fleet markers on map with optional distance lines to a point */
-export function showFleetDrones(drones, incidentCoords, onSelect) {
+export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false } = {}) {
   clearFleetMarkers();
   if (!map) return;
 
@@ -464,8 +466,22 @@ export function showFleetDrones(drones, incidentCoords, onSelect) {
     bounds.push(drone.coordinates);
   }
 
-  if (bounds.length > 1) {
-    map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 });
+  if (!skipFitBounds && bounds.length > 1) {
+    map.fitBounds(bounds, { padding: [60, 60], maxZoom: 14 });
+  }
+}
+
+/** Fit map to show all currently visible markers (incidents + drones) */
+export function fitAllMarkers(padding = [60, 60], maxZoom = 12) {
+  if (!map) return;
+  const allCoords = [
+    ...incidentMarkers.map(m => [m.getLatLng().lat, m.getLatLng().lng]),
+    ...fleetMarkers.map(m => [m.getLatLng().lat, m.getLatLng().lng]),
+  ];
+  if (allCoords.length > 1) {
+    map.fitBounds(allCoords, { padding, maxZoom });
+  } else if (allCoords.length === 1) {
+    map.setView(allCoords[0], maxZoom);
   }
 }
 
