@@ -595,10 +595,10 @@
 .route-label {
   font-family: 'Geist', var(--font-ui);
   font-size: 10px;
-  font-weight: 450;
-  color: rgba(237, 239, 242, 0.85);
-  background: rgba(24, 27, 32, 0.5);
-  padding: 2px 8px;
+  font-weight: 500;
+  color: rgba(237, 239, 242, 0.9);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1px 6px;
   border-radius: 3px;
   white-space: nowrap;
   pointer-events: none;
