@@ -332,7 +332,7 @@ const CHAT_SCREENS = new Set([3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14]);
 // Screens that show the chat input
 const INPUT_SCREENS = new Set([3, 4, 5, 6, 9, 10, 11, 14]);
 // Screens that show FPV as default view
-const FPV_SCREENS = new Set([10, 11, 14]);
+const FPV_SCREENS = new Set([9, 10, 11, 14]);
 
 function renderScreen(screen) {
   const contentEl = document.getElementById('screen-content');
@@ -384,7 +384,6 @@ function renderScreen(screen) {
 
   // Clear overlay markers when entering non-setup screens (not live scene)
   if (screen >= 7 && screen !== 14) {
-    mapComponent.cancelEnRouteAnimation();
     mapComponent.clearOverlays();
   }
 
@@ -1047,68 +1046,17 @@ async function setupPreflightScreen() {
 
 function setupMissionScreen() {
   chat.clear();
-  mapComponent.clearOverlays();
-  const gen = chat.getGeneration();
-
-  const drone = state.get('selectedDrone');
-  const inc = state.get('selectedIncident');
-  const droneCoords = drone?.coordinates || [32.7680, -117.1820];
-  const incCoords = inc?.coordinates || SEARCH_ZONE.origin;
-
-  // Show incident marker
-  if (inc) mapComponent.showIncidents([inc], () => {});
-
-  // Calculate distance/ETA for chat
-  const R = 6371;
-  const dLat = (incCoords[0] - droneCoords[0]) * Math.PI / 180;
-  const dLng = (incCoords[1] - droneCoords[1]) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(droneCoords[0] * Math.PI / 180) * Math.cos(incCoords[0] * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-  const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const totalSec = Math.round(distKm / 60 * 3600);
-
-  const shortName = drone?.name?.replace(/^Delta\s+/i, '') || 'Drone';
-
-  chat.appendSara(`${shortName} launched. En route to search area. ETA ${totalSec}s.`);
-
-  // Countdown milestones
-  let lastMilestone = Infinity;
-
-  mapComponent.showEnRouteScene(droneCoords, incCoords, SEARCH_ZONE.radius, {
-    onProgress: (progress, remainingSec) => {
-      if (chat.getGeneration() !== gen) return;
-      // Chat milestones at 60s, 30s, 10s
-      if (remainingSec <= 60 && lastMilestone > 60) {
-        lastMilestone = 60;
-        chat.appendSara('60 seconds to search area.');
-      } else if (remainingSec <= 30 && lastMilestone > 30) {
-        lastMilestone = 30;
-        chat.appendSara('30 seconds. Activating sensors.');
-      } else if (remainingSec <= 10 && lastMilestone > 10) {
-        lastMilestone = 10;
-        chat.appendSara('Approaching search area. Switching to camera feed...');
-      }
-    },
-    onArrival: () => {
-      if (chat.getGeneration() !== gen) return;
-
-      // Now set drone position and enable FPV
-      state.set({
-        dronePosition: { lat: incCoords[0], lng: incCoords[1] },
-        droneHeading: 180,
-        droneAltitude: 120,
-        droneSpeed: 35,
-      });
-
-      // Enable FPV
-      manageFpvLayer(true);
-      manageTelemetryBar(true);
-
-      chat.appendSara('On station. Camera feed active. Scanning search area.');
-
-      // Pre-type first exchange after a delay
-      setTimeout(() => orchestrator.preTypeNext(), 2000);
-    },
+  state.set({
+    dronePosition: { lat: 32.7210, lng: -117.1498 },
+    droneHeading: 180,
+    droneAltitude: 120,
+    droneSpeed: 35,
   });
+
+  chat.appendSara("Mission active. Drone is airborne and heading to search area. Use the mic or type to communicate.");
+
+  // Pre-type first exchange into textarea after a delay
+  setTimeout(() => orchestrator.preTypeNext(), 2000);
 }
 
 function setupTargetSpottedScreen() {
