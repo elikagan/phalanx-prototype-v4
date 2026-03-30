@@ -916,9 +916,10 @@ export function showLiveOrbitScene(center, drone, radius = 300) {
   const labelPos = offsetLatLng(L.latLng(center[0], center[1]), radius * 0.45, 180);
   const label = L.marker([labelPos.lat, labelPos.lng], {
     icon: L.divIcon({
-      className: 'target-located-label',
-      html: 'TARGET LOCATED',
-      iconSize: [0, 0],
+      className: 'fleet-drone-marker',
+      html: '<div class="target-located-label">TARGET LOCATED</div>',
+      iconSize: [120, 22],
+      iconAnchor: [60, 11],
     }),
     interactive: false,
     zIndexOffset: 870,

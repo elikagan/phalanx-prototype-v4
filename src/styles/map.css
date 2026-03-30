@@ -650,7 +650,6 @@
   white-space: nowrap;
   pointer-events: none;
   width: fit-content;
-  transform: translateX(-50%);
 }
 
 /* Route label emphasis: recommended vs alternative */
