@@ -537,7 +537,7 @@ function handleChatCommand(text, screen) {
   if (screen === 4) {
     if (lower.includes('deploy') || lower.includes('launch') || lower.includes('go') || lower.includes('yes') || lower.includes('next')) {
       const inc = state.get('selectedIncident');
-      if (inc?.coordinates) {
+      if (inc?.coordinates && !state.get('searchZone')) {
         state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
       }
       state.goToScreen(8);
@@ -553,7 +553,7 @@ function handleChatCommand(text, screen) {
     if (match) {
       state.set({ selectedDrone: match });
       const inc = state.get('selectedIncident');
-      if (inc?.coordinates) {
+      if (inc?.coordinates && !state.get('searchZone')) {
         state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
       }
       state.goToScreen(8);
@@ -617,7 +617,7 @@ function handleAction(action, dataset) {
       if (drone) {
         state.set({ selectedDrone: drone });
         const inc = state.get('selectedIncident');
-        if (inc?.coordinates) {
+        if (inc?.coordinates && !state.get('searchZone')) {
           state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
         }
         state.goToScreen(8);
@@ -799,7 +799,9 @@ function setupAnalysisScreen() {
 
   mapComponent.showFleetDrones(availableDrones, inc?.coordinates, (drone) => {
     state.set({ selectedDrone: drone });
-    state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
+    if (!state.get('searchZone')) {
+      state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
+    }
     state.goToScreen(8);
   }, { skipFitBounds: true, recommendedDroneId: closestDrone?.id });
 
@@ -876,7 +878,9 @@ function setupAnalysisScreen() {
     {
       choices: closestDrone ? [
         { label: `Deploy ${shortName}`, className: 'btn-deploy', action: () => {
-          state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
+          if (!state.get('searchZone')) {
+            state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
+          }
           state.goToScreen(8);
         }},
       ] : [],
@@ -897,7 +901,7 @@ function setupDroneMapScreen() {
   mapComponent.showFleetDrones(DRONES, incCoords, (drone) => {
     state.set({ selectedDrone: drone });
     const incForZone = state.get('selectedIncident');
-    if (incForZone?.coordinates) {
+    if (incForZone?.coordinates && !state.get('searchZone')) {
       state.set({ searchZone: { center: incForZone.coordinates, radius: SEARCH_ZONE.radius } });
     }
     state.goToScreen(8);
