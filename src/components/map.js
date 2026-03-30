@@ -243,19 +243,23 @@ let editHandles = [];
 let _dragStartLatLng = null;
 let _editActive = false;
 let _onMapClickDismiss = null;
+let _ignoreMapClick = false;
+let _onChange = null;
 
 export function makeSearchZoneEditable(onChange) {
   if (!map || !searchCircle) return;
   clearEditHandles();
+  _onChange = onChange;
 
   // Make zone clickable (pointer cursor) but don't show handles yet
   searchCircle.setStyle({ interactive: true });
   searchCircle.getElement()?.style.setProperty('cursor', 'pointer');
 
-  searchCircle.on('click', (e) => {
-    L.DomEvent.stopPropagation(e);
+  searchCircle.on('click', () => {
     if (!_editActive) {
-      _showHandles(onChange);
+      _ignoreMapClick = true;
+      setTimeout(() => { _ignoreMapClick = false; }, 100);
+      _showHandles(_onChange);
     }
   });
 }
@@ -357,6 +361,8 @@ function _showHandles(onChange) {
 
   [handleN, handleE, handleS, handleW].forEach(h => {
     h.on('dragend', () => {
+      _ignoreMapClick = true;
+      setTimeout(() => { _ignoreMapClick = false; }, 100);
       if (onChange) onChange({ center: [centerLL.lat, centerLL.lng], radiusX, radiusY, rotation });
     });
   });
@@ -391,6 +397,8 @@ function _showHandles(onChange) {
     rebuild();
   });
   rotHandle.on('dragend', () => {
+    _ignoreMapClick = true;
+    setTimeout(() => { _ignoreMapClick = false; }, 100);
     if (onChange) onChange({ center: [centerLL.lat, centerLL.lng], radiusX, radiusY, rotation });
   });
 
@@ -416,16 +424,19 @@ function _showHandles(onChange) {
     _dragStartLatLng = null;
     map.dragging.enable();
     map.off('mousemove', _onZoneDrag);
+    _ignoreMapClick = true;
+    setTimeout(() => { _ignoreMapClick = false; }, 100);
     if (onChange) onChange({ center: [centerLL.lat, centerLL.lng], radiusX, radiusY, rotation });
   }
 
   // ── Click map background to dismiss handles ──
   if (_onMapClickDismiss) map.off('click', _onMapClickDismiss);
   _onMapClickDismiss = () => {
+    if (_ignoreMapClick) return;
     _hideHandles();
   };
   // Delay binding so this click event doesn't fire immediately
-  setTimeout(() => map.on('click', _onMapClickDismiss), 50);
+  setTimeout(() => map.on('click', _onMapClickDismiss), 100);
 }
 
 function _hideHandles() {
