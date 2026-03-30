@@ -719,17 +719,22 @@
   cursor: grabbing;
 }
 
-.edit-handle.center-handle {
-  width: 20px;
-  height: 20px;
+.edit-handle.edit-handle-rotate {
+  width: 18px;
+  height: 18px;
   background: #fff;
-  border: 2px solid #407CF5;
+  border: 2px solid #D4A017;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: move;
+  cursor: crosshair;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.edit-handle-rotate .edit-handle-icon {
+  font-size: 11px;
+  color: #D4A017;
 }
 
 /* ── Map Tooltips — dark (Mapbox night) ── */

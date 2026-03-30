@@ -172,111 +172,137 @@ function onSearchZone(zone) {
 
   if (!zone) return;
 
-  if (zone.bias) {
-    const origin = zone.origin || zone.center;
-    const pts = generateOblong(origin, zone.center, zone.radius, zone.bias);
-    searchCircle = L.polygon(pts, {
-      color: '#D4A017',
-      weight: 2,
-      fillColor: '#D4A017',
-      fillOpacity: 0.18,
-      smoothFactor: 2,
-      className: 'search-zone-shape',
-    }).addTo(map);
-  } else {
-    searchCircle = L.circle(zone.center, {
-      radius: zone.radius,
-      color: '#D4A017',
-      weight: 2,
-      fillColor: '#D4A017',
-      fillOpacity: 0.18,
-      className: 'search-zone-shape',
-    }).addTo(map);
-  }
-
+  // Normalize to ellipse model: { center, radiusX, radiusY, rotation }
+  const rx = zone.radiusX || zone.radius || 500;
+  const ry = zone.radiusY || zone.radius || 500;
+  const rot = zone.rotation || 0;
+  const pts = generateEllipsePoints(zone.center, rx, ry, rot);
+  searchCircle = L.polygon(pts, {
+    color: '#D4A017',
+    weight: 2,
+    fillColor: '#D4A017',
+    fillOpacity: 0.18,
+    smoothFactor: 2,
+    className: 'search-zone-shape',
+  }).addTo(map);
+  // Store current ellipse params on the polygon for edit handles to read
+  searchCircle._ellipse = { center: zone.center, radiusX: rx, radiusY: ry, rotation: rot };
 }
 
-function generateOblong(origin, center, radius, bias) {
+// ── Ellipse geometry ──────────────────
+
+function generateEllipsePoints(center, radiusX, radiusY, rotationDeg = 0) {
   const segments = 64;
-  const rLat = radius / 111320;
-  const rLng = radius / (111320 * Math.cos(center[0] * Math.PI / 180));
-
-  const dLat = center[0] - origin[0];
-  const dLng = center[1] - origin[1];
-  const angle = Math.atan2(dLng, dLat);
-  const cosA = Math.cos(angle);
-  const sinA = Math.sin(angle);
-
-  const length = rLat * 2.5;
-  const maxWidth = rLng * 1.2;
-
-  const right = [];
-  const left = [];
-
-  for (let i = 0; i <= segments; i++) {
-    const t = i / segments;
-    const along = t * length;
-
-    let w;
-    if (t < 0.08) {
-      w = maxWidth * 0.05 * (t / 0.08);
-    } else if (t < 0.6) {
-      const mt = (t - 0.08) / 0.52;
-      w = maxWidth * (0.05 + 0.95 * (1 - (1 - mt) * (1 - mt)));
-    } else {
-      const ft = (t - 0.6) / 0.4;
-      w = maxWidth * Math.cos(ft * Math.PI / 2);
-    }
-
-    right.push([
-      origin[0] + along * cosA - w * sinA,
-      origin[1] + along * sinA + w * cosA,
-    ]);
-    left.unshift([
-      origin[0] + along * cosA + w * sinA,
-      origin[1] + along * sinA - w * cosA,
-    ]);
+  const rot = rotationDeg * Math.PI / 180;
+  const cosR = Math.cos(rot);
+  const sinR = Math.sin(rot);
+  const mPerLat = 111320;
+  const mPerLng = 111320 * Math.cos(center[0] * Math.PI / 180);
+  const pts = [];
+  for (let i = 0; i < segments; i++) {
+    const angle = (i / segments) * 2 * Math.PI;
+    // Ellipse point before rotation (in meters)
+    const ex = radiusX * Math.cos(angle);
+    const ey = radiusY * Math.sin(angle);
+    // Rotate
+    const rx = ex * cosR - ey * sinR;
+    const ry = ex * sinR + ey * cosR;
+    // Convert to lat/lng offset
+    pts.push([center[0] + ry / mPerLat, center[1] + rx / mPerLng]);
   }
-
-  return [...right, ...left];
+  return pts;
 }
 
-// ── Editable Search Zone (drag handles) ──────────────────
+function ellipseEdgePoint(center, radiusX, radiusY, rotationDeg, bearingDeg) {
+  // Get the point on the ellipse edge at a given bearing from center
+  const rot = rotationDeg * Math.PI / 180;
+  const bearing = bearingDeg * Math.PI / 180;
+  const mPerLat = 111320;
+  const mPerLng = 111320 * Math.cos(center[0] * Math.PI / 180);
+  // Direction in local coords (before rotation), bearing 0 = north = +lat = +y
+  const dx = Math.sin(bearing - rot);
+  const dy = Math.cos(bearing - rot);
+  // Parametric intersection with ellipse: find t where (t*dx/rx)^2 + (t*dy/ry)^2 = 1
+  const t = 1 / Math.sqrt((dx / radiusX) ** 2 + (dy / radiusY) ** 2);
+  const ex = t * dx;
+  const ey = t * dy;
+  // Rotate back to map coords
+  const cosR = Math.cos(rot);
+  const sinR = Math.sin(rot);
+  const rx = ex * cosR - ey * sinR;
+  const ry = ex * sinR + ey * cosR;
+  return L.latLng(center[0] + ry / mPerLat, center[1] + rx / mPerLng);
+}
+
+// ── Editable Search Zone ──────────────────
 
 let editHandles = [];
+let _dragStartLatLng = null;
 
 export function makeSearchZoneEditable(onChange) {
   if (!map || !searchCircle) return;
   clearEditHandles();
 
-  const isCircle = typeof searchCircle.getRadius === 'function';
-  if (!isCircle) return;
+  const e = searchCircle._ellipse;
+  if (!e) return;
 
-  const center = searchCircle.getLatLng();
-  const radius = searchCircle.getRadius();
+  let { center, radiusX, radiusY, rotation } = e;
+  let centerLL = L.latLng(center[0], center[1]);
 
-  const radiusLabel = L.marker(center, {
+  // Helper: rebuild polygon + reposition all handles
+  function rebuild() {
+    const pts = generateEllipsePoints([centerLL.lat, centerLL.lng], radiusX, radiusY, rotation);
+    searchCircle.setLatLngs(pts);
+    searchCircle._ellipse = { center: [centerLL.lat, centerLL.lng], radiusX, radiusY, rotation };
+    // Update handle positions
+    const nPos = ellipseEdgePoint([centerLL.lat, centerLL.lng], radiusX, radiusY, rotation, 0);
+    const ePos = ellipseEdgePoint([centerLL.lat, centerLL.lng], radiusX, radiusY, rotation, 90);
+    const sPos = ellipseEdgePoint([centerLL.lat, centerLL.lng], radiusX, radiusY, rotation, 180);
+    const wPos = ellipseEdgePoint([centerLL.lat, centerLL.lng], radiusX, radiusY, rotation, 270);
+    handleN.setLatLng(nPos);
+    handleE.setLatLng(ePos);
+    handleS.setLatLng(sPos);
+    handleW.setLatLng(wPos);
+    // Rotation handle sits on stem past N
+    const stemDist = radiusY * 1.25;
+    const rotPos = ellipseEdgePoint([centerLL.lat, centerLL.lng], radiusX * 1.25, radiusY * 1.25, rotation, 0);
+    rotHandle.setLatLng(rotPos);
+    // Rotation stem line
+    rotStem.setLatLngs([nPos, rotPos]);
+    // Size label at south edge
+    const labelText = radiusX === radiusY
+      ? `${Math.round(radiusX)}m`
+      : `${Math.round(radiusX)} × ${Math.round(radiusY)}m`;
+    sizeLabel.setLatLng(sPos);
+    sizeLabel.setIcon(L.divIcon({
+      className: 'map-label',
+      html: `<span>${labelText}</span>`,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
+    }));
+  }
+
+  // ── Size label (at S edge, not center) ──
+  const sPos = ellipseEdgePoint([centerLL.lat, centerLL.lng], radiusX, radiusY, rotation, 180);
+  const labelText = radiusX === radiusY
+    ? `${Math.round(radiusX)}m`
+    : `${Math.round(radiusX)} × ${Math.round(radiusY)}m`;
+  const sizeLabel = L.marker(sPos, {
     icon: L.divIcon({
       className: 'map-label',
-      html: `<span>${Math.round(radius)}m radius</span>`,
+      html: `<span>${labelText}</span>`,
       iconSize: [0, 0],
       iconAnchor: [0, 0],
     }),
     interactive: false,
     zIndexOffset: 870,
   }).addTo(map);
-  editHandles.push(radiusLabel);
+  editHandles.push(sizeLabel);
 
-  const dirs = [
-    { name: 'N', bearing: 0 },
-    { name: 'E', bearing: 90 },
-    { name: 'S', bearing: 180 },
-    { name: 'W', bearing: 270 },
-  ];
-
-  for (const dir of dirs) {
-    const handlePos = offsetLatLng(center, radius, dir.bearing);
-    const handle = L.marker(handlePos, {
+  // ── Cardinal handles (N/S = radiusY, E/W = radiusX) ──
+  function makeHandle(bearing) {
+    const pos = ellipseEdgePoint([centerLL.lat, centerLL.lng], radiusX, radiusY, rotation, bearing);
+    const h = L.marker(pos, {
       icon: L.divIcon({
         className: 'edit-handle',
         html: '',
@@ -286,61 +312,113 @@ export function makeSearchZoneEditable(onChange) {
       draggable: true,
       zIndexOffset: 880,
     }).addTo(map);
-
-    handle.on('drag', (e) => {
-      const hPos = e.target.getLatLng();
-      const newRadius = center.distanceTo(hPos);
-      const clamped = Math.max(100, Math.min(2000, newRadius));
-      searchCircle.setRadius(clamped);
-      for (let i = 0; i < dirs.length; i++) {
-        const hp = offsetLatLng(center, clamped, dirs[i].bearing);
-        editHandles[i + 1].setLatLng(hp);
-      }
-      radiusLabel.setIcon(L.divIcon({
-        className: 'map-label',
-        html: `<span>${Math.round(clamped)}m radius</span>`,
-        iconSize: [0, 0],
-        iconAnchor: [0, 0],
-      }));
-    });
-    handle.on('dragend', () => {
-      if (onChange) onChange({ center: [center.lat, center.lng], radius: searchCircle.getRadius() });
-    });
-
-    editHandles.push(handle);
+    editHandles.push(h);
+    return h;
   }
 
-  const centerHandle = L.marker(center, {
+  const handleN = makeHandle(0);
+  const handleE = makeHandle(90);
+  const handleS = makeHandle(180);
+  const handleW = makeHandle(270);
+
+  // N/S drag → change radiusY
+  function onNSDrag(e) {
+    const hPos = e.target.getLatLng();
+    const dist = centerLL.distanceTo(hPos);
+    radiusY = Math.max(80, Math.min(2000, dist));
+    rebuild();
+  }
+  handleN.on('drag', onNSDrag);
+  handleS.on('drag', onNSDrag);
+
+  // E/W drag → change radiusX
+  function onEWDrag(e) {
+    const hPos = e.target.getLatLng();
+    const dist = centerLL.distanceTo(hPos);
+    radiusX = Math.max(80, Math.min(2000, dist));
+    rebuild();
+  }
+  handleE.on('drag', onEWDrag);
+  handleW.on('drag', onEWDrag);
+
+  // Fire onChange on dragend for all cardinal handles
+  [handleN, handleE, handleS, handleW].forEach(h => {
+    h.on('dragend', () => {
+      if (onChange) onChange({ center: [centerLL.lat, centerLL.lng], radiusX, radiusY, rotation });
+    });
+  });
+
+  // ── Rotation handle (on stem past N) ──
+  const nEdge = ellipseEdgePoint([centerLL.lat, centerLL.lng], radiusX, radiusY, rotation, 0);
+  const rotPos = ellipseEdgePoint([centerLL.lat, centerLL.lng], radiusX * 1.25, radiusY * 1.25, rotation, 0);
+  const rotStem = L.polyline([nEdge, rotPos], {
+    color: '#fff', weight: 1, opacity: 0.5, dashArray: '4 4',
+  }).addTo(map);
+  editHandles.push(rotStem);
+
+  const rotHandle = L.marker(rotPos, {
     icon: L.divIcon({
-      className: 'edit-handle center-handle',
-      html: '<span class="material-symbols-outlined edit-handle-icon">open_with</span>',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
+      className: 'edit-handle edit-handle-rotate',
+      html: '<span class="material-symbols-outlined edit-handle-icon">rotate_right</span>',
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
     }),
     draggable: true,
     zIndexOffset: 890,
   }).addTo(map);
+  editHandles.push(rotHandle);
 
-  centerHandle.on('drag', (e) => {
-    const newCenter = e.target.getLatLng();
-    const r = searchCircle.getRadius();
-    searchCircle.setLatLng(newCenter);
-    radiusLabel.setLatLng(newCenter);
-    if (searchLabel) searchLabel.setLatLng(newCenter);
-    for (let i = 0; i < dirs.length; i++) {
-      const hp = offsetLatLng(newCenter, r, dirs[i].bearing);
-      editHandles[i + 1].setLatLng(hp);
-    }
+  rotHandle.on('drag', (e) => {
+    const hPos = e.target.getLatLng();
+    const mPerLat = 111320;
+    const mPerLng = 111320 * Math.cos(centerLL.lat * Math.PI / 180);
+    const dx = (hPos.lng - centerLL.lng) * mPerLng;
+    const dy = (hPos.lat - centerLL.lat) * mPerLat;
+    // Bearing from center to handle position
+    rotation = Math.atan2(dx, dy) * 180 / Math.PI;
+    rebuild();
   });
-  centerHandle.on('dragend', (e) => {
-    const c = e.target.getLatLng();
-    if (onChange) onChange({ center: [c.lat, c.lng], radius: searchCircle.getRadius() });
+  rotHandle.on('dragend', () => {
+    if (onChange) onChange({ center: [centerLL.lat, centerLL.lng], radiusX, radiusY, rotation });
   });
 
-  editHandles.push(centerHandle);
+  // ── Drag zone fill to move ──
+  searchCircle.setStyle({ interactive: true });
+  searchCircle.getElement()?.style.setProperty('cursor', 'grab');
+
+  searchCircle.on('mousedown', (e) => {
+    L.DomEvent.stopPropagation(e);
+    _dragStartLatLng = e.latlng;
+    map.dragging.disable();
+    map.on('mousemove', onZoneDrag);
+    map.once('mouseup', onZoneDragEnd);
+  });
+
+  function onZoneDrag(e) {
+    if (!_dragStartLatLng) return;
+    const dLat = e.latlng.lat - _dragStartLatLng.lat;
+    const dLng = e.latlng.lng - _dragStartLatLng.lng;
+    centerLL = L.latLng(centerLL.lat + dLat, centerLL.lng + dLng);
+    _dragStartLatLng = e.latlng;
+    rebuild();
+  }
+
+  function onZoneDragEnd() {
+    _dragStartLatLng = null;
+    map.dragging.enable();
+    map.off('mousemove', onZoneDrag);
+    if (onChange) onChange({ center: [centerLL.lat, centerLL.lng], radiusX, radiusY, rotation });
+  }
+
+  // Initial positioning is already correct from the handle creation above
 }
 
 export function clearEditHandles() {
+  // Remove zone drag listeners
+  if (searchCircle) {
+    searchCircle.off('mousedown');
+    searchCircle.setStyle({ interactive: false });
+  }
   for (const h of editHandles) map?.removeLayer(h);
   editHandles = [];
 }
@@ -939,13 +1017,14 @@ export function showLiveOrbitScene(center, drone, radius = 300) {
 
 export function showSearchZonePreview(center, radius, fillOpacity = 0.18) {
   if (!map) return;
-  const circle = L.circle(center, {
-    radius,
+  const pts = generateEllipsePoints(center, radius, radius, 0);
+  const poly = L.polygon(pts, {
     color: '#D4A017',
     weight: 2,
     fillColor: '#D4A017',
     fillOpacity,
+    smoothFactor: 2,
     className: 'search-zone-shape',
   }).addTo(map);
-  routeLineOverlays.push(circle);
+  routeLineOverlays.push(poly);
 }

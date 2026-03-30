@@ -811,7 +811,10 @@ function setupAnalysisScreen() {
         state.set({ searchZone: zone });
         if (!searchAreaNoted) {
           searchAreaNoted = true;
-          chat.appendSystem(`Search area modified — ${Math.round(zone.radius)}m radius`);
+          const sizeText = zone.radiusX === zone.radiusY
+            ? `${Math.round(zone.radiusX)}m radius`
+            : `${Math.round(zone.radiusX)} × ${Math.round(zone.radiusY)}m`;
+          chat.appendSystem(`Search area modified — ${sizeText}`);
         }
       });
     }, 300);
