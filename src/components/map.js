@@ -187,32 +187,27 @@ function onSearchZone(zone) {
   }).addTo(map);
 }
 
-// ── Editable Search Zone (using leaflet-ellipse) ──────────────────
+// ── Editable Search Zone ──────────────────────────────────────────
 //
-// Uses native DOM events (not Leaflet events) for select/dismiss to avoid
-// Leaflet's unreliable event propagation (dragend→click, double-fire, etc).
+// ALL select/dismiss/drag uses event delegation on the SVG overlay pane
+// or native DOM events. ZERO reliance on Leaflet's event system for the
+// ellipse path (Leaflet's hit detection breaks when geometry changes).
 //
-// UNSELECTED: amber stroke, pointer cursor, no handles, map pans normally
+// UNSELECTED: amber stroke, pointer cursor, no handles
 // SELECTED:   white fat stroke, grab cursor, handles visible, drag fill to move
-//
-// Click zone → select. Pointerdown outside zone/handles → deselect.
-// clearEditHandles() tears down everything (screen transition).
 
 let editHandles = [];
 let _onChange = null;
 let _selected = false;
 let _editState = null;
-let _dismissListener = null;
-let _zoneLeafletClick = null; // Leaflet click handler (reliable for select — survives SVG re-renders)
+let _editCleanup = null; // single cleanup function for all listeners
 
-function _isInsideEditUI(target) {
-  const zoneEl = searchCircle?.getElement();
-  if (zoneEl && zoneEl.contains(target)) return true;
-  for (const h of editHandles) {
-    const hEl = h.getElement?.() || h._path;
-    if (hEl && hEl.contains(target)) return true;
-  }
-  return false;
+function _isZonePath(target) {
+  return target?.classList?.contains('search-zone-shape') || target?.closest?.('.search-zone-shape');
+}
+
+function _isEditHandle(target) {
+  return target?.closest?.('.edit-handle') || target?.closest?.('.edit-handle-rotate');
 }
 
 export function makeSearchZoneEditable(onChange) {
@@ -220,36 +215,135 @@ export function makeSearchZoneEditable(onChange) {
   clearEditHandles();
   _onChange = onChange;
 
-  // Start unselected: amber stroke, clickable, pointer cursor
+  // Start unselected
   searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: true });
   const el = searchCircle.getElement();
-  if (el) el.style.cursor = 'pointer';
+  if (el) { el.style.cursor = 'pointer'; el.style.pointerEvents = 'auto'; }
 
-  // Use Leaflet's click for select — it survives SVG element replacement
-  // (Leaflet rebinds after re-render). This is the ONE thing Leaflet click is reliable for.
-  _zoneLeafletClick = (e) => {
-    L.DomEvent.stop(e);
-    if (!_selected) _selectZone();
-  };
-  searchCircle.on('click', _zoneLeafletClick);
+  // All event handling via delegation on the map container + document
+  const container = map.getContainer();
 
-  // Native pointerdown on document for dismiss — bypasses Leaflet's broken propagation
-  _dismissListener = (evt) => {
+  // Click on zone path → select
+  function onContainerClick(evt) {
+    if (_isZonePath(evt.target) && !_selected) {
+      evt.stopPropagation();
+      _selectZone();
+    }
+  }
+
+  // Pointerdown outside zone/handles → dismiss
+  function onDocPointerdown(evt) {
     if (!_selected) return;
-    if (_isInsideEditUI(evt.target)) return;
-    // Only dismiss if clicking on the map, not the chat panel
-    const mapContainer = map.getContainer();
-    if (!mapContainer.contains(evt.target)) return;
+    if (_isZonePath(evt.target) || _isEditHandle(evt.target)) return;
+    if (!container.contains(evt.target)) return; // ignore clicks in chat panel
     _deselectZone();
+  }
+
+  // Mousedown on zone path when selected → start drag
+  let dragging = false;
+  let dragStartPx = null;
+
+  function onContainerMousedown(evt) {
+    if (!_selected || !_isZonePath(evt.target)) return;
+    evt.preventDefault();
+    evt.stopPropagation();
+    dragging = true;
+    dragStartPx = { x: evt.clientX, y: evt.clientY };
+    map.dragging.disable();
+    const el2 = searchCircle?.getElement();
+    if (el2) el2.style.cursor = 'grabbing';
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('mouseup', onDragUp);
+  }
+
+  function onDragMove(evt) {
+    if (!dragging || !_editState) return;
+    const s = _editState;
+    const dx = evt.clientX - dragStartPx.x;
+    const dy = evt.clientY - dragStartPx.y;
+    dragStartPx = { x: evt.clientX, y: evt.clientY };
+    // Convert pixel delta to latlng delta
+    const center = map.latLngToContainerPoint(s.centerLL);
+    s.centerLL = map.containerPointToLatLng(L.point(center.x + dx, center.y + dy));
+    _rebuildEllipse(s);
+  }
+
+  function onDragUp() {
+    if (!dragging) return;
+    dragging = false;
+    map.dragging.enable();
+    document.removeEventListener('mousemove', onDragMove);
+    document.removeEventListener('mouseup', onDragUp);
+    const el2 = searchCircle?.getElement();
+    if (el2) el2.style.cursor = 'grab';
+    if (_editState && _onChange) {
+      const s = _editState;
+      _onChange({ center: [s.centerLL.lat, s.centerLL.lng], radiusX: s.rx, radiusY: s.ry, rotation: s.tilt });
+    }
+  }
+
+  container.addEventListener('click', onContainerClick, true);
+  container.addEventListener('mousedown', onContainerMousedown, true);
+  document.addEventListener('pointerdown', onDocPointerdown);
+
+  _editCleanup = () => {
+    container.removeEventListener('click', onContainerClick, true);
+    container.removeEventListener('mousedown', onContainerMousedown, true);
+    document.removeEventListener('pointerdown', onDocPointerdown);
+    document.removeEventListener('mousemove', onDragMove);
+    document.removeEventListener('mouseup', onDragUp);
+    if (dragging) { dragging = false; map.dragging.enable(); }
   };
-  setTimeout(() => document.addEventListener('pointerdown', _dismissListener), 0);
+}
+
+function _rebuildEllipse(s) {
+  if (!searchCircle) return;
+  searchCircle.setLatLng(s.centerLL);
+  searchCircle.setRadius([s.rx, s.ry]);
+  searchCircle.setTilt(s.tilt);
+  const el = searchCircle.getElement();
+  if (el) {
+    el.style.cursor = _selected ? 'grab' : 'pointer';
+    el.style.pointerEvents = 'auto';
+  }
+  if (s.handleN) _repositionHandles(s);
+}
+
+function _repositionHandles(s) {
+  function edgePoint(bearing) {
+    const b = (bearing - s.tilt) * Math.PI / 180;
+    const cosB = Math.cos(b);
+    const sinB = Math.sin(b);
+    const dist = 1 / Math.sqrt((sinB / s.rx) ** 2 + (cosB / s.ry) ** 2);
+    return _offsetByMeters(s.centerLL, dist, bearing);
+  }
+  const nPos = edgePoint(s.tilt);
+  const sPos = edgePoint(s.tilt + 180);
+  const ePos = edgePoint(s.tilt + 90);
+  const wPos = edgePoint(s.tilt + 270);
+  s.handleN.setLatLng(nPos);
+  s.handleS.setLatLng(sPos);
+  s.handleE.setLatLng(ePos);
+  s.handleW.setLatLng(wPos);
+  const stemEnd = _offsetByMeters(s.centerLL, s.ry * 1.3, s.tilt);
+  s.rotHandle.setLatLng(stemEnd);
+  s.rotStem.setLatLngs([nPos, stemEnd]);
+  const labelPos = _offsetByMeters(s.centerLL, Math.min(s.rx, s.ry) * 0.45, s.tilt + 210);
+  const labelText = Math.round(s.rx) === Math.round(s.ry)
+    ? `${Math.round(s.rx)}m`
+    : `${Math.round(s.rx)} × ${Math.round(s.ry)}m`;
+  s.sizeLabel.setLatLng(labelPos);
+  s.sizeLabel.setIcon(L.divIcon({
+    className: 'map-label',
+    html: `<span>${labelText}</span>`,
+    iconSize: [0, 0], iconAnchor: [0, 0],
+  }));
 }
 
 function _selectZone() {
   if (!map || !searchCircle || _selected) return;
   _selected = true;
 
-  // Highlight: white fat stroke, brighter fill, grab cursor
   searchCircle.setStyle({ weight: 3, color: '#fff', fillOpacity: 0.25 });
   const el = searchCircle.getElement();
   if (el) el.style.cursor = 'grab';
@@ -262,6 +356,10 @@ function _selectZone() {
   };
   _editState = s;
 
+  function fireChange() {
+    if (_onChange) _onChange({ center: [s.centerLL.lat, s.centerLL.lng], radiusX: s.rx, radiusY: s.ry, rotation: s.tilt });
+  }
+
   function edgePoint(bearing) {
     const b = (bearing - s.tilt) * Math.PI / 180;
     const cosB = Math.cos(b);
@@ -270,92 +368,7 @@ function _selectZone() {
     return _offsetByMeters(s.centerLL, dist, bearing);
   }
 
-  function updateEllipse() {
-    searchCircle.setLatLng(s.centerLL);
-    searchCircle.setRadius([s.rx, s.ry]);
-    searchCircle.setTilt(s.tilt);
-    // Leaflet re-renders SVG — restore cursor
-    const newEl = searchCircle.getElement();
-    if (newEl) newEl.style.cursor = _selected ? 'grab' : 'pointer';
-  }
-
-  function fireChange() {
-    if (_onChange) _onChange({ center: [s.centerLL.lat, s.centerLL.lng], radiusX: s.rx, radiusY: s.ry, rotation: s.tilt });
-  }
-
-  function repositionHandles() {
-    const nPos = edgePoint(s.tilt);
-    const sPos = edgePoint(s.tilt + 180);
-    const ePos = edgePoint(s.tilt + 90);
-    const wPos = edgePoint(s.tilt + 270);
-    s.handleN.setLatLng(nPos);
-    s.handleS.setLatLng(sPos);
-    s.handleE.setLatLng(ePos);
-    s.handleW.setLatLng(wPos);
-    const stemEnd = _offsetByMeters(s.centerLL, s.ry * 1.3, s.tilt);
-    s.rotHandle.setLatLng(stemEnd);
-    s.rotStem.setLatLngs([nPos, stemEnd]);
-    const labelPos = _offsetByMeters(s.centerLL, Math.min(s.rx, s.ry) * 0.45, s.tilt + 210);
-    const labelText = Math.round(s.rx) === Math.round(s.ry)
-      ? `${Math.round(s.rx)}m`
-      : `${Math.round(s.rx)} × ${Math.round(s.ry)}m`;
-    s.sizeLabel.setLatLng(labelPos);
-    s.sizeLabel.setIcon(L.divIcon({
-      className: 'map-label',
-      html: `<span>${labelText}</span>`,
-      iconSize: [0, 0], iconAnchor: [0, 0],
-    }));
-  }
-
-  function rebuild() {
-    updateEllipse();
-    repositionHandles();
-  }
-
-  // ── Drag fill to move ──
-  let dragging = false;
-  let dragStart = null;
-
-  function onFillMouseDown(e) {
-    if (!_selected) return;
-    L.DomEvent.stop(e);
-    dragging = true;
-    dragStart = e.latlng;
-    map.dragging.disable();
-    const el2 = searchCircle.getElement();
-    if (el2) el2.style.cursor = 'grabbing';
-    map.on('mousemove', onFillMove);
-    map.on('mouseup', onFillUp);
-  }
-
-  function onFillMove(e) {
-    if (!dragging) return;
-    s.centerLL = L.latLng(
-      s.centerLL.lat + (e.latlng.lat - dragStart.lat),
-      s.centerLL.lng + (e.latlng.lng - dragStart.lng),
-    );
-    dragStart = e.latlng;
-    rebuild();
-  }
-
-  function onFillUp() {
-    if (!dragging) return;
-    dragging = false;
-    map.dragging.enable();
-    const el2 = searchCircle.getElement();
-    if (el2) el2.style.cursor = 'grab';
-    map.off('mousemove', onFillMove);
-    map.off('mouseup', onFillUp);
-    fireChange();
-  }
-
-  searchCircle.on('mousedown', onFillMouseDown);
-  s._cleanupDrag = () => {
-    searchCircle.off('mousedown', onFillMouseDown);
-    map.off('mousemove', onFillMove);
-    map.off('mouseup', onFillUp);
-    map.dragging.enable();
-  };
+  function rebuild() { _rebuildEllipse(s); }
 
   // ── Size label ──
   s.sizeLabel = L.marker(edgePoint(s.tilt + 180), {
@@ -383,23 +396,12 @@ function _selectZone() {
   s.handleE = mkHandle(edgePoint(s.tilt + 90));
   s.handleW = mkHandle(edgePoint(s.tilt + 270));
 
-  function onAxisYDrag(e) {
-    s.ry = Math.max(80, Math.min(2000, s.centerLL.distanceTo(e.target.getLatLng())));
-    rebuild();
-  }
-  s.handleN.on('drag', onAxisYDrag);
-  s.handleS.on('drag', onAxisYDrag);
+  s.handleN.on('drag', (e) => { s.ry = Math.max(80, Math.min(2000, s.centerLL.distanceTo(e.target.getLatLng()))); rebuild(); });
+  s.handleS.on('drag', (e) => { s.ry = Math.max(80, Math.min(2000, s.centerLL.distanceTo(e.target.getLatLng()))); rebuild(); });
+  s.handleE.on('drag', (e) => { s.rx = Math.max(80, Math.min(2000, s.centerLL.distanceTo(e.target.getLatLng()))); rebuild(); });
+  s.handleW.on('drag', (e) => { s.rx = Math.max(80, Math.min(2000, s.centerLL.distanceTo(e.target.getLatLng()))); rebuild(); });
 
-  function onAxisXDrag(e) {
-    s.rx = Math.max(80, Math.min(2000, s.centerLL.distanceTo(e.target.getLatLng())));
-    rebuild();
-  }
-  s.handleE.on('drag', onAxisXDrag);
-  s.handleW.on('drag', onAxisXDrag);
-
-  [s.handleN, s.handleS, s.handleE, s.handleW].forEach(h => {
-    h.on('dragend', fireChange);
-  });
+  [s.handleN, s.handleS, s.handleE, s.handleW].forEach(h => h.on('dragend', fireChange));
 
   // ── Rotation handle ──
   const stemEnd = _offsetByMeters(s.centerLL, s.ry * 1.3, s.tilt);
@@ -430,27 +432,19 @@ function _selectZone() {
   });
   s.rotHandle.on('dragend', fireChange);
 
-  repositionHandles();
+  _repositionHandles(s);
 }
 
 function _deselectZone() {
   if (!_selected) return;
   _selected = false;
-  if (_editState?._cleanupDrag) _editState._cleanupDrag();
   for (const h of editHandles) map?.removeLayer(h);
   editHandles = [];
   _editState = null;
   if (searchCircle) {
     searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18 });
-    // Force Leaflet to rebuild SVG path + hit detection for new geometry.
-    // Leaflet preserves on() handlers through remove/add cycles.
-    if (map) {
-      searchCircle.removeFrom(map);
-      searchCircle.addTo(map);
-    }
-    // Element is recreated — reset cursor
     const el = searchCircle.getElement();
-    if (el) el.style.cursor = 'pointer';
+    if (el) { el.style.cursor = 'pointer'; el.style.pointerEvents = 'auto'; }
   }
 }
 
@@ -466,23 +460,15 @@ function _offsetByMeters(ll, meters, bearingDeg) {
 }
 
 export function clearEditHandles() {
-  if (_editState?._cleanupDrag) _editState._cleanupDrag();
+  if (_editCleanup) { _editCleanup(); _editCleanup = null; }
   for (const h of editHandles) map?.removeLayer(h);
   editHandles = [];
   _editState = null;
   _selected = false;
-  if (_dismissListener) {
-    document.removeEventListener('pointerdown', _dismissListener);
-    _dismissListener = null;
-  }
-  if (_zoneLeafletClick && searchCircle) {
-    searchCircle.off('click', _zoneLeafletClick);
-    _zoneLeafletClick = null;
-  }
   if (searchCircle) {
     searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: false });
     const el = searchCircle.getElement();
-    if (el) el.style.cursor = '';
+    if (el) { el.style.cursor = ''; el.style.pointerEvents = ''; }
   }
   _onChange = null;
 }

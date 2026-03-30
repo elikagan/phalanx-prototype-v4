@@ -43,7 +43,7 @@ function updateStatus(screen) {
     4: '',
     5: 'Drone Selection',
     6: 'Mission Briefing',
-    7: 'Search Area',
+    7: '',
     8: 'Pre-Flight',
     9: 'Mission Active',
     10: 'Target Spotted',
