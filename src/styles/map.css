@@ -2,15 +2,18 @@
 @import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 
 /*
- * MAP OVERLAY COLOR SYSTEM
- * These colors are designed to POP against satellite imagery.
- * Do NOT use the UI design system tokens here — they're too muted.
+ * MAP OVERLAY DESIGN SYSTEM
+ * Modeled after Google Maps satellite view.
  *
- * Route blue:   #4285F4 (Google Maps blue — proven legible on satellite)
- * Alert red:    #EA4335 (bright, unmistakable)
- * Confirm green:#34A853 (bright, clear)
- * Amber:        #FBBC04 (bright warning)
- * Label bg:     rgba(30, 30, 34, 0.92) (near-black, high contrast for white text)
+ * HIERARCHY (most important → least):
+ *   1. Incident pin   — bright red/amber, white border (the emergency)
+ *   2. Route lines    — #1A73E8 blue, 3px, dark outline (visible but calm)
+ *   3. Labels         — white chip, dark text, subtle shadow (info on demand)
+ *   4. Search zones   — white dashed outline, barely-there fill (context)
+ *   5. Drone markers  — dark circle, small icon (supporting cast)
+ *
+ * Labels use Google Maps style: white bg, #202124 text, soft shadow.
+ * Nothing should scream except the incident pin.
  */
 
 /* === Map Overlays === */
@@ -18,35 +21,35 @@
   background: var(--bg-void);
 }
 
-/* Drone marker */
+/* ── Drone marker ── */
 .drone-marker {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   transition: transform var(--dur-normal) var(--ease-out);
 }
 
 .drone-marker svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 0 10px rgba(66, 133, 244, 0.6)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
 
-/* Search zone label */
+/* ── Search zone label — quiet, contextual ── */
 .search-zone-label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 500;
   letter-spacing: 1.5px;
-  color: #fff;
-  background: rgba(66, 133, 244, 0.85);
-  padding: 4px 12px;
-  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  background: none;
+  padding: 0;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 
-/* Waypoint marker */
+/* ── Waypoint marker ── */
 .waypoint-marker {
   display: flex;
   flex-direction: column;
@@ -55,32 +58,31 @@
 }
 
 .waypoint-crosshair {
-  width: 18px;
-  height: 18px;
-  border: 2px solid #fff;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
   border-radius: 50%;
   position: relative;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
 .waypoint-crosshair::before,
 .waypoint-crosshair::after {
   content: '';
   position: absolute;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .waypoint-crosshair::before {
-  width: 1.5px;
-  height: 26px;
+  width: 1px;
+  height: 22px;
   left: 50%;
   top: -4px;
   transform: translateX(-50%);
 }
 
 .waypoint-crosshair::after {
-  width: 26px;
-  height: 1.5px;
+  width: 22px;
+  height: 1px;
   top: 50%;
   left: -4px;
   transform: translateY(-50%);
@@ -88,46 +90,44 @@
 
 .waypoint-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
-  color: #fff;
-  background: rgba(30, 30, 34, 0.92);
-  padding: 3px 10px;
-  border-radius: 4px;
-  margin-top: 6px;
+  color: #202124;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-top: 4px;
   white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* Target marker */
+/* ── Target marker — loud, like incident ── */
 .target-marker {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   background: #EA4335;
   border-radius: 50%;
-  border: 3px solid #fff;
+  border: 2.5px solid #fff;
   animation: target-pulse 2s ease-in-out infinite;
-  box-shadow: 0 0 16px rgba(234, 67, 53, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .target-marker.confirmed {
   background: #34A853;
-  border-color: #fff;
   animation: target-pulse-green 2s ease-in-out infinite;
-  box-shadow: 0 0 16px rgba(52, 168, 83, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 @keyframes target-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 67, 53, 0.4), 0 0 16px rgba(234, 67, 53, 0.5); }
-  50% { box-shadow: 0 0 0 12px rgba(234, 67, 53, 0), 0 0 16px rgba(234, 67, 53, 0.3); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 67, 53, 0.3), 0 1px 4px rgba(0, 0, 0, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(234, 67, 53, 0), 0 1px 4px rgba(0, 0, 0, 0.4); }
 }
 
 @keyframes target-pulse-green {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.4), 0 0 16px rgba(52, 168, 83, 0.5); }
-  50% { box-shadow: 0 0 0 12px rgba(52, 168, 83, 0), 0 0 16px rgba(52, 168, 83, 0.3); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.3), 0 1px 4px rgba(0, 0, 0, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(52, 168, 83, 0), 0 1px 4px rgba(0, 0, 0, 0.4); }
 }
 
-/* Target label (on FPV) */
+/* Target label on FPV (stays dark-themed) */
 .target-label {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -144,27 +144,27 @@
   color: var(--green);
 }
 
-/* Target label (on map) */
+/* Target label on map — white chip like everything else */
 .target-map-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 1px;
-  color: #fff;
-  background: rgba(234, 67, 53, 0.9);
-  padding: 3px 10px;
-  border-radius: 4px;
+  letter-spacing: 0.5px;
+  color: #EA4335;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 3px 8px;
+  border-radius: 10px;
   white-space: nowrap;
   pointer-events: none;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .target-map-label.confirmed {
-  background: rgba(52, 168, 83, 0.9);
+  color: #34A853;
 }
 
-/* View toggle thumbnail (v3-style) */
+/* ── View toggle thumbnail (v3-style) ── */
 .view-thumb {
   position: relative;
   width: 120px;
@@ -191,7 +191,6 @@
   pointer-events: none;
 }
 
-/* When showing map (FPV is main), thumbnail shows a grid pattern for the map */
 .view-thumb:not(.showing-map)::after {
   content: '';
   position: absolute;
@@ -203,7 +202,6 @@
   pointer-events: none;
 }
 
-/* When showing FPV (map is main), thumbnail shows scanlines for FPV */
 .view-thumb.showing-map::after {
   content: '';
   position: absolute;
@@ -248,7 +246,7 @@
   color: var(--text-primary);
 }
 
-/* HUD overlay on FPV */
+/* ── HUD overlay on FPV ── */
 .hud-overlay {
   position: absolute;
   inset: 0;
@@ -284,7 +282,6 @@
   top: 50%;
 }
 
-/* Corner brackets */
 .hud-corner {
   position: absolute;
   width: 20px;
@@ -299,7 +296,6 @@
 .hud-corner.bl { bottom: 8px; left: 8px; border-bottom-width: 1px; border-left-width: 1px; }
 .hud-corner.br { bottom: 8px; right: 8px; border-bottom-width: 1px; border-right-width: 1px; }
 
-/* HUD telemetry text */
 .hud-text {
   position: absolute;
   font-family: var(--font-mono);
@@ -312,7 +308,6 @@
 .hud-text.bottom-left { bottom: 12px; left: 32px; }
 .hud-text.bottom-right { bottom: 12px; right: 32px; text-align: right; }
 
-/* Recording indicator */
 .hud-rec {
   position: absolute;
   top: 12px;
@@ -333,7 +328,6 @@
   animation: rec-blink 1.5s ease-in-out infinite;
 }
 
-/* Scan lines on FPV */
 .fpv-scanlines {
   position: absolute;
   inset: 0;
@@ -347,7 +341,6 @@
   pointer-events: none;
 }
 
-/* Target circle on FPV */
 .target-circle {
   position: absolute;
   border: 2px solid var(--red);
@@ -410,7 +403,7 @@
   z-index: 25;
 }
 
-/* === Compass Points (around target circle) === */
+/* === Compass Points === */
 .compass-point {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -526,113 +519,117 @@
   letter-spacing: 0.5px;
 }
 
-/* === Incident Map Markers === */
+/* ── Incident Map Markers — THE LOUD ELEMENT ── */
 .incident-map-marker {
   pointer-events: auto;
   cursor: pointer;
 }
 
 .incident-dot {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--dot-color, #EA4335);
-  border: 3px solid #fff;
+  border: 2.5px solid #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.5);
-  animation: incident-pulse 2.5s ease-in-out infinite;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  animation: incident-pulse 3s ease-in-out infinite;
 }
 
 @keyframes incident-pulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2), 0 0 0 6px color-mix(in srgb, var(--dot-color, #EA4335) 30%, transparent); }
-  50% { box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2), 0 0 0 16px color-mix(in srgb, var(--dot-color, #EA4335) 0%, transparent); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--dot-color, #EA4335) 25%, transparent), 0 1px 4px rgba(0, 0, 0, 0.4); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--dot-color, #EA4335) 0%, transparent), 0 1px 4px rgba(0, 0, 0, 0.4); }
 }
 
+/* Incident label — white chip, dark text */
 .incident-map-label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: #fff;
-  background: rgba(30, 30, 34, 0.92);
-  padding: 4px 10px;
-  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: #202124;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 3px 8px;
+  border-radius: 10px;
   white-space: nowrap;
-  margin-top: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  margin-top: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* === Fleet Drone Markers === */
+/* ── Fleet Drone Markers — quiet, supporting ── */
 .fleet-drone-marker {
   pointer-events: auto;
   cursor: pointer;
 }
 
 .fleet-drone-dot {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: rgba(30, 30, 34, 0.85);
-  border: 2.5px solid var(--drone-color, #4285F4);
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid var(--drone-color, #1A73E8);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* Linked: drone assigned to incident */
 .incident-dot.linked,
 .fleet-drone-dot.linked {
-  outline: 2px solid #4285F4;
-  outline-offset: 3px;
+  outline: 2px solid #1A73E8;
+  outline-offset: 2px;
 }
 
+/* Fleet drone label — white chip */
 .fleet-drone-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.3px;
-  color: #fff;
-  background: rgba(30, 30, 34, 0.92);
-  padding: 3px 10px;
-  border-radius: 4px;
+  color: #202124;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 2px 8px;
+  border-radius: 10px;
   white-space: nowrap;
-  margin-top: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  margin-top: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* === Route Line Labels === */
-.route-line-label {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: #fff;
-  background: #4285F4;
-  padding: 5px 12px;
-  border-radius: 14px;
+/* ── Route Labels — white chip, dark text (Google Maps style) ── */
+/*
+ * This is the "7 min / 2.3 miles" chip from Google Maps.
+ * White bg, dark text, small, rounded pill, soft shadow.
+ * NOT a colored billboard. Quiet and informational.
+ */
+.route-label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  color: #202124;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 4px 10px;
+  border-radius: 12px;
   white-space: nowrap;
   pointer-events: none;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* === Edit Handles (draggable search zone) === */
+/* ── Edit Handles (draggable search zone) ── */
 .edit-handle {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   background: #fff;
-  border: 3px solid #4285F4;
+  border: 2px solid #1A73E8;
   border-radius: 50%;
   cursor: grab;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  transition: transform var(--dur-micro) var(--ease-out), background var(--dur-micro) var(--ease-out);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform var(--dur-micro) var(--ease-out);
 }
 
 .edit-handle:hover {
-  background: #4285F4;
   transform: scale(1.3);
 }
 
@@ -641,43 +638,38 @@
 }
 
 .edit-handle.center-handle {
-  width: 24px;
-  height: 24px;
-  background: rgba(30, 30, 34, 0.9);
-  border: 2.5px solid #4285F4;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border: 2px solid #1A73E8;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: move;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
-.edit-handle.center-handle:hover {
-  background: #4285F4;
-}
-
-/* === Map Tooltips === */
+/* ── Map Tooltips ── */
 .map-tooltip {
-  background: rgba(30, 30, 34, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: var(--r-md);
-  color: #fff;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 8px;
+  color: #202124;
   font-family: var(--font-ui);
   font-size: 12px;
   line-height: 1.5;
   padding: 8px 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .map-tooltip strong {
-  color: #fff;
+  color: #202124;
   font-weight: 600;
 }
 
-/* Override Leaflet default tooltip arrow */
 .leaflet-tooltip.map-tooltip::before {
-  border-top-color: rgba(30, 30, 34, 0.95);
+  border-top-color: rgba(255, 255, 255, 0.95);
 }
 
 /* Mobile overrides */
@@ -688,7 +680,6 @@
   }
 }
 
-/* Mobile map gradients */
 @media (max-width: 767px) {
   .map-container::before {
     content: '';
