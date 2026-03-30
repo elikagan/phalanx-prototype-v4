@@ -22,35 +22,36 @@ import * as state from '../state.js';
 import { MAP_CENTER, MAP_ZOOM } from '../scenarios/san-diego-pursuit.js';
 
 // ── Map Overlay Palette ────────────────────────────────────
-// Hierarchy: incident (red) > routes (blue) > labels (white) > zones (ghost)
+// Sourced from Mapbox Navigation (night), QGroundControl, MIL-STD-2525
+// Dark labels on satellite = industry standard for aviation/tactical maps
 const MC = {
-  // Route
-  routeBlue: '#1A73E8',       // Google Maps blue
-  routeOutline: '#0D47A1',    // darker blue outline (not black, not white)
-  altRoute: '#9AA0A6',        // gray for secondary routes
+  // Route — Mapbox Navigation night guidance
+  routeBlue: '#407CF5',
+  routeCasing: '#1B43B4',
+  altRoute: '#5f8fad',        // steel blue for secondary/return routes
 
-  // Incident (the ONE loud thing)
-  incidentRed: '#EA4335',
-  incidentAmber: '#F9AB00',
+  // Incident — MIL-STD hostile red (desaturated)
+  incidentRed: '#c95454',
+  incidentAmber: '#a89540',
 
-  // Status
-  green: '#34A853',
-  amber: '#F9AB00',
+  // Status — MIL-STD desaturated
+  green: '#4a9a65',
+  amber: '#a89540',
 
-  // Labels — white chips with dark text (Google Maps style)
-  labelBg: 'rgba(255, 255, 255, 0.95)',
-  labelText: '#202124',       // near-black
-  labelBorder: 'rgba(0, 0, 0, 0.12)',
-  labelShadow: '0 1px 3px rgba(0,0,0,0.3)',
+  // Labels — Mapbox Navigation night mode (dark bg, light text)
+  labelBg: 'rgba(24, 27, 32, 0.85)',
+  labelText: '#EDEFF2',
+  labelSecondary: '#A6B2C6',
+  labelBorder: 'rgba(255, 255, 255, 0.12)',
 
-  // Search zone (background-level, barely there)
-  zoneLine: 'rgba(255, 255, 255, 0.5)',
-  zoneFill: 'rgba(255, 255, 255, 0.06)',
+  // Search zone — steel blue, subtle
+  zoneLine: '#5f8fad',
+  zoneFill: '#5f8fad',
 
-  // Drone
-  droneBlue: '#1A73E8',
-  droneMission: '#F9AB00',
-  droneOffline: '#5F6368',
+  // Drone — MIL-STD friendly cyan (desaturated)
+  droneFriendly: '#5fb8c2',
+  droneMission: '#a89540',
+  droneOffline: '#585858',
 };
 
 let map = null;
@@ -70,11 +71,11 @@ let incidentMarkers = [];
 let fleetMarkers = [];
 let distanceLines = [];
 
-// Drone SVG — stealth flying wing, white fill for satellite visibility
+// Drone SVG — stealth flying wing, cyan fill (MIL-STD friendly)
 const DRONE_SVG = `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
   <path d="M16 6 L4 24 L8 22 L16 20 L24 22 L28 24 Z"
-    fill="#fff" stroke="${MC.routeOutline}" stroke-width="0.8" opacity="0.95"/>
-  <path d="M16 6 L16 20" stroke="rgba(0,0,0,0.2)" stroke-width="0.5"/>
+    fill="${MC.droneFriendly}" stroke="#fff" stroke-width="0.8" opacity="0.95"/>
+  <path d="M16 6 L16 20" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>
 </svg>`;
 
 // Fleet drone SVG — colored fill
@@ -109,18 +110,18 @@ export function init() {
     L.control.zoom({ position: 'bottomright' }).addTo(map);
   }
 
-  // Flight trail — dark outline underneath
+  // Flight trail — casing underneath (Mapbox style)
   flightTrailOutline = L.polyline([], {
-    color: MC.routeOutline,
-    weight: 5,
-    opacity: 0.4,
+    color: MC.routeCasing,
+    weight: 7,
+    opacity: 0.8,
     lineCap: 'round',
   }).addTo(map);
-  // Flight trail — blue line on top
+  // Flight trail — route on top
   flightTrail = L.polyline([], {
     color: MC.routeBlue,
-    weight: 3,
-    opacity: 0.9,
+    weight: 4,
+    opacity: 1.0,
     lineCap: 'round',
   }).addTo(map);
 
@@ -178,21 +179,19 @@ function onSearchZone(zone) {
     const origin = zone.origin || zone.center;
     const pts = generateOblong(origin, zone.center, zone.radius, zone.bias);
     searchCircle = L.polygon(pts, {
-      color: MC.zoneLine,
-      weight: 1.5,
-      dashArray: '6 4',
-      fillColor: '#fff',
-      fillOpacity: 0.06,
+      color: MC.routeBlue,
+      weight: 3,
+      fillColor: MC.routeBlue,
+      fillOpacity: 0.15,
       smoothFactor: 2,
     }).addTo(map);
   } else {
     searchCircle = L.circle(zone.center, {
       radius: zone.radius,
-      color: MC.zoneLine,
-      weight: 1.5,
-      dashArray: '6 4',
-      fillColor: '#fff',
-      fillOpacity: 0.06,
+      color: MC.routeBlue,
+      weight: 3,
+      fillColor: MC.routeBlue,
+      fillOpacity: 0.15,
     }).addTo(map);
   }
 
@@ -410,12 +409,17 @@ function onTargetStatus(status) {
   if (!el) return;
 
   if (status === 'confirmed' || status === 'tracking') {
-    el.querySelector('.target-marker')?.classList.add('confirmed');
+    // The divIcon element itself has the .target-marker class
+    const dot = el.querySelector('.target-marker') || el.firstElementChild;
+    if (dot) dot.classList.add('confirmed');
     if (targetLabel) {
       const labelEl = targetLabel.getElement();
       if (labelEl) {
-        labelEl.querySelector('.target-map-label').textContent = 'TARGET CONFIRMED';
-        labelEl.querySelector('.target-map-label').classList.add('confirmed');
+        const lbl = labelEl.querySelector('.target-map-label') || labelEl.firstElementChild;
+        if (lbl) {
+          lbl.textContent = 'TARGET CONFIRMED';
+          lbl.classList.add('confirmed');
+        }
       }
     }
     const pos = state.get('targetPosition');
@@ -423,10 +427,10 @@ function onTargetStatus(status) {
       orbitCircle = L.circle([pos.lat, pos.lng], {
         radius: 80,
         color: MC.green,
-        weight: 1.5,
+        weight: 2,
         dashArray: '6 4',
         fillColor: MC.green,
-        fillOpacity: 0.06,
+        fillOpacity: 0.08,
       }).addTo(map);
     }
   }
@@ -572,7 +576,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     if (!drone.coordinates) continue;
     const isAvailable = drone.status === 'available';
     const isMission = drone.status === 'in-mission';
-    const color = isAvailable ? MC.droneBlue
+    const color = isAvailable ? MC.droneFriendly
       : isMission ? MC.droneMission
       : MC.droneOffline;
 
@@ -583,8 +587,8 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         html: `<div class="fleet-drone-dot${isAssigned ? ' linked' : ''}" style="--drone-color:${color}">
           ${FLEET_DRONE_SVG(color)}
         </div>
-        <div class="fleet-drone-label">${drone.name}${drone.distanceFromIncident != null ? ' · ' + drone.distanceFromIncident + ' km' : ''}</div>`,
-        iconSize: [150, 52],
+        <div class="fleet-drone-label">${drone.name}</div>`,
+        iconSize: [120, 48],
         iconAnchor: [20, 20],
       }),
       zIndexOffset: isAvailable ? 850 : 700,
@@ -606,21 +610,21 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     tooltip.setContent(`<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`);
     marker.bindTooltip(tooltip);
 
-    // Route line — thin, calm, Google Maps style
+    // Route line — Mapbox Navigation style (casing + route)
     if (incidentCoords && isAvailable) {
-      // Dark blue outline (just slightly wider)
+      // Casing layer (wider, darker)
       const outline = L.polyline([drone.coordinates, incidentCoords], {
-        color: MC.routeOutline,
-        weight: 5,
-        opacity: 0.4,
+        color: MC.routeCasing,
+        weight: 7,
+        opacity: 0.8,
         lineCap: 'round',
       }).addTo(map);
       distanceLines.push(outline);
-      // Blue route line
+      // Route layer (brighter, narrower)
       const line = L.polyline([drone.coordinates, incidentCoords], {
         color: MC.routeBlue,
-        weight: 3,
-        opacity: 0.9,
+        weight: 4,
+        opacity: 1.0,
         lineCap: 'round',
       }).addTo(map);
       distanceLines.push(line);
@@ -693,11 +697,11 @@ export function clearOverlays() {
 
 let routeLineOverlays = [];
 
-export function addRouteLine(from, to, { color = MC.routeBlue, weight = 3, opacity = 0.9, label = '' } = {}) {
+export function addRouteLine(from, to, { color = MC.routeBlue, weight = 4, opacity = 1.0, label = '' } = {}) {
   if (!map) return;
 
-  const outline = L.polyline([from, to], { color: MC.routeOutline, weight: weight + 2, opacity: 0.4, lineCap: 'round' }).addTo(map);
-  routeLineOverlays.push(outline);
+  const casing = L.polyline([from, to], { color: MC.routeCasing, weight: weight + 3, opacity: 0.8, lineCap: 'round' }).addTo(map);
+  routeLineOverlays.push(casing);
   const line = L.polyline([from, to], { color, weight, opacity, lineCap: 'round' }).addTo(map);
   routeLineOverlays.push(line);
 
@@ -722,14 +726,32 @@ export function clearRouteLines() {
   routeLineOverlays = [];
 }
 
-export function showSearchZonePreview(center, radius, fillOpacity = 0.06) {
+export function showReturnRoute(dronePos, basePos) {
+  if (!map) return;
+  const from = [dronePos.lat, dronePos.lng];
+  const to = basePos;
+  // Calculate distance
+  const R = 6371;
+  const dLat = (to[0] - from[0]) * Math.PI / 180;
+  const dLng = (to[1] - from[1]) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(from[0]*Math.PI/180)*Math.cos(to[0]*Math.PI/180)*Math.sin(dLng/2)**2;
+  const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const etaSec = Math.round(dist / 60 * 3600);
+  const etaStr = etaSec >= 60 ? `${Math.floor(etaSec/60)}m ${etaSec%60}s` : `${etaSec}s`;
+
+  addRouteLine(from, to, {
+    color: MC.altRoute,
+    label: `RTB · ${dist.toFixed(1)} km · ${etaStr}`,
+  });
+}
+
+export function showSearchZonePreview(center, radius, fillOpacity = 0.15) {
   if (!map) return;
   const circle = L.circle(center, {
     radius,
-    color: MC.zoneLine,
-    weight: 1.5,
-    dashArray: '6 4',
-    fillColor: '#fff',
+    color: MC.routeBlue,
+    weight: 3,
+    fillColor: MC.routeBlue,
     fillOpacity,
   }).addTo(map);
   routeLineOverlays.push(circle);

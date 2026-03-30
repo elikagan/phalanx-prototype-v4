@@ -17,11 +17,19 @@ import { INCIDENTS, DRONES, SEARCH_ZONE, WAYPOINTS, PREFLIGHT_CHECKS, MISSION_SU
 // ── Password Gate ──────────────────────────────────────────
 const PASSWORD = 'phalanx';
 
+// Auto-restore session if already authenticated
+if (sessionStorage.getItem('phalanx-auth') === 'true') {
+  document.getElementById('password-gate')?.classList.add('hidden');
+  document.getElementById('app-shell')?.classList.remove('hidden');
+  requestAnimationFrame(() => boot());
+}
+
 document.getElementById('gate-form')?.addEventListener('submit', (e) => {
   e.preventDefault();
   const input = document.getElementById('gate-input');
   const error = document.getElementById('gate-error');
   if (input.value === PASSWORD) {
+    sessionStorage.setItem('phalanx-auth', 'true');
     document.getElementById('password-gate').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('hidden');
     boot();
@@ -43,6 +51,13 @@ function boot() {
   window.addEventListener('resize', () => {
     state.set({ isMobile: window.innerWidth < 768 });
     mapComponent.resize();
+  });
+
+  // Logo click → back to incidents map
+  document.getElementById('topbar-logo')?.addEventListener('click', () => {
+    if (state.get('authenticated')) {
+      state.goToScreen(3);
+    }
   });
 
   // Delegated click handler on screen-content
@@ -737,9 +752,9 @@ function setupAnalysisScreen() {
     state.goToScreen(6);
   }, { skipFitBounds: true });
 
-  // Show search zone preview circle around incident
+  // Show search zone preview circle centered on incident
   if (inc?.coordinates) {
-    mapComponent.showSearchZonePreview(SEARCH_ZONE.center, SEARCH_ZONE.radius, 0.12);
+    mapComponent.showSearchZonePreview(inc.coordinates, SEARCH_ZONE.radius, 0.12);
   }
 
   // Fit map to show incident + drones
@@ -777,8 +792,8 @@ function setupAnalysisScreen() {
     {
       choices: [
         { label: 'Launch', primary: true, action: () => {
-          // Auto-configure search zone and go straight to pre-flight
-          state.set({ searchZone: SEARCH_ZONE });
+          // Auto-configure search zone centered on incident
+          state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
           state.goToScreen(8);
         }},
         { label: 'Choose Different Drone', primary: false, action: () => state.goToScreen(5) },
@@ -845,20 +860,22 @@ function setupBriefingScreen() {
   const inc = state.get('selectedIncident');
   const drone = state.get('selectedDrone');
   if (inc) mapComponent.showIncidents([inc], () => {});
-  if (drone) mapComponent.showFleetDrones([drone], inc?.coordinates, () => {});
-  // Show search zone preview + route line from drone to search area
+  // Show drone marker only — no route line from showFleetDrones (we draw our own below)
+  if (drone) mapComponent.showFleetDrones([drone], null, () => {});
+  // Show search zone preview centered on incident + route line from drone
   if (inc?.coordinates) {
-    mapComponent.showSearchZonePreview(SEARCH_ZONE.center, SEARCH_ZONE.radius, 0.15);
+    mapComponent.showSearchZonePreview(inc.coordinates, SEARCH_ZONE.radius, 0.15);
   }
   if (drone?.coordinates && inc?.coordinates) {
-    const etaSec = Math.round((drone.distanceFromIncident || 2.3) / 60 * 3600);
-    const etaLabel = etaSec >= 60 ? `${Math.round(etaSec / 60)}m ${etaSec % 60}s` : `${etaSec}s`;
-    mapComponent.addRouteLine(drone.coordinates, SEARCH_ZONE.center, {
-      label: `${drone.distanceFromIncident || 2.3} km · ${etaLabel} ETA`,
+    const dist = drone.distanceFromIncident || 2.3;
+    const etaSec = Math.round(dist / 60 * 3600);
+    const etaLabel = etaSec >= 60 ? `${Math.floor(etaSec / 60)}m ${etaSec % 60}s` : `${etaSec}s`;
+    mapComponent.addRouteLine(drone.coordinates, inc.coordinates, {
+      label: `${dist} km · ${etaLabel}`,
     });
   }
   if (inc?.coordinates && drone?.coordinates) {
-    mapComponent.fitAllMarkers([80, 80], 15);
+    mapComponent.fitAllMarkers([60, 60], 13);
   } else if (inc?.coordinates) {
     mapComponent.focusIncident(inc.coordinates, 15);
   }
@@ -894,8 +911,8 @@ function setupSearchAreaScreen() {
 
   if (path === '911') {
     const inc = state.get('selectedIncident');
-    // Use circle (no bias) for editability — drag handles need a circle
-    const editableZone = { center: SEARCH_ZONE.center, radius: SEARCH_ZONE.radius };
+    // Use circle centered on incident for editability — drag handles need a circle
+    const editableZone = { center: inc?.coordinates || SEARCH_ZONE.center, radius: SEARCH_ZONE.radius };
     state.set({
       searchZone: editableZone,
       dronePosition: { lat: 32.7210, lng: -117.1498 },
@@ -994,7 +1011,13 @@ function setupOrbitScreen() {
 }
 
 async function setupReturningScreen() {
-  // Screen 12: returning home
+  // Screen 12: returning home — show RTB route line
+  const dronePos = state.get('dronePosition');
+  if (dronePos) {
+    const basePos = [32.7210, -117.1498]; // Launch point
+    mapComponent.showReturnRoute(dronePos, basePos);
+  }
+
   await wait(2000);
   chat.appendSara("Touchdown confirmed. Motors disarmed.", {
     choices: [
@@ -1032,7 +1055,12 @@ async function setupLiveSceneScreen() {
 
   // Show incident + drone on the underlying map (visible via toggle)
   if (inc) mapComponent.showIncidents([inc], () => {});
-  if (drone) mapComponent.showFleetDrones([drone], inc?.coordinates, () => {});
+  if (drone) mapComponent.showFleetDrones([drone], null, () => {});
+  // Show orbit circle around target on map
+  if (inc?.coordinates) {
+    state.set({ targetPosition: { lat: inc.coordinates[0], lng: inc.coordinates[1] } });
+    state.set({ targetStatus: 'confirmed' });
+  }
 
   const incNumber = inc?.id?.replace(/\D/g, '') || '—';
 

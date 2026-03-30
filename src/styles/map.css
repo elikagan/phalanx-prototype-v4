@@ -3,17 +3,16 @@
 
 /*
  * MAP OVERLAY DESIGN SYSTEM
- * Modeled after Google Maps satellite view.
+ * Sources: Mapbox Navigation (night), QGroundControl, MIL-STD-2525
  *
- * HIERARCHY (most important → least):
- *   1. Incident pin   — bright red/amber, white border (the emergency)
- *   2. Route lines    — #1A73E8 blue, 3px, dark outline (visible but calm)
- *   3. Labels         — white chip, dark text, subtle shadow (info on demand)
- *   4. Search zones   — white dashed outline, barely-there fill (context)
- *   5. Drone markers  — dark circle, small icon (supporting cast)
+ * HIERARCHY:
+ *   1. Incident pin  — desaturated MIL-STD red, white border
+ *   2. Route lines   — Mapbox blue #407CF5, 4px with #1B43B4 casing at 7px
+ *   3. Labels        — dark bg rgba(24,27,32,0.85), light text #EDEFF2
+ *   4. Search zones  — steel blue #5f8fad, 2px dashed, 0.12 fill
+ *   5. Drone markers — MIL-STD cyan #5fb8c2
  *
- * Labels use Google Maps style: white bg, #202124 text, soft shadow.
- * Nothing should scream except the incident pin.
+ * Dark labels on satellite = aviation/tactical industry standard.
  */
 
 /* === Map Overlays === */
@@ -31,22 +30,22 @@
 .drone-marker svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 4px rgba(95, 184, 194, 0.4));
 }
 
-/* ── Search zone label — quiet, contextual ── */
+/* ── Search zone label — QUIET tier (ghost text, no bg) ── */
 .search-zone-label {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 9px;
+  font-weight: 400;
   letter-spacing: 1.5px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(166, 178, 198, 0.6);
   background: none;
   padding: 0;
   white-space: nowrap;
   pointer-events: none;
   text-align: center;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 /* ── Waypoint marker ── */
@@ -90,15 +89,14 @@
 
 .waypoint-label {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  color: #202124;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 2px 8px;
-  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 400;
+  color: rgba(166, 178, 198, 0.6);
+  background: none;
+  padding: 0;
   margin-top: 4px;
   white-space: nowrap;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 
 /* ── Target marker — loud, like incident ── */
@@ -144,24 +142,23 @@
   color: var(--green);
 }
 
-/* Target label on map — white chip like everything else */
+/* Target label on map — MEDIUM tier with status color */
 .target-map-label {
   font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.5px;
-  color: #EA4335;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 3px 8px;
-  border-radius: 10px;
+  color: #c95454;
+  background: rgba(24, 27, 32, 0.55);
+  padding: 2px 6px;
+  border-radius: 3px;
   white-space: nowrap;
   pointer-events: none;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .target-map-label.confirmed {
-  color: #34A853;
+  color: #4a9a65;
 }
 
 /* ── View toggle thumbnail (v3-style) ── */
@@ -543,19 +540,18 @@
   50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--dot-color, #EA4335) 0%, transparent), 0 1px 4px rgba(0, 0, 0, 0.4); }
 }
 
-/* Incident label — white chip, dark text */
+/* Incident label — LOUD tier (the one label that gets a bg) */
 .incident-map-label {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0.3px;
-  color: #202124;
-  background: rgba(255, 255, 255, 0.92);
+  color: #EDEFF2;
+  background: rgba(24, 27, 32, 0.80);
   padding: 3px 8px;
-  border-radius: 10px;
+  border-radius: 4px;
   white-space: nowrap;
   margin-top: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 /* ── Fleet Drone Markers — quiet, supporting ── */
@@ -565,56 +561,52 @@
 }
 
 .fleet-drone-dot {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  border: 2px solid var(--drone-color, #1A73E8);
+  background: rgba(24, 27, 32, 0.8);
+  border: 2px solid var(--drone-color, #5fb8c2);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 .incident-dot.linked,
 .fleet-drone-dot.linked {
-  outline: 2px solid #1A73E8;
+  outline: 2px solid #407CF5;
   outline-offset: 2px;
 }
 
-/* Fleet drone label — white chip */
+/* Fleet drone label — QUIET tier (no bg, just text + shadow) */
 .fleet-drone-label {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 9px;
+  font-weight: 400;
   letter-spacing: 0.3px;
-  color: #202124;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 2px 8px;
-  border-radius: 10px;
+  color: rgba(237, 239, 242, 0.7);
+  background: none;
+  padding: 0;
   white-space: nowrap;
-  margin-top: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  margin-top: 3px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 6px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Route Labels — white chip, dark text (Google Maps style) ── */
 /*
- * This is the "7 min / 2.3 miles" chip from Google Maps.
- * White bg, dark text, small, rounded pill, soft shadow.
- * NOT a colored billboard. Quiet and informational.
+ * Route label — MEDIUM tier (semi-transparent, not boxed)
+ * Key info (distance, ETA) but shouldn't dominate.
  */
 .route-label {
-  font-family: var(--font-ui);
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: 10px;
   font-weight: 500;
-  color: #202124;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 4px 10px;
-  border-radius: 12px;
+  color: rgba(237, 239, 242, 0.9);
+  background: rgba(24, 27, 32, 0.55);
+  padding: 2px 6px;
+  border-radius: 3px;
   white-space: nowrap;
   pointer-events: none;
   text-align: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* ── Edit Handles (draggable search zone) ── */
@@ -622,7 +614,7 @@
   width: 12px;
   height: 12px;
   background: #fff;
-  border: 2px solid #1A73E8;
+  border: 2px solid #407CF5;
   border-radius: 50%;
   cursor: grab;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
@@ -641,7 +633,7 @@
   width: 20px;
   height: 20px;
   background: #fff;
-  border: 2px solid #1A73E8;
+  border: 2px solid #407CF5;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -650,26 +642,26 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
-/* ── Map Tooltips ── */
+/* ── Map Tooltips — dark (Mapbox night) ── */
 .map-tooltip {
-  background: rgba(255, 255, 255, 0.95);
-  border: none;
-  border-radius: 8px;
-  color: #202124;
+  background: rgba(24, 27, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: #EDEFF2;
   font-family: var(--font-ui);
   font-size: 12px;
   line-height: 1.5;
   padding: 8px 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .map-tooltip strong {
-  color: #202124;
+  color: #EDEFF2;
   font-weight: 600;
 }
 
 .leaflet-tooltip.map-tooltip::before {
-  border-top-color: rgba(255, 255, 255, 0.95);
+  border-top-color: rgba(24, 27, 32, 0.92);
 }
 
 /* Mobile overrides */
