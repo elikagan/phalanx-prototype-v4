@@ -638,10 +638,19 @@
   width: fit-content;
 }
 
-/* ── Target Located Label — uses .route-label base + yellow accent ── */
+/* ── Target Located Label ── */
 .target-located-label {
+  font-family: 'Geist', var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
   color: #D4A017;
-  letter-spacing: 0.5px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  width: fit-content;
+  transform: translateX(-50%);
 }
 
 /* ── Edit Handles (draggable search zone) ── */
