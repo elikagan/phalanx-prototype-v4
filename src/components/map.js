@@ -179,19 +179,19 @@ function onSearchZone(zone) {
     const origin = zone.origin || zone.center;
     const pts = generateOblong(origin, zone.center, zone.radius, zone.bias);
     searchCircle = L.polygon(pts, {
-      color: MC.routeBlue,
-      weight: 3,
-      fillColor: MC.routeBlue,
-      fillOpacity: 0.15,
+      color: 'transparent',
+      weight: 0,
+      fillColor: '#a89540',
+      fillOpacity: 0.25,
       smoothFactor: 2,
     }).addTo(map);
   } else {
     searchCircle = L.circle(zone.center, {
       radius: zone.radius,
-      color: MC.routeBlue,
-      weight: 3,
-      fillColor: MC.routeBlue,
-      fillOpacity: 0.15,
+      color: 'transparent',
+      weight: 0,
+      fillColor: '#a89540',
+      fillOpacity: 0.25,
     }).addTo(map);
   }
 
@@ -745,13 +745,13 @@ export function showReturnRoute(dronePos, basePos) {
   });
 }
 
-export function showSearchZonePreview(center, radius, fillOpacity = 0.15) {
+export function showSearchZonePreview(center, radius, fillOpacity = 0.25) {
   if (!map) return;
   const circle = L.circle(center, {
     radius,
-    color: MC.routeBlue,
-    weight: 3,
-    fillColor: MC.routeBlue,
+    color: 'transparent',
+    weight: 0,
+    fillColor: '#a89540',
     fillOpacity,
   }).addTo(map);
   routeLineOverlays.push(circle);
