@@ -89,6 +89,24 @@
   - Panel (drawer, modal): 400ms
 - **Rules:** No decorative animation. No bouncing. No particle effects. Transitions serve the operator's spatial model.
 
+## Map Route Lines — 4 Emphasis Levels
+
+All route lines use a dark casing underneath for legibility on satellite imagery. Dots are achieved with very short dashes + `lineCap: 'round'`.
+
+| Level | Name | Use Case | Weight | Dash | Opacity | Color | Casing |
+|-------|------|----------|--------|------|---------|-------|--------|
+| 1 | Ghost | Alternative routes, not selected | 2 | `'2, 12'` | 0.45 | `#fff` | 5px, 0.2 |
+| 2 | Default | Proposed route, standard | 3 | `'2, 10'` | 0.7 | `#fff` | 7px, 0.3 |
+| 3 | Emphasis | Recommended / selected route | 4 | `'2, 10'` | 0.95 | `#fff` | 8px, 0.4 |
+| 4 | Solid | Active mission, confirmed path | 4 | none | 0.9 | `#407CF5` | 8px, 0.4 |
+
+**Rules:**
+- `lineCap: 'round'` on ALL lines (dots, not ticks)
+- Casing is always solid black, never dashed
+- Dash `'2, 10'` = 2px dot + 10px gap = evenly spaced round dots
+- Ghost level uses wider gap (`'2, 12'`) so dots feel sparser
+- Only Level 4 (active/confirmed) uses color. All others are white.
+
 ## Component Rules
 - No gratuitous borders, glows, gradients, or shadows
 - Every visual element earns its place — if removing it doesn't hurt comprehension, remove it

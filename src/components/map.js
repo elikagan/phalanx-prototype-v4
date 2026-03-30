@@ -428,7 +428,7 @@ function onTargetStatus(status) {
         radius: 120,
         color: MC.green,
         weight: 2,
-        dashArray: '8 6',
+        dashArray: '2, 10',
         fillColor: MC.green,
         fillOpacity: 0.10,
       }).addTo(map);
@@ -665,7 +665,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         color: '#fff',
         weight: 3,
         opacity: 0.7,
-        dashArray: '12, 8',
+        dashArray: '2, 10',
         fillColor: '#407CF5',
         fillOpacity: 0.15,
         interactive: true,
@@ -706,7 +706,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       distanceLines.push(casing);
       const line = L.polyline([drone.coordinates, incidentCoords], {
         color: '#fff', weight: isRec ? 4 : 2.5, opacity: isRec ? 0.95 : 0.6,
-        dashArray: isRec ? '12, 8' : '8, 8', lineCap: 'round',
+        dashArray: isRec ? '2, 10' : '2, 12', lineCap: 'round',
       }).addTo(map);
       distanceLines.push(line);
 
@@ -828,7 +828,7 @@ export function clearOverlays() {
 
 let routeLineOverlays = [];
 
-export function addRouteLine(from, to, { color = '#fff', weight = 3, opacity = 0.9, dashArray = '10, 8', label = '' } = {}) {
+export function addRouteLine(from, to, { color = '#fff', weight = 3, opacity = 0.7, dashArray = '2, 10', label = '' } = {}) {
   if (!map) return;
 
   // Solid casing (always solid, never dashed)
@@ -889,7 +889,7 @@ export function showLiveOrbitScene(center, drone, radius = 300) {
     color: '#fff',
     weight: 3.5,
     opacity: 0.8,
-    dashArray: '14, 10',
+    dashArray: '2, 10',
     fillColor: '#407CF5',
     fillOpacity: 0.18,
   }).addTo(map);

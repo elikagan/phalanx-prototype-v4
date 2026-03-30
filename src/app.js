@@ -1021,21 +1021,31 @@ function setupSearchAreaScreen() {
 }
 
 async function setupPreflightScreen() {
-  chat.appendSara("Running pre-flight checks...");
+  chat.clear();
+  const gen = chat.getGeneration();
 
-  await wait(400);
-  for (const check of PREFLIGHT_CHECKS) {
-    chat.appendSara(`${check.label}: ${check.value} ✓`);
-    await wait(200);
-  }
+  // Build preflight checklist as one compact card
+  const checksHtml = `
+    <div class="card">
+      <div class="section-label">Pre-Flight Check</div>
+      <div class="data-grid">
+        ${PREFLIGHT_CHECKS.map(c => `<span class="data-label">${c.label}</span><span class="data-value">${c.value} ✓</span>`).join('')}
+      </div>
+    </div>`;
 
-  await wait(300);
+  chat.appendSaraWithContent("Running pre-flight checks...", checksHtml);
+
+  await wait(1200);
+  if (chat.getGeneration() !== gen) return;
+
   chat.appendSara("All systems go. Launching...");
   await wait(800);
+  if (chat.getGeneration() !== gen) return;
   state.goToScreen(9);
 }
 
 function setupMissionScreen() {
+  chat.clear();
   state.set({
     dronePosition: { lat: 32.7210, lng: -117.1498 },
     droneHeading: 180,
@@ -1043,8 +1053,7 @@ function setupMissionScreen() {
     droneSpeed: 35,
   });
 
-  chat.appendSara("Mission active. Drone is airborne and heading to search area. I'll monitor dispatch frequencies for updates.");
-  chat.appendSara("Use the mic button or type to communicate. I'll pre-type suggested commands.");
+  chat.appendSara("Mission active. Drone is airborne and heading to search area. Use the mic or type to communicate.");
 
   // Pre-type first exchange into textarea after a delay
   setTimeout(() => orchestrator.preTypeNext(), 2000);
