@@ -176,34 +176,26 @@ function onSearchZone(zone) {
     const origin = zone.origin || zone.center;
     const pts = generateOblong(origin, zone.center, zone.radius, zone.bias);
     searchCircle = L.polygon(pts, {
-      color: 'transparent',
-      weight: 0,
+      color: '#D4A017',
+      weight: 2,
+      dashArray: '6 4',
       fillColor: '#D4A017',
-      fillOpacity: 0.25,
+      fillOpacity: 0.18,
       smoothFactor: 2,
+      className: 'search-zone-shape',
     }).addTo(map);
   } else {
     searchCircle = L.circle(zone.center, {
       radius: zone.radius,
-      color: 'transparent',
-      weight: 0,
+      color: '#D4A017',
+      weight: 2,
+      dashArray: '6 4',
       fillColor: '#D4A017',
-      fillOpacity: 0.25,
+      fillOpacity: 0.18,
+      className: 'search-zone-shape',
     }).addTo(map);
   }
 
-  const labelText = zone.bias
-    ? `SEARCH ZONE — ${zone.bias.toUpperCase()}BOUND`
-    : 'SEARCH ZONE';
-  searchLabel = L.marker(zone.center, {
-    icon: L.divIcon({
-      className: 'search-zone-label',
-      html: labelText,
-      iconSize: [180, 20],
-      iconAnchor: [90, 10],
-    }),
-    interactive: false,
-  }).addTo(map);
 }
 
 function generateOblong(origin, center, radius, bias) {
@@ -942,24 +934,16 @@ export function showLiveOrbitScene(center, drone, radius = 300) {
   routeLineOverlays.push(label);
 }
 
-export function showSearchZonePreview(center, radius, fillOpacity = 0.25) {
+export function showSearchZonePreview(center, radius, fillOpacity = 0.18) {
   if (!map) return;
   const circle = L.circle(center, {
     radius,
-    color: 'transparent',
-    weight: 0,
+    color: '#D4A017',
+    weight: 2,
+    dashArray: '6 4',
     fillColor: '#D4A017',
     fillOpacity,
+    className: 'search-zone-shape',
   }).addTo(map);
   routeLineOverlays.push(circle);
-  const label = L.marker(center, {
-    icon: L.divIcon({
-      className: 'map-label map-label-dim',
-      html: 'SEARCH AREA',
-      iconSize: [0, 0],
-      iconAnchor: [0, 0],
-    }),
-    interactive: false,
-  }).addTo(map);
-  routeLineOverlays.push(label);
 }

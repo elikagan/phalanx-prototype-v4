@@ -22,19 +22,9 @@
 /* ── Drone marker — uses fleet-drone-dot everywhere (see DESIGN.md) ── */
 /* Old .drone-marker class removed — all drones use .fleet-drone-dot now */
 
-/* ── Search zone label — QUIET tier (ghost text, no bg) ── */
-.search-zone-label {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 400;
-  letter-spacing: 1.5px;
-  color: rgba(166, 178, 198, 0.6);
-  background: none;
-  padding: 0;
-  white-space: nowrap;
-  pointer-events: none;
-  text-align: center;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+/* ── Search zone shape — amber dashed stroke with drop shadow ── */
+.search-zone-shape {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
 
 /* ── Waypoint marker ── */

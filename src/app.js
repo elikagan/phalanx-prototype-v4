@@ -802,9 +802,15 @@ function setupAnalysisScreen() {
     state.goToScreen(7);
   }, { skipFitBounds: true, recommendedDroneId: closestDrone?.id });
 
-  // Show search zone preview circle centered on incident
+  // Set state-driven search zone + editable handles
   if (inc?.coordinates) {
-    mapComponent.showSearchZonePreview(inc.coordinates, SEARCH_ZONE.radius, 0.12);
+    state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
+    setTimeout(() => {
+      mapComponent.makeSearchZoneEditable((zone) => {
+        state.set({ searchZone: zone });
+        chat.appendSystem(`Search area modified — ${Math.round(zone.radius)}m radius`);
+      });
+    }, 300);
   }
 
   // Fit map to show incident + drones
