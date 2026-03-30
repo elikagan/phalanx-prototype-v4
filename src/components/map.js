@@ -603,12 +603,28 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     // Color: blue if assigned/recommended, black otherwise
     const dotColor = (isAssigned || isRecommended) ? '#407CF5' : '#1c1c1f';
 
+    // Calculate heading toward incident (if we have one)
+    let headingDeg = 0;
+    const targetCoords = isAssigned && incidentLookup.has(drone.assignedIncident)
+      ? incidentLookup.get(drone.assignedIncident).coordinates
+      : incidentCoords;
+    if (targetCoords) {
+      const dLng = (targetCoords[1] - drone.coordinates[1]) * Math.PI / 180;
+      const lat1 = drone.coordinates[0] * Math.PI / 180;
+      const lat2 = targetCoords[0] * Math.PI / 180;
+      const y = Math.sin(dLng) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+      headingDeg = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+    }
+
     const shortName = drone.name.replace(/^Delta\s+/i, '');
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
         html: `<div class="fleet-drone-dot" style="--dot-color:${dotColor}">
-          ${FLEET_DRONE_SVG()}
+          <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${Math.round(headingDeg)}deg)">
+            <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
+          </svg>
         </div>
         <div class="fleet-drone-label">${shortName}</div>`,
         iconSize: [120, 48],
@@ -682,26 +698,17 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
 
     // Route line from drone to incident
     if (incidentCoords && isReroutable) {
-      // Recommended drone: bold blue solid line. Alternatives: thin dim dashed.
-      if (isRecommended) {
-        const casing = L.polyline([drone.coordinates, incidentCoords], {
-          color: '#000', weight: 8, opacity: 0.4, lineCap: 'round',
-        }).addTo(map);
-        distanceLines.push(casing);
-        const line = L.polyline([drone.coordinates, incidentCoords], {
-          color: '#407CF5', weight: 4, opacity: 0.9, lineCap: 'round',
-        }).addTo(map);
-        distanceLines.push(line);
-      } else {
-        const casing = L.polyline([drone.coordinates, incidentCoords], {
-          color: '#000', weight: 5, opacity: 0.2, lineCap: 'round',
-        }).addTo(map);
-        distanceLines.push(casing);
-        const line = L.polyline([drone.coordinates, incidentCoords], {
-          color: '#fff', weight: 2, opacity: 0.4, dashArray: '6, 8', lineCap: 'round',
-        }).addTo(map);
-        distanceLines.push(line);
-      }
+      // Recommended: bold white dashed. Alternatives: thinner white dashed.
+      const isRec = isRecommended;
+      const casing = L.polyline([drone.coordinates, incidentCoords], {
+        color: '#000', weight: isRec ? 8 : 6, opacity: isRec ? 0.4 : 0.3, lineCap: 'round',
+      }).addTo(map);
+      distanceLines.push(casing);
+      const line = L.polyline([drone.coordinates, incidentCoords], {
+        color: '#fff', weight: isRec ? 4 : 2.5, opacity: isRec ? 0.95 : 0.6,
+        dashArray: isRec ? '12, 8' : '8, 8', lineCap: 'round',
+      }).addTo(map);
+      distanceLines.push(line);
 
       // Calculate distance dynamically
       const R = 6371;

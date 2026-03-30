@@ -9,6 +9,10 @@ import * as state from '../state.js';
 
 const chatEl = () => document.getElementById('chat-history');
 
+// Generation counter — incremented on clear(). Async operations bail if generation changed.
+let chatGeneration = 0;
+export function getGeneration() { return chatGeneration; }
+
 /** Append a SARA message */
 export function appendSara(text, options = {}) {
   const el = chatEl();
@@ -214,6 +218,7 @@ export function appendSaraWithContent(text, html, options = {}) {
 
 /** Clear all chat messages */
 export function clear() {
+  chatGeneration++;
   const el = chatEl();
   if (el) el.innerHTML = '';
 }

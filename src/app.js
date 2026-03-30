@@ -726,9 +726,13 @@ async function setupIncidentMapScreen() {
   const standby = DRONES.filter(d => d.status === 'standby').length;
 
   // Welcome message — typed out for a live feel
+  const gen = chat.getGeneration();
   await chat.appendSaraWordByWord(
     `Welcome back. ${surveillance} drones on surveillance, ${inMission} responding to incidents. ${standby} on standby ready for launch.`
   );
+
+  // Bail if user navigated away during the word-by-word typing
+  if (chat.getGeneration() !== gen) return;
 
   // Compact incident cards — numbered, structured rows, expandable on hover
   const cardsHtml = INCIDENTS.map((inc, idx) => {
@@ -754,6 +758,7 @@ async function setupIncidentMapScreen() {
       </div>`;
   }).join('');
 
+  if (chat.getGeneration() !== gen) return;
   chat.appendSaraWithContent(
     `I'm tracking ${INCIDENTS.length} active incidents in San Diego County.`,
     `<div class="stack-4">${cardsHtml}</div>`
