@@ -9,11 +9,13 @@
   overflow: hidden;
 }
 
-/* Desktop: fixed frame centered */
+/* Desktop: fixed frame centered, never exceeds viewport */
 @media (min-width: 768px) {
   .shell {
     width: 1024px;
     height: 768px;
+    max-height: 100vh;
+    max-width: 100vw;
     border-radius: var(--r-lg);
     border: 1px solid var(--border-subtle);
   }
