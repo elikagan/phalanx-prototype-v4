@@ -652,23 +652,29 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         fillColor: '#407CF5',
         fillOpacity: 0.15,
         interactive: true,
+        bubblingMouseEvents: false,
       }).addTo(map);
       if (onIncidentSelect) {
         orbitZone.on('click', () => onIncidentSelect(assignedInc));
-        orbitZone.getElement && orbitZone.on('add', () => {
-          const el = orbitZone.getElement();
-          if (el) el.style.cursor = 'pointer';
-        });
       }
+      // Set pointer cursor on the SVG path
+      const pathEl = orbitZone._path || orbitZone.getElement?.();
+      if (pathEl) pathEl.style.cursor = 'pointer';
+      // Also set it after it's added to the map (in case _path isn't ready yet)
+      orbitZone.on('add', () => {
+        const p = orbitZone._path;
+        if (p) p.style.cursor = 'pointer';
+      });
       distanceLines.push(orbitZone);
 
       // Solid route line (not dashed — this is an active assignment, not proposed)
+      // Non-interactive so clicks pass through to the orbit zone
       const casing = L.polyline([drone.coordinates, targetCoords], {
-        color: '#000', weight: 7, opacity: 0.3, lineCap: 'round',
+        color: '#000', weight: 7, opacity: 0.3, lineCap: 'round', interactive: false,
       }).addTo(map);
       distanceLines.push(casing);
       const line = L.polyline([drone.coordinates, targetCoords], {
-        color: '#407CF5', weight: 3, opacity: 0.8, lineCap: 'round',
+        color: '#407CF5', weight: 3, opacity: 0.8, lineCap: 'round', interactive: false,
       }).addTo(map);
       distanceLines.push(line);
     }
