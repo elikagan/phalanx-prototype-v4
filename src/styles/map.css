@@ -646,7 +646,7 @@
 
 /* Dimmed variant for non-recommended alternatives */
 .map-label-dim {
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 /* Status-colored variant (amber for target located) */

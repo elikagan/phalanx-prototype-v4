@@ -703,13 +703,13 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       const isRec = isRecommended;
       const w = isRec ? 4 : 3;
       const shadow = L.polyline([drone.coordinates, incidentCoords], {
-        color: '#000', weight: w + 1, opacity: isRec ? 0.4 : 0.25,
+        color: '#000', weight: w + 1, opacity: isRec ? 0.4 : 0.3,
         dashArray: '2, 10', lineCap: 'round',
         className: 'route-shadow',
       }).addTo(map);
       distanceLines.push(shadow);
       const line = L.polyline([drone.coordinates, incidentCoords], {
-        color: '#fff', weight: w, opacity: isRec ? 0.95 : 0.6,
+        color: '#fff', weight: w, opacity: isRec ? 0.95 : 0.75,
         dashArray: '2, 10', lineCap: 'round',
       }).addTo(map);
       distanceLines.push(line);
@@ -725,10 +725,9 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       const etaRemSec = etaSec % 60;
       const etaStr = etaMin > 0 ? `${etaMin}m ${etaRemSec}s` : `${etaRemSec}s`;
 
-      const t = 0.3 + labelIndex * 0.15;
       const mid = [
-        drone.coordinates[0] + (incidentCoords[0] - drone.coordinates[0]) * t,
-        drone.coordinates[1] + (incidentCoords[1] - drone.coordinates[1]) * t,
+        (drone.coordinates[0] + incidentCoords[0]) / 2,
+        (drone.coordinates[1] + incidentCoords[1]) / 2,
       ];
       // Recommended label is brighter, alternatives are dimmer
       const labelClass = isRecommended ? 'map-label map-label-primary' : 'map-label map-label-dim';
