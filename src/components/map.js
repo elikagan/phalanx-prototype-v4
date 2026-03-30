@@ -78,10 +78,10 @@ const DRONE_SVG = `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
   <path d="M16 6 L16 20" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>
 </svg>`;
 
-// Fleet drone SVG — colored fill
-const FLEET_DRONE_SVG = (color) => `<svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+// Fleet drone SVG — white icon on blue circle
+const FLEET_DRONE_SVG = () => `<svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
   <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z"
-    fill="${color}" stroke="rgba(255,255,255,0.5)" stroke-width="0.8"/>
+    fill="#fff" stroke="none"/>
 </svg>`;
 
 const droneIcon = L.divIcon({
@@ -508,17 +508,15 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
   for (let i = 0; i < incidents.length; i++) {
     const inc = incidents[i];
     if (!inc.coordinates) continue;
-    const { color } = INCIDENT_ICONS[inc.priority] || INCIDENT_ICONS[3];
     const incNumber = inc.id.replace(/\D/g, '');
-    const hasLinkedDrone = assignedIncidentIds.has(inc.id);
     const marker = L.marker(inc.coordinates, {
       icon: L.divIcon({
         className: 'incident-map-marker',
-        html: `<div class="incident-dot${hasLinkedDrone ? ' linked' : ''}" style="--dot-color:${color}">
+        html: `<div class="incident-dot">
           <span class="material-symbols-outlined" style="font-size:18px;color:#fff">${inc.icon || 'location_on'}</span>
         </div>
         <div class="incident-map-label">${inc.type} #${incNumber}</div>`,
-        iconSize: [160, 56],
+        iconSize: [200, 56],
         iconAnchor: [20, 20],
       }),
       zIndexOffset: 800,
@@ -580,12 +578,11 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       : isMission ? MC.droneMission
       : MC.droneOffline;
 
-    const isAssigned = isMission && drone.assignedIncident;
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
-        html: `<div class="fleet-drone-dot${isAssigned ? ' linked' : ''}" style="--drone-color:${color}">
-          ${FLEET_DRONE_SVG(color)}
+        html: `<div class="fleet-drone-dot">
+          ${FLEET_DRONE_SVG()}
         </div>
         <div class="fleet-drone-label">${drone.name}</div>`,
         iconSize: [120, 48],
