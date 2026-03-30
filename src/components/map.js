@@ -178,7 +178,6 @@ function onSearchZone(zone) {
     searchCircle = L.polygon(pts, {
       color: '#D4A017',
       weight: 2,
-      dashArray: '6 4',
       fillColor: '#D4A017',
       fillOpacity: 0.18,
       smoothFactor: 2,
@@ -189,7 +188,6 @@ function onSearchZone(zone) {
       radius: zone.radius,
       color: '#D4A017',
       weight: 2,
-      dashArray: '6 4',
       fillColor: '#D4A017',
       fillOpacity: 0.18,
       className: 'search-zone-shape',
@@ -260,7 +258,7 @@ export function makeSearchZoneEditable(onChange) {
   const radiusLabel = L.marker(center, {
     icon: L.divIcon({
       className: 'map-label',
-      html: `${Math.round(radius)}m radius`,
+      html: `<span>${Math.round(radius)}m radius</span>`,
       iconSize: [0, 0],
       iconAnchor: [0, 0],
     }),
@@ -300,11 +298,13 @@ export function makeSearchZoneEditable(onChange) {
       }
       radiusLabel.setIcon(L.divIcon({
         className: 'map-label',
-        html: `${Math.round(clamped)}m radius`,
+        html: `<span>${Math.round(clamped)}m radius</span>`,
         iconSize: [0, 0],
         iconAnchor: [0, 0],
       }));
-      if (onChange) onChange({ center: [center.lat, center.lng], radius: clamped });
+    });
+    handle.on('dragend', () => {
+      if (onChange) onChange({ center: [center.lat, center.lng], radius: searchCircle.getRadius() });
     });
 
     editHandles.push(handle);
@@ -331,7 +331,10 @@ export function makeSearchZoneEditable(onChange) {
       const hp = offsetLatLng(newCenter, r, dirs[i].bearing);
       editHandles[i + 1].setLatLng(hp);
     }
-    if (onChange) onChange({ center: [newCenter.lat, newCenter.lng], radius: r });
+  });
+  centerHandle.on('dragend', (e) => {
+    const c = e.target.getLatLng();
+    if (onChange) onChange({ center: [c.lat, c.lng], radius: searchCircle.getRadius() });
   });
 
   editHandles.push(centerHandle);
@@ -726,7 +729,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       const labelMarker = L.marker(mid, {
         icon: L.divIcon({
           className: labelClass,
-          html: `${distKm.toFixed(1)} km · ${etaStr}`,
+          html: `<span>${distKm.toFixed(1)} km · ${etaStr}</span>`,
           iconSize: [0, 0],
           iconAnchor: [0, 0],
         }),
@@ -843,7 +846,7 @@ export function addRouteLine(from, to, { color = '#fff', weight = 3, opacity = 0
     const labelMarker = L.marker(mid, {
       icon: L.divIcon({
         className: 'map-label map-label-primary',
-        html: label,
+        html: `<span>${label}</span>`,
         iconSize: [0, 0],
         iconAnchor: [0, 0],
       }),
@@ -924,7 +927,7 @@ export function showLiveOrbitScene(center, drone, radius = 300) {
   const label = L.marker([labelPos.lat, labelPos.lng], {
     icon: L.divIcon({
       className: 'map-label map-label-amber',
-      html: 'TARGET LOCATED',
+      html: '<span>TARGET LOCATED</span>',
       iconSize: [0, 0],
       iconAnchor: [0, 0],
     }),
@@ -940,7 +943,6 @@ export function showSearchZonePreview(center, radius, fillOpacity = 0.18) {
     radius,
     color: '#D4A017',
     weight: 2,
-    dashArray: '6 4',
     fillColor: '#D4A017',
     fillOpacity,
     className: 'search-zone-shape',

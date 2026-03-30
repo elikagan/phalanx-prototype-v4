@@ -805,10 +805,14 @@ function setupAnalysisScreen() {
   // Set state-driven search zone + editable handles
   if (inc?.coordinates) {
     state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
+    let searchAreaNoted = false;
     setTimeout(() => {
       mapComponent.makeSearchZoneEditable((zone) => {
         state.set({ searchZone: zone });
-        chat.appendSystem(`Search area modified — ${Math.round(zone.radius)}m radius`);
+        if (!searchAreaNoted) {
+          searchAreaNoted = true;
+          chat.appendSystem(`Search area modified — ${Math.round(zone.radius)}m radius`);
+        }
       });
     }, 300);
   }
