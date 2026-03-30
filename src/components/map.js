@@ -32,11 +32,11 @@ const MC = {
 
   // Incident — MIL-STD hostile red (desaturated)
   incidentRed: '#c95454',
-  incidentAmber: '#a89540',
+  incidentAmber: '#D4A017',
 
   // Status — MIL-STD desaturated
   green: '#4a9a65',
-  amber: '#a89540',
+  amber: '#D4A017',
 
   // Labels — Mapbox Navigation night mode (dark bg, light text)
   labelBg: 'rgba(24, 27, 32, 0.85)',
@@ -50,7 +50,7 @@ const MC = {
 
   // Drone — MIL-STD friendly cyan (desaturated)
   droneFriendly: '#5fb8c2',
-  droneMission: '#a89540',
+  droneMission: '#D4A017',
   droneOffline: '#585858',
 };
 
@@ -181,7 +181,7 @@ function onSearchZone(zone) {
     searchCircle = L.polygon(pts, {
       color: 'transparent',
       weight: 0,
-      fillColor: '#a89540',
+      fillColor: '#D4A017',
       fillOpacity: 0.25,
       smoothFactor: 2,
     }).addTo(map);
@@ -190,7 +190,7 @@ function onSearchZone(zone) {
       radius: zone.radius,
       color: 'transparent',
       weight: 0,
-      fillColor: '#a89540',
+      fillColor: '#D4A017',
       fillOpacity: 0.25,
     }).addTo(map);
   }
@@ -510,7 +510,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
     if (!inc.coordinates) continue;
     const incNumber = inc.id.replace(/\D/g, '');
     const hasLinkedDrone = assignedIncidentIds.has(inc.id);
-    const dotColor = hasLinkedDrone ? '#407CF5' : '#a89540';
+    const dotColor = hasLinkedDrone ? '#407CF5' : '#D4A017';
     const marker = L.marker(inc.coordinates, {
       icon: L.divIcon({
         className: 'incident-map-marker',
@@ -751,7 +751,7 @@ export function showSearchZonePreview(center, radius, fillOpacity = 0.25) {
     radius,
     color: 'transparent',
     weight: 0,
-    fillColor: '#a89540',
+    fillColor: '#D4A017',
     fillOpacity,
   }).addTo(map);
   routeLineOverlays.push(circle);
