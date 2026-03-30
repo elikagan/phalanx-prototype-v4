@@ -59,7 +59,7 @@ export const DRONES = [
     status: 'surveillance',
     battery: 72,
     signal: 'strong',
-    coordinates: [32.7340, -117.1450],
+    coordinates: [32.7350, -117.1050],
     distanceFromIncident: 2.3,
     patrol: 'North Park grid',
   },
