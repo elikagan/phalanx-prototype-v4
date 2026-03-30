@@ -1,6 +1,18 @@
 /* === Leaflet Base === */
 @import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 
+/*
+ * MAP OVERLAY COLOR SYSTEM
+ * These colors are designed to POP against satellite imagery.
+ * Do NOT use the UI design system tokens here — they're too muted.
+ *
+ * Route blue:   #4285F4 (Google Maps blue — proven legible on satellite)
+ * Alert red:    #EA4335 (bright, unmistakable)
+ * Confirm green:#34A853 (bright, clear)
+ * Amber:        #FBBC04 (bright warning)
+ * Label bg:     rgba(30, 30, 34, 0.92) (near-black, high contrast for white text)
+ */
+
 /* === Map Overlays === */
 .map-container {
   background: var(--bg-void);
@@ -8,29 +20,30 @@
 
 /* Drone marker */
 .drone-marker {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   transition: transform var(--dur-normal) var(--ease-out);
 }
 
 .drone-marker svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 0 8px rgba(95, 143, 173, 0.5)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 0 10px rgba(66, 133, 244, 0.6)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
 }
 
 /* Search zone label */
 .search-zone-label {
   font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 1px;
-  color: var(--text-secondary);
-  background: rgba(var(--overlay), 0.85);
-  padding: 3px 10px;
-  border-radius: 3px;
-  border: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: #fff;
+  background: rgba(66, 133, 244, 0.85);
+  padding: 4px 12px;
+  border-radius: 4px;
   white-space: nowrap;
   pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Waypoint marker */
@@ -42,31 +55,32 @@
 }
 
 .waypoint-crosshair {
-  width: 16px;
-  height: 16px;
-  border: 1.5px solid var(--text-muted);
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
   border-radius: 50%;
   position: relative;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
 }
 
 .waypoint-crosshair::before,
 .waypoint-crosshair::after {
   content: '';
   position: absolute;
-  background: var(--text-muted);
+  background: #fff;
 }
 
 .waypoint-crosshair::before {
-  width: 1px;
-  height: 24px;
+  width: 1.5px;
+  height: 26px;
   left: 50%;
   top: -4px;
   transform: translateX(-50%);
 }
 
 .waypoint-crosshair::after {
-  width: 24px;
-  height: 1px;
+  width: 26px;
+  height: 1.5px;
   top: 50%;
   left: -4px;
   transform: translateY(-50%);
@@ -74,32 +88,43 @@
 
 .waypoint-label {
   font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-secondary);
-  background: rgba(var(--overlay), 0.85);
-  padding: 2px 8px;
-  border-radius: 3px;
-  border: 1px solid var(--border);
-  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  background: rgba(30, 30, 34, 0.92);
+  padding: 3px 10px;
+  border-radius: 4px;
+  margin-top: 6px;
   white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 /* Target marker */
 .target-marker {
   width: 28px;
   height: 28px;
-  background: var(--red);
+  background: #EA4335;
   border-radius: 50%;
-  border: 2px solid rgba(184, 84, 84, 0.4);
+  border: 3px solid #fff;
   animation: target-pulse 2s ease-in-out infinite;
-  box-shadow: 0 0 12px rgba(184, 84, 84, 0.4);
+  box-shadow: 0 0 16px rgba(234, 67, 53, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .target-marker.confirmed {
-  background: var(--green);
-  border-color: rgba(74, 154, 101, 0.4);
+  background: #34A853;
+  border-color: #fff;
   animation: target-pulse-green 2s ease-in-out infinite;
-  box-shadow: 0 0 12px rgba(74, 154, 101, 0.4);
+  box-shadow: 0 0 16px rgba(52, 168, 83, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes target-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234, 67, 53, 0.4), 0 0 16px rgba(234, 67, 53, 0.5); }
+  50% { box-shadow: 0 0 0 12px rgba(234, 67, 53, 0), 0 0 16px rgba(234, 67, 53, 0.3); }
+}
+
+@keyframes target-pulse-green {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.4), 0 0 16px rgba(52, 168, 83, 0.5); }
+  50% { box-shadow: 0 0 0 12px rgba(52, 168, 83, 0), 0 0 16px rgba(52, 168, 83, 0.3); }
 }
 
 /* Target label (on FPV) */
@@ -123,20 +148,20 @@
 .target-map-label {
   font-family: var(--font-mono);
   font-size: 11px;
+  font-weight: 600;
   letter-spacing: 1px;
-  color: var(--red);
-  background: rgba(var(--overlay), 0.85);
-  padding: 2px 8px;
-  border-radius: 3px;
-  border: 1px solid rgba(184, 84, 84, 0.3);
+  color: #fff;
+  background: rgba(234, 67, 53, 0.9);
+  padding: 3px 10px;
+  border-radius: 4px;
   white-space: nowrap;
   pointer-events: none;
   text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .target-map-label.confirmed {
-  color: var(--green);
-  border-color: rgba(74, 154, 101, 0.3);
+  background: rgba(52, 168, 83, 0.9);
 }
 
 /* View toggle thumbnail (v3-style) */
@@ -511,32 +536,32 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--dot-color, var(--red));
+  background: var(--dot-color, #EA4335);
+  border: 3px solid #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--dot-color, var(--red)) 30%, transparent),
-    0 0 16px color-mix(in srgb, var(--dot-color, var(--red)) 25%, transparent);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.5);
   animation: incident-pulse 2.5s ease-in-out infinite;
 }
 
 @keyframes incident-pulse {
-  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--dot-color, var(--red)) 30%, transparent); }
-  50% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--dot-color, var(--red)) 0%, transparent); }
+  0%, 100% { box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2), 0 0 0 6px color-mix(in srgb, var(--dot-color, #EA4335) 30%, transparent); }
+  50% { box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2), 0 0 0 16px color-mix(in srgb, var(--dot-color, #EA4335) 0%, transparent); }
 }
 
 .incident-map-label {
   font-family: var(--font-mono);
   font-size: 11px;
+  font-weight: 600;
   letter-spacing: 0.5px;
-  color: var(--text-primary);
-  background: rgba(var(--overlay), 0.88);
-  padding: 3px 10px;
-  border-radius: 3px;
-  border: 1px solid var(--border);
+  color: #fff;
+  background: rgba(30, 30, 34, 0.92);
+  padding: 4px 10px;
+  border-radius: 4px;
   white-space: nowrap;
-  margin-top: 4px;
-  backdrop-filter: blur(4px);
+  margin-top: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 /* === Fleet Drone Markers === */
@@ -546,76 +571,113 @@
 }
 
 .fleet-drone-dot {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: rgba(var(--overlay), 0.75);
-  border: 2px solid var(--drone-color, var(--accent));
+  background: rgba(30, 30, 34, 0.85);
+  border: 2.5px solid var(--drone-color, #4285F4);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 /* Linked: drone assigned to incident */
 .incident-dot.linked,
 .fleet-drone-dot.linked {
-  outline: 2px solid var(--accent);
+  outline: 2px solid #4285F4;
   outline-offset: 3px;
 }
 
 .fleet-drone-label {
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.5px;
-  color: var(--text-secondary);
-  background: rgba(var(--overlay), 0.85);
-  padding: 2px 8px;
-  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: #fff;
+  background: rgba(30, 30, 34, 0.92);
+  padding: 3px 10px;
+  border-radius: 4px;
   white-space: nowrap;
-  margin-top: 4px;
-  backdrop-filter: blur(4px);
+  margin-top: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 /* === Route Line Labels === */
 .route-line-label {
   font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   letter-spacing: 0.3px;
   color: #fff;
-  background: rgba(0, 0, 0, 0.75);
-  padding: 4px 10px;
-  border-radius: 4px;
+  background: #4285F4;
+  padding: 5px 12px;
+  border-radius: 14px;
   white-space: nowrap;
   pointer-events: none;
   text-align: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 2px rgba(255, 255, 255, 0.15);
+}
+
+/* === Edit Handles (draggable search zone) === */
+.edit-handle {
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border: 3px solid #4285F4;
+  border-radius: 50%;
+  cursor: grab;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  transition: transform var(--dur-micro) var(--ease-out), background var(--dur-micro) var(--ease-out);
+}
+
+.edit-handle:hover {
+  background: #4285F4;
+  transform: scale(1.3);
+}
+
+.edit-handle:active {
+  cursor: grabbing;
+}
+
+.edit-handle.center-handle {
+  width: 24px;
+  height: 24px;
+  background: rgba(30, 30, 34, 0.9);
+  border: 2.5px solid #4285F4;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: move;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.edit-handle.center-handle:hover {
+  background: #4285F4;
 }
 
 /* === Map Tooltips === */
 .map-tooltip {
-  background: rgba(var(--overlay), 0.92);
-  border: 1px solid var(--border);
+  background: rgba(30, 30, 34, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--r-md);
-  color: var(--text-primary);
+  color: #fff;
   font-family: var(--font-ui);
   font-size: 12px;
   line-height: 1.5;
   padding: 8px 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
 }
 
 .map-tooltip strong {
-  color: var(--text-primary);
-  font-weight: 500;
+  color: #fff;
+  font-weight: 600;
 }
 
 /* Override Leaflet default tooltip arrow */
 .leaflet-tooltip.map-tooltip::before {
-  border-top-color: rgba(var(--overlay), 0.92);
+  border-top-color: rgba(30, 30, 34, 0.95);
 }
 
 /* Mobile overrides */

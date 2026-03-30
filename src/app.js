@@ -894,8 +894,10 @@ function setupSearchAreaScreen() {
 
   if (path === '911') {
     const inc = state.get('selectedIncident');
+    // Use circle (no bias) for editability — drag handles need a circle
+    const editableZone = { center: SEARCH_ZONE.center, radius: SEARCH_ZONE.radius };
     state.set({
-      searchZone: SEARCH_ZONE,
+      searchZone: editableZone,
       dronePosition: { lat: 32.7210, lng: -117.1498 },
     });
 
@@ -911,14 +913,18 @@ function setupSearchAreaScreen() {
           SEARCH_ZONE.center[1],
           14, 1.5
         );
+        // Make search zone editable with drag handles
+        setTimeout(() => {
+          mapComponent.makeSearchZoneEditable();
+        }, 500);
       });
     });
 
     chat.appendSara(
-      "Based on dispatch data, I've configured the search area. The suspect was last seen heading southbound at ~45 mph. Search zone is biased south from El Cajon Blvd & 30th.",
+      "Based on dispatch data, I've configured the search area. Drag the handles to resize, or drag the center to reposition.",
       {
         choices: [
-          { label: 'Confirm Search Area', primary: true, action: () => state.goToScreen(8) },
+          { label: 'Confirm Search Area', primary: true, action: () => { mapComponent.clearEditHandles(); state.goToScreen(8); } },
         ],
       }
     );
