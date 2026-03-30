@@ -27,13 +27,7 @@
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
 
-.search-zone-editable {
-  cursor: grab !important;
-}
-
-.search-zone-editable.search-zone-dragging {
-  cursor: grabbing !important;
-}
+/* Search zone cursor states are set inline by JS (pointer / grab / grabbing) */
 
 /* ── Waypoint marker ── */
 .waypoint-marker {

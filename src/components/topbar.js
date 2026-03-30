@@ -55,14 +55,15 @@ function updateStatus(screen) {
 
   const text = labels[screen] || '';
   el.textContent = text;
-
-  // Hide divider when status text is empty
-  const divider = document.querySelector('.topbar-divider');
-  if (divider) divider.style.display = text ? '' : 'none';
   el.style.display = text ? '' : 'none';
 
   // Show/hide incident badge based on screen
   updateIncidentBadge(state.get('selectedIncident'));
+
+  // Show divider if status text OR incident badge is visible
+  const divider = document.querySelector('.topbar-divider');
+  const badge = document.getElementById('topbar-incident-badge');
+  if (divider) divider.style.display = (text || badge) ? '' : 'none';
 }
 
 function updateIncidentBadge(inc) {

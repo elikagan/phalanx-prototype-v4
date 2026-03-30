@@ -189,75 +189,106 @@ function onSearchZone(zone) {
 
 // ── Editable Search Zone (using leaflet-ellipse) ──────────────────
 //
-// Handles show immediately when makeSearchZoneEditable() is called.
-// They stay visible until clearEditHandles() is called (screen transition).
-// Dragging the ellipse fill moves it (grab cursor). Map panning works outside the fill.
+// Two states:
+//   UNSELECTED: amber stroke, pointer cursor on hover, no handles, map pans normally
+//   SELECTED:   white fat stroke, grab cursor on hover, handles visible, drag fill to move
+//
+// Click zone → select (show handles). Click map background → deselect (hide handles).
+// clearEditHandles() tears down everything (screen transition).
 
 let editHandles = [];
 let _onChange = null;
-let _dragCleanup = null; // cleanup function for fill-drag listeners
+let _selected = false;
+let _editState = null;
+let _onZoneClick = null;
+let _onMapClick = null;
+let _skipDismissUntil = 0;
 
 export function makeSearchZoneEditable(onChange) {
   if (!map || !searchCircle) return;
   clearEditHandles();
   _onChange = onChange;
 
-  // Make ellipse interactive + add CSS class for grab cursor
-  searchCircle.setStyle({ weight: 3, color: '#fff', fillOpacity: 0.25, interactive: true });
-  // className is applied via Leaflet's options, but we also need to add it after render
-  _applyEditableClass();
+  // Start unselected: amber stroke, clickable, pointer cursor
+  searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: true });
+  const el = searchCircle.getElement();
+  if (el) el.style.cursor = 'pointer';
 
-  // Read current ellipse params
-  let rx = searchCircle._mRadiusX;
-  let ry = searchCircle._mRadiusY;
-  let tilt = searchCircle._tiltDeg;
-  let centerLL = searchCircle.getLatLng();
+  // Click zone → select
+  _onZoneClick = (e) => {
+    L.DomEvent.stop(e);
+    if (!_selected) _selectZone();
+  };
+  searchCircle.on('click', _onZoneClick);
 
-  // ── Helpers ──
+  // Click map background → deselect
+  _onMapClick = () => {
+    if (Date.now() < _skipDismissUntil) return;
+    if (_selected) _deselectZone();
+  };
+  map.on('click', _onMapClick);
+}
+
+function _selectZone() {
+  if (!map || !searchCircle) return;
+  _selected = true;
+  _skipDismissUntil = Date.now() + 250;
+
+  // Highlight: white fat stroke, brighter fill, grab cursor
+  searchCircle.setStyle({ weight: 3, color: '#fff', fillOpacity: 0.25 });
+  const el = searchCircle.getElement();
+  if (el) el.style.cursor = 'grab';
+
+  // Read current ellipse params into mutable state
+  const s = {
+    rx: searchCircle._mRadiusX,
+    ry: searchCircle._mRadiusY,
+    tilt: searchCircle._tiltDeg,
+    centerLL: searchCircle.getLatLng(),
+  };
+  _editState = s;
+
   function edgePoint(bearing) {
-    const b = (bearing - tilt) * Math.PI / 180;
+    const b = (bearing - s.tilt) * Math.PI / 180;
     const cosB = Math.cos(b);
     const sinB = Math.sin(b);
-    const dist = 1 / Math.sqrt((sinB / rx) ** 2 + (cosB / ry) ** 2);
-    return _offsetByMeters(centerLL, dist, bearing);
+    const dist = 1 / Math.sqrt((sinB / s.rx) ** 2 + (cosB / s.ry) ** 2);
+    return _offsetByMeters(s.centerLL, dist, bearing);
   }
 
   function updateEllipse() {
-    searchCircle.setLatLng(centerLL);
-    searchCircle.setRadius([rx, ry]);
-    searchCircle.setTilt(tilt);
-    // Leaflet re-renders the SVG path, so re-apply the CSS class
-    _applyEditableClass();
+    searchCircle.setLatLng(s.centerLL);
+    searchCircle.setRadius([s.rx, s.ry]);
+    searchCircle.setTilt(s.tilt);
+    const el2 = searchCircle.getElement();
+    if (el2) el2.style.cursor = 'grab';
   }
 
   function fireChange() {
-    if (_onChange) _onChange({ center: [centerLL.lat, centerLL.lng], radiusX: rx, radiusY: ry, rotation: tilt });
+    if (_onChange) _onChange({ center: [s.centerLL.lat, s.centerLL.lng], radiusX: s.rx, radiusY: s.ry, rotation: s.tilt });
   }
 
   function repositionHandles() {
-    const nPos = edgePoint(tilt);
-    const sPos = edgePoint(tilt + 180);
-    const ePos = edgePoint(tilt + 90);
-    const wPos = edgePoint(tilt + 270);
-    handleN.setLatLng(nPos);
-    handleS.setLatLng(sPos);
-    handleE.setLatLng(ePos);
-    handleW.setLatLng(wPos);
-    // Rotation stem past N
-    const stemEnd = _offsetByMeters(centerLL, ry * 1.3, tilt);
-    rotHandle.setLatLng(stemEnd);
-    rotStem.setLatLngs([nPos, stemEnd]);
-    // Size label inside the circle, offset toward SW (not on any handle edge)
-    const labelPos = _offsetByMeters(centerLL, Math.min(rx, ry) * 0.45, tilt + 210);
-    const labelText = Math.round(rx) === Math.round(ry)
-      ? `${Math.round(rx)}m`
-      : `${Math.round(rx)} × ${Math.round(ry)}m`;
-    sizeLabel.setLatLng(labelPos);
-    sizeLabel.setIcon(L.divIcon({
+    const nPos = edgePoint(s.tilt);
+    const sPos = edgePoint(s.tilt + 180);
+    const ePos = edgePoint(s.tilt + 90);
+    const wPos = edgePoint(s.tilt + 270);
+    s.handleN.setLatLng(nPos);
+    s.handleS.setLatLng(sPos);
+    s.handleE.setLatLng(ePos);
+    s.handleW.setLatLng(wPos);
+    const stemEnd = _offsetByMeters(s.centerLL, s.ry * 1.3, s.tilt);
+    s.rotHandle.setLatLng(stemEnd);
+    s.rotStem.setLatLngs([nPos, stemEnd]);
+    const labelPos = _offsetByMeters(s.centerLL, Math.min(s.rx, s.ry) * 0.45, s.tilt + 210);
+    const labelText = Math.round(s.rx) === Math.round(s.ry)
+      ? `${Math.round(s.rx)}m`
+      : `${Math.round(s.rx)} × ${Math.round(s.ry)}m`;
+    s.sizeLabel.setLatLng(labelPos);
+    s.sizeLabel.setIcon(L.divIcon({
       className: 'map-label',
       html: `<span>${labelText}</span>`,
-      iconSize: [0, 0],
-      iconAnchor: [0, 0],
+      iconSize: [0, 0], iconAnchor: [0, 0],
     }));
   }
 
@@ -266,62 +297,62 @@ export function makeSearchZoneEditable(onChange) {
     repositionHandles();
   }
 
-  // ── Drag-the-fill to move ──
-  let _dragging = false;
-  let _dragStartLatLng = null;
+  // ── Drag fill to move ──
+  let dragging = false;
+  let dragStart = null;
 
   function onFillMouseDown(e) {
-    if (e.originalEvent && e.originalEvent._fromHandle) return;
+    if (!_selected) return;
     L.DomEvent.stop(e);
-    _dragging = true;
-    _dragStartLatLng = e.latlng;
+    dragging = true;
+    dragStart = e.latlng;
     map.dragging.disable();
-    _setDraggingClass(true);
-    map.on('mousemove', onFillMouseMove);
-    map.on('mouseup', onFillMouseUp);
+    const el2 = searchCircle.getElement();
+    if (el2) el2.style.cursor = 'grabbing';
+    map.on('mousemove', onFillMove);
+    map.on('mouseup', onFillUp);
   }
 
-  function onFillMouseMove(e) {
-    if (!_dragging) return;
-    const dlat = e.latlng.lat - _dragStartLatLng.lat;
-    const dlng = e.latlng.lng - _dragStartLatLng.lng;
-    centerLL = L.latLng(centerLL.lat + dlat, centerLL.lng + dlng);
-    _dragStartLatLng = e.latlng;
+  function onFillMove(e) {
+    if (!dragging) return;
+    s.centerLL = L.latLng(
+      s.centerLL.lat + (e.latlng.lat - dragStart.lat),
+      s.centerLL.lng + (e.latlng.lng - dragStart.lng),
+    );
+    dragStart = e.latlng;
     rebuild();
   }
 
-  function onFillMouseUp() {
-    if (!_dragging) return;
-    _dragging = false;
+  function onFillUp() {
+    if (!dragging) return;
+    dragging = false;
     map.dragging.enable();
-    _setDraggingClass(false);
-    map.off('mousemove', onFillMouseMove);
-    map.off('mouseup', onFillMouseUp);
+    const el2 = searchCircle.getElement();
+    if (el2) el2.style.cursor = 'grab';
+    map.off('mousemove', onFillMove);
+    map.off('mouseup', onFillUp);
+    _skipDismissUntil = Date.now() + 250;
     fireChange();
   }
 
   searchCircle.on('mousedown', onFillMouseDown);
-
-  // Store cleanup so clearEditHandles can remove these listeners
-  _dragCleanup = () => {
+  s._cleanupDrag = () => {
     searchCircle.off('mousedown', onFillMouseDown);
-    map.off('mousemove', onFillMouseMove);
-    map.off('mouseup', onFillMouseUp);
+    map.off('mousemove', onFillMove);
+    map.off('mouseup', onFillUp);
     map.dragging.enable();
   };
 
   // ── Size label ──
-  const sizeLabel = L.marker(edgePoint(tilt + 180), {
+  s.sizeLabel = L.marker(edgePoint(s.tilt + 180), {
     icon: L.divIcon({
       className: 'map-label',
-      html: `<span>${Math.round(rx)}m</span>`,
-      iconSize: [0, 0],
-      iconAnchor: [0, 0],
+      html: `<span>${Math.round(s.rx)}m</span>`,
+      iconSize: [0, 0], iconAnchor: [0, 0],
     }),
-    interactive: false,
-    zIndexOffset: 870,
+    interactive: false, zIndexOffset: 870,
   }).addTo(map);
-  editHandles.push(sizeLabel);
+  editHandles.push(s.sizeLabel);
 
   // ── Cardinal handles ──
   function mkHandle(pos) {
@@ -333,40 +364,38 @@ export function makeSearchZoneEditable(onChange) {
     return h;
   }
 
-  const handleN = mkHandle(edgePoint(tilt));
-  const handleS = mkHandle(edgePoint(tilt + 180));
-  const handleE = mkHandle(edgePoint(tilt + 90));
-  const handleW = mkHandle(edgePoint(tilt + 270));
+  s.handleN = mkHandle(edgePoint(s.tilt));
+  s.handleS = mkHandle(edgePoint(s.tilt + 180));
+  s.handleE = mkHandle(edgePoint(s.tilt + 90));
+  s.handleW = mkHandle(edgePoint(s.tilt + 270));
 
-  // N/S → stretch radiusY
   function onAxisYDrag(e) {
-    ry = Math.max(80, Math.min(2000, centerLL.distanceTo(e.target.getLatLng())));
+    s.ry = Math.max(80, Math.min(2000, s.centerLL.distanceTo(e.target.getLatLng())));
     rebuild();
   }
-  handleN.on('drag', onAxisYDrag);
-  handleS.on('drag', onAxisYDrag);
+  s.handleN.on('drag', onAxisYDrag);
+  s.handleS.on('drag', onAxisYDrag);
 
-  // E/W → stretch radiusX
   function onAxisXDrag(e) {
-    rx = Math.max(80, Math.min(2000, centerLL.distanceTo(e.target.getLatLng())));
+    s.rx = Math.max(80, Math.min(2000, s.centerLL.distanceTo(e.target.getLatLng())));
     rebuild();
   }
-  handleE.on('drag', onAxisXDrag);
-  handleW.on('drag', onAxisXDrag);
+  s.handleE.on('drag', onAxisXDrag);
+  s.handleW.on('drag', onAxisXDrag);
 
-  [handleN, handleS, handleE, handleW].forEach(h => {
-    h.on('dragend', fireChange);
+  [s.handleN, s.handleS, s.handleE, s.handleW].forEach(h => {
+    h.on('dragend', () => { _skipDismissUntil = Date.now() + 250; fireChange(); });
   });
 
   // ── Rotation handle ──
-  const stemEnd = _offsetByMeters(centerLL, ry * 1.3, tilt);
-  const nEdge = edgePoint(tilt);
-  const rotStem = L.polyline([nEdge, stemEnd], {
+  const stemEnd = _offsetByMeters(s.centerLL, s.ry * 1.3, s.tilt);
+  const nEdge = edgePoint(s.tilt);
+  s.rotStem = L.polyline([nEdge, stemEnd], {
     color: '#fff', weight: 1, opacity: 0.5, dashArray: '4 4',
   }).addTo(map);
-  editHandles.push(rotStem);
+  editHandles.push(s.rotStem);
 
-  const rotHandle = L.marker(stemEnd, {
+  s.rotHandle = L.marker(stemEnd, {
     icon: L.divIcon({
       className: 'edit-handle edit-handle-rotate',
       html: '<span class="material-symbols-outlined edit-handle-icon">rotate_right</span>',
@@ -374,34 +403,33 @@ export function makeSearchZoneEditable(onChange) {
     }),
     draggable: true, zIndexOffset: 890,
   }).addTo(map);
-  editHandles.push(rotHandle);
+  editHandles.push(s.rotHandle);
 
-  rotHandle.on('drag', (e) => {
+  s.rotHandle.on('drag', (e) => {
     const hPos = e.target.getLatLng();
     const mPerLat = 111320;
-    const mPerLng = 111320 * Math.cos(centerLL.lat * Math.PI / 180);
-    const dx = (hPos.lng - centerLL.lng) * mPerLng;
-    const dy = (hPos.lat - centerLL.lat) * mPerLat;
-    tilt = Math.atan2(dx, dy) * 180 / Math.PI;
+    const mPerLng = 111320 * Math.cos(s.centerLL.lat * Math.PI / 180);
+    const dx = (hPos.lng - s.centerLL.lng) * mPerLng;
+    const dy = (hPos.lat - s.centerLL.lat) * mPerLat;
+    s.tilt = Math.atan2(dx, dy) * 180 / Math.PI;
     rebuild();
   });
-  rotHandle.on('dragend', fireChange);
+  s.rotHandle.on('dragend', () => { _skipDismissUntil = Date.now() + 250; fireChange(); });
 
-  // Show handles immediately
   repositionHandles();
 }
 
-// Apply/remove CSS classes on the ellipse SVG element (re-grab every time since Leaflet re-renders)
-function _applyEditableClass() {
-  const el = searchCircle?.getElement();
-  if (el) el.classList.add('search-zone-editable');
-}
-
-function _setDraggingClass(on) {
-  const el = searchCircle?.getElement();
-  if (!el) return;
-  if (on) el.classList.add('search-zone-dragging');
-  else el.classList.remove('search-zone-dragging');
+function _deselectZone() {
+  _selected = false;
+  if (_editState?._cleanupDrag) _editState._cleanupDrag();
+  for (const h of editHandles) map?.removeLayer(h);
+  editHandles = [];
+  _editState = null;
+  if (searchCircle) {
+    searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18 });
+    const el = searchCircle.getElement();
+    if (el) el.style.cursor = 'pointer';
+  }
 }
 
 function _offsetByMeters(ll, meters, bearingDeg) {
@@ -416,17 +444,23 @@ function _offsetByMeters(ll, meters, bearingDeg) {
 }
 
 export function clearEditHandles() {
-  // Remove fill-drag listeners
-  if (_dragCleanup) { _dragCleanup(); _dragCleanup = null; }
+  if (_editState?._cleanupDrag) _editState._cleanupDrag();
   for (const h of editHandles) map?.removeLayer(h);
   editHandles = [];
+  _editState = null;
+  _selected = false;
   if (searchCircle) {
+    searchCircle.off('click', _onZoneClick);
     searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: false });
     const el = searchCircle.getElement();
-    if (el) {
-      el.classList.remove('search-zone-editable', 'search-zone-dragging');
-    }
+    if (el) el.style.cursor = '';
   }
+  if (map && _onMapClick) {
+    map.off('click', _onMapClick);
+    _onMapClick = null;
+  }
+  _onZoneClick = null;
+  _onChange = null;
 }
 
 function offsetLatLng(center, distanceM, bearingDeg) {
