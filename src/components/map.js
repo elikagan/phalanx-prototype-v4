@@ -563,7 +563,7 @@ export function focusIncident(coordinates, zoom = 16) {
 // ── Fleet Drone Markers ───────────────────────────────────
 // Three types: surveillance (airborne), in-mission (assigned), standby (ground/home base)
 
-export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false, incidents = [] } = {}) {
+export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false, incidents = [], onIncidentSelect = null } = {}) {
   clearFleetMarkers();
   if (!map) return;
 
@@ -614,11 +614,15 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         iconAnchor: [20, 20],
       }),
       zIndexOffset: isAssigned ? 900 : isReroutable ? 850 : 700,
-      interactive: isReroutable,
+      interactive: isReroutable || isAssigned,
     }).addTo(map);
 
     if (isReroutable) {
       marker.on('click', () => onSelect?.(drone));
+    }
+    // In-mission drone click → open its assigned incident
+    if (isAssigned && onIncidentSelect && incidentLookup.has(drone.assignedIncident)) {
+      marker.on('click', () => onIncidentSelect(incidentLookup.get(drone.assignedIncident)));
     }
 
     const statusLabel = isSurveillance ? `Surveillance — ${drone.patrol || 'patrol'}`
@@ -638,6 +642,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       const targetCoords = assignedInc.coordinates;
 
       // Orbit/surveillance zone around incident (blue tint, shows active coverage)
+      // Clickable — clicking anywhere in the zone opens the incident
       const orbitZone = L.circle(targetCoords, {
         radius: 300,
         color: '#fff',
@@ -646,7 +651,15 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         dashArray: '12, 8',
         fillColor: '#407CF5',
         fillOpacity: 0.15,
+        interactive: true,
       }).addTo(map);
+      if (onIncidentSelect) {
+        orbitZone.on('click', () => onIncidentSelect(assignedInc));
+        orbitZone.getElement && orbitZone.on('add', () => {
+          const el = orbitZone.getElement();
+          if (el) el.style.cursor = 'pointer';
+        });
+      }
       distanceLines.push(orbitZone);
 
       // Solid route line (not dashed — this is an active assignment, not proposed)

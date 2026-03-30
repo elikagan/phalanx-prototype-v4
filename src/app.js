@@ -700,7 +700,22 @@ async function setupIncidentMapScreen() {
     }
   }, { skipFitBounds: true, assignedIncidentIds });
 
-  mapComponent.showFleetDrones(DRONES, null, () => {}, { skipFitBounds: true, incidents: INCIDENTS });
+  const handleIncidentClick = (inc) => {
+    const assignedDrone = DRONES.find(d => d.assignedIncident === inc.id);
+    if (assignedDrone) {
+      state.set({ selectedIncident: inc, selectedDrone: assignedDrone });
+      state.goToScreen(14);
+    } else {
+      state.set({ selectedIncident: inc });
+      state.goToScreen(4);
+    }
+  };
+
+  mapComponent.showFleetDrones(DRONES, null, () => {}, {
+    skipFitBounds: true,
+    incidents: INCIDENTS,
+    onIncidentSelect: handleIncidentClick,
+  });
 
   // Fit all markers with max zoom 12 so the full metro spread is visible
   mapComponent.fitAllMarkers([60, 60], 12);
