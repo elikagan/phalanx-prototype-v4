@@ -876,7 +876,7 @@ function setupAnalysisScreen() {
       choices: closestDrone ? [
         { label: `Deploy ${shortName}`, className: 'btn-deploy', action: () => {
           state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
-          state.goToScreen(9);
+          state.goToScreen(7);
         }},
       ] : [],
     }
