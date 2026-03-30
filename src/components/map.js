@@ -220,6 +220,9 @@ export function makeSearchZoneEditable(onChange) {
   const el = searchCircle.getElement();
   if (el) { el.style.cursor = 'pointer'; el.style.pointerEvents = 'auto'; }
 
+  // Make incident markers pass-through so clicks reach the zone path beneath
+  _setIncidentMarkersPassthrough(true);
+
   // All event handling via delegation on the map container + document
   const container = map.getContainer();
 
@@ -453,6 +456,13 @@ function _deselectZone() {
   }
 }
 
+function _setIncidentMarkersPassthrough(passthrough) {
+  for (const m of incidentMarkers) {
+    const el = m.getElement?.();
+    if (el) el.style.pointerEvents = passthrough ? 'none' : '';
+  }
+}
+
 function _offsetByMeters(ll, meters, bearingDeg) {
   const R = 6371000;
   const lat1 = ll.lat * Math.PI / 180;
@@ -470,6 +480,7 @@ export function clearEditHandles() {
   editHandles = [];
   _editState = null;
   _selected = false;
+  _setIncidentMarkersPassthrough(false);
   if (searchCircle) {
     searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: false });
     const el = searchCircle.getElement();
