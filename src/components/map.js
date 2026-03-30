@@ -842,13 +842,13 @@ export function addRouteLine(from, to, { color = '#fff', weight = 3, opacity = 0
     const mid = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2];
     const labelMarker = L.marker(mid, {
       icon: L.divIcon({
-        className: 'route-label',
+        className: 'route-label route-label-primary',
         html: label,
-        iconSize: [130, 22],
-        iconAnchor: [65, 11],
+        iconSize: [120, 22],
+        iconAnchor: [60, 11],
       }),
       interactive: false,
-      zIndexOffset: 860,
+      zIndexOffset: 865,
     }).addTo(map);
     routeLineOverlays.push(labelMarker);
   }
