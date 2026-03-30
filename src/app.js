@@ -737,6 +737,11 @@ function setupAnalysisScreen() {
     state.goToScreen(6);
   }, { skipFitBounds: true });
 
+  // Show search zone preview circle around incident
+  if (inc?.coordinates) {
+    mapComponent.showSearchZonePreview(SEARCH_ZONE.center, SEARCH_ZONE.radius, 0.12);
+  }
+
   // Fit map to show incident + drones
   if (inc?.coordinates) {
     mapComponent.fitAllMarkers([60, 60], 14);
@@ -841,6 +846,17 @@ function setupBriefingScreen() {
   const drone = state.get('selectedDrone');
   if (inc) mapComponent.showIncidents([inc], () => {});
   if (drone) mapComponent.showFleetDrones([drone], inc?.coordinates, () => {});
+  // Show search zone preview + route line from drone to search area
+  if (inc?.coordinates) {
+    mapComponent.showSearchZonePreview(SEARCH_ZONE.center, SEARCH_ZONE.radius, 0.15);
+  }
+  if (drone?.coordinates && inc?.coordinates) {
+    const etaSec = Math.round((drone.distanceFromIncident || 2.3) / 60 * 3600);
+    const etaLabel = etaSec >= 60 ? `${Math.round(etaSec / 60)}m ${etaSec % 60}s` : `${etaSec}s`;
+    mapComponent.addRouteLine(drone.coordinates, SEARCH_ZONE.center, {
+      label: `${drone.distanceFromIncident || 2.3} km · ${etaLabel} ETA`,
+    });
+  }
   if (inc?.coordinates && drone?.coordinates) {
     mapComponent.fitAllMarkers([80, 80], 15);
   } else if (inc?.coordinates) {

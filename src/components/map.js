@@ -17,6 +17,7 @@ let targetMarker = null;
 let targetLabel = null;
 let orbitCircle = null;
 let flightTrail = null;
+let flightTrailOutline = null;
 let trailCoords = [];
 const waypointMarkers = new Map();
 
@@ -66,12 +67,19 @@ export function init() {
     L.control.zoom({ position: 'bottomright' }).addTo(map);
   }
 
-  // Flight trail polyline
+  // Flight trail — dark outline underneath
+  flightTrailOutline = L.polyline([], {
+    color: '#000000',
+    weight: 6,
+    opacity: 0.4,
+    lineCap: 'round',
+  }).addTo(map);
+  // Flight trail — bright line on top
   flightTrail = L.polyline([], {
     color: '#5f8fad',
     weight: 3,
-    opacity: 0.7,
-    dashArray: '8 4',
+    opacity: 0.85,
+    lineCap: 'round',
   }).addTo(map);
 
   // Subscribe to state
@@ -104,8 +112,9 @@ function onDroneMove(pos) {
     droneMarker.setLatLng(latlng);
   }
 
-  // Add to flight trail
+  // Add to flight trail (both outline and colored line)
   trailCoords.push(latlng);
+  if (flightTrailOutline) flightTrailOutline.setLatLngs(trailCoords);
   flightTrail.setLatLngs(trailCoords);
 }
 
@@ -347,6 +356,7 @@ export function resize() {
 export function clearTrail() {
   trailCoords = [];
   if (flightTrail) flightTrail.setLatLngs([]);
+  if (flightTrailOutline) flightTrailOutline.setLatLngs([]);
 }
 
 /** Get the raw Leaflet map instance (for advanced usage) */
@@ -479,13 +489,22 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     tooltip.setContent(`<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`);
     marker.bindTooltip(tooltip);
 
-    // Distance line from drone to incident with midpoint label
+    // Route line from drone to incident — double-stroke (Google Maps style)
     if (incidentCoords && isAvailable) {
+      // Dark outline (wider, underneath)
+      const outline = L.polyline([drone.coordinates, incidentCoords], {
+        color: '#000000',
+        weight: 6,
+        opacity: 0.5,
+        lineCap: 'round',
+      }).addTo(map);
+      distanceLines.push(outline);
+      // Bright route line on top (solid, not dashed)
       const line = L.polyline([drone.coordinates, incidentCoords], {
-        color,
+        color: '#5f8fad',
         weight: 3,
-        opacity: 0.7,
-        dashArray: '12 8',
+        opacity: 0.9,
+        lineCap: 'round',
       }).addTo(map);
       distanceLines.push(line);
 
@@ -501,8 +520,8 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
           icon: L.divIcon({
             className: 'route-line-label',
             html: `${drone.distanceFromIncident} km · ${etaLabel} ETA`,
-            iconSize: [120, 22],
-            iconAnchor: [60, 11],
+            iconSize: [140, 24],
+            iconAnchor: [70, 12],
           }),
           interactive: false,
           zIndexOffset: 860,
@@ -557,11 +576,15 @@ export function clearOverlays() {
 
 let routeLineOverlays = [];
 
-/** Draw a route line from→to with a midpoint label. Returns cleanup ref. */
-export function addRouteLine(from, to, { color = '#5f8fad', weight = 3, dashArray = '12 8', opacity = 0.7, label = '' } = {}) {
+/** Draw a route line from→to with a midpoint label (double-stroke). */
+export function addRouteLine(from, to, { color = '#5f8fad', weight = 3, opacity = 0.9, label = '' } = {}) {
   if (!map) return;
 
-  const line = L.polyline([from, to], { color, weight, opacity, dashArray }).addTo(map);
+  // Dark outline underneath
+  const outline = L.polyline([from, to], { color: '#000000', weight: weight + 3, opacity: 0.5, lineCap: 'round' }).addTo(map);
+  routeLineOverlays.push(outline);
+  // Bright solid line on top
+  const line = L.polyline([from, to], { color, weight, opacity, lineCap: 'round' }).addTo(map);
   routeLineOverlays.push(line);
 
   if (label) {
@@ -586,16 +609,38 @@ export function clearRouteLines() {
   routeLineOverlays = [];
 }
 
-/** Show a preview search zone circle (fainter, for briefing screens) */
-export function showSearchZonePreview(center, radius, fillOpacity = 0.08) {
+/** Show a search zone circle around the target area */
+export function showSearchZonePreview(center, radius, fillOpacity = 0.12) {
   if (!map) return;
+  // Outer glow ring
+  const glow = L.circle(center, {
+    radius: radius + 40,
+    color: '#5f8fad',
+    weight: 1,
+    opacity: 0.3,
+    fillColor: '#5f8fad',
+    fillOpacity: 0.04,
+  }).addTo(map);
+  routeLineOverlays.push(glow);
+  // Main circle — solid outline, visible fill
   const circle = L.circle(center, {
     radius,
     color: '#5f8fad',
-    weight: 2,
-    dashArray: '8 6',
+    weight: 2.5,
+    opacity: 0.9,
     fillColor: '#5f8fad',
     fillOpacity,
   }).addTo(map);
   routeLineOverlays.push(circle);
+  // Label
+  const label = L.marker(center, {
+    icon: L.divIcon({
+      className: 'search-zone-label',
+      html: 'SEARCH AREA',
+      iconSize: [120, 22],
+      iconAnchor: [60, 11],
+    }),
+    interactive: false,
+  }).addTo(map);
+  routeLineOverlays.push(label);
 }
