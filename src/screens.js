@@ -11,7 +11,7 @@ import { INCIDENTS, DRONES, SARA_ANALYSIS, MISSION_BRIEFING, PREFLIGHT_CHECKS, M
 export function screen1() {
   return `
     <div class="screen screen-center fade-in">
-      <form id="auth-form" class="stack-12" style="width:100%;max-width:320px">
+      <form id="auth-form" class="stack-12 auth-form-wrap">
         <div class="text-center mb-8">
           <div class="org-label">Riverside County SAR</div>
         </div>
@@ -21,7 +21,7 @@ export function screen1() {
           class="form-input" placeholder="Password">
         <button type="submit" class="btn-primary w-full mt-4">Sign In</button>
         <div class="text-center">
-          <a href="#" class="card-desc" style="text-decoration:none" onclick="event.preventDefault()">Forgot password?</a>
+          <a href="#" class="card-desc link-plain" onclick="event.preventDefault()">Forgot password?</a>
         </div>
       </form>
     </div>
@@ -34,17 +34,17 @@ export function screen2() {
     <div class="screen screen-center fade-in">
       <div class="screen-title">Authenticated</div>
       <div class="screen-subtitle">Welcome, Riverside County SAR. How would you like to proceed?</div>
-      <div class="row-12" style="flex-wrap:wrap;justify-content:center">
-        <div class="card card-interactive text-left" data-action="path-911" style="width:240px;cursor:pointer">
+      <div class="row-12 path-row">
+        <div class="card card-interactive text-left path-card" data-action="path-911">
           <div class="card-header-row">
-            <span class="material-symbols-outlined card-icon" style="color:var(--red)">emergency</span>
+            <span class="material-symbols-outlined card-icon card-icon-red">emergency</span>
             <span class="card-title">Active Incidents</span>
           </div>
           <div class="card-desc">Select from current 911 dispatches with AI-analyzed intelligence</div>
         </div>
-        <div class="card card-interactive text-left" data-action="path-manual" style="width:240px;cursor:pointer">
+        <div class="card card-interactive text-left path-card" data-action="path-manual">
           <div class="card-header-row">
-            <span class="material-symbols-outlined card-icon" style="color:var(--accent)">flight_takeoff</span>
+            <span class="material-symbols-outlined card-icon card-icon-accent">flight_takeoff</span>
             <span class="card-title">Manual Mission</span>
           </div>
           <div class="card-desc">Configure a custom search with target description and area</div>
@@ -67,7 +67,7 @@ export function screen3() {
             <span class="incident-type">${inc.type}</span>
           </div>
           <div class="incident-location">
-            <span class="material-symbols-outlined" style="font-size:14px;vertical-align:-2px">location_on</span>
+            <span class="material-symbols-outlined icon-inline">location_on</span>
             ${inc.location}
           </div>
           <div class="incident-time">${inc.time} · ${inc.elapsed}</div>
@@ -112,8 +112,8 @@ export function screen4() {
       </div>
     </div>
 
-    <details class="card mb-12" style="cursor:pointer">
-      <summary class="card-desc" style="padding:4px 0">View source transcripts</summary>
+    <details class="card mb-12">
+      <summary class="card-desc">View source transcripts</summary>
       <pre class="transcript-pre">${SARA_ANALYSIS.transcriptText}</pre>
     </details>
 
@@ -211,7 +211,7 @@ export function screen8() {
   `).join('');
 
   return `<div class="screen fade-in" id="screen-8-content">
-    <div style="max-width:400px" class="mx-auto">
+    <div class="preflight-wrap mx-auto">
       ${checks}
     </div>
   </div>`;
@@ -246,18 +246,18 @@ export function screen14() {
 export function screen13() {
   const s = MISSION_SUMMARY;
   return `
-    <div class="screen screen-center fade-in" style="padding:24px;max-width:560px" class="mx-auto">
+    <div class="screen screen-center fade-in summary-screen mx-auto">
       <div class="chat-msg chat-msg-sara chat-msg--static">
         <div class="chat-msg-label">SARA</div>
         <div class="chat-msg-text">Mission complete. Here's your summary.</div>
       </div>
 
       <div class="summary-card mb-20 w-full">
-        <div class="section-label" style="letter-spacing:1px;margin-bottom:16px">Mission Summary</div>
+        <div class="section-label section-label-wide">Mission Summary</div>
         <div class="summary-grid">
           <div class="summary-stat"><span class="label">Duration</span><span class="value">${s.duration}</span></div>
           <div class="summary-stat"><span class="label">Area Covered</span><span class="value">${s.areaCovered}</span></div>
-          <div class="summary-stat"><span class="label">Target Found</span><span class="value" style="color:var(--green)">${s.targetFound}</span></div>
+          <div class="summary-stat"><span class="label">Target Found</span><span class="value text-green">${s.targetFound}</span></div>
           <div class="summary-stat"><span class="label">Battery Used</span><span class="value">${s.batteryUsed}</span></div>
           <div class="summary-stat"><span class="label">Distance Flown</span><span class="value">${s.distanceFlown}</span></div>
           <div class="summary-stat"><span class="label">Max Altitude</span><span class="value">${s.maxAltitude}</span></div>

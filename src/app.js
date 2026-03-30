@@ -444,7 +444,7 @@ function manageViewToggle(fpvActive) {
       <div class="view-thumb" id="view-thumb">
         <div class="view-thumb-label" id="view-thumb-label">MAP</div>
         <button class="view-toggle" title="Toggle map/video">
-          <span class="material-symbols-outlined" style="font-size:16px">swap_horiz</span>
+          <span class="material-symbols-outlined icon-sm">swap_horiz</span>
         </button>
       </div>
     `;
@@ -838,7 +838,7 @@ function setupAnalysisScreen() {
       </div>
     </div>
     ${closestDrone ? `
-    <div class="card mb-8" style="border-left:3px solid var(--accent)">
+    <div class="card mb-8 card-recommended">
       <div class="section-label">Recommended Drone</div>
       <div class="data-grid">
         <span class="data-label">Drone</span><span class="data-value">${closestDrone.name}</span>
@@ -1128,7 +1128,7 @@ async function setupLiveSceneScreen() {
   // Status header
   chat.appendSaraWithContent(
     `Live feed from ${drone?.name || 'Unknown Drone'} on scene at ${inc?.type || 'Incident'} #${incNumber}.`,
-    `<div class="card" style="margin-bottom:8px">
+    `<div class="card mb-8">
       <div class="section-label">Scene Status</div>
       <div class="data-grid">
         <span class="data-label">Incident</span><span class="data-value">${inc?.type} #${incNumber}</span>
@@ -1137,7 +1137,7 @@ async function setupLiveSceneScreen() {
         <span class="data-label">Drone</span><span class="data-value">${drone?.name} · ${drone?.battery}% battery</span>
         <span class="data-label">On scene</span><span class="data-value">${inc?.elapsed}</span>
         <span class="data-label">Altitude</span><span class="data-value">85m AGL</span>
-        <span class="data-label">Target</span><span class="data-value" style="color:var(--green)">CONFIRMED · Tracking</span>
+        <span class="data-label">Target</span><span class="data-value text-green">CONFIRMED · Tracking</span>
       </div>
     </div>`
   );

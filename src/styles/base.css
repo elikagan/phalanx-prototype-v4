@@ -136,6 +136,12 @@ h1, h2, h3, h4 {
 .mt-16 { margin-top: 16px; }
 .mx-auto { margin-left: auto; margin-right: auto; }
 
+/* Color utilities */
+.text-green { color: var(--green); }
+.text-red { color: var(--red); }
+.text-amber { color: var(--amber); }
+.text-accent { color: var(--accent); }
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 4px;

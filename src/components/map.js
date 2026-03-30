@@ -324,7 +324,7 @@ export function makeSearchZoneEditable(onChange) {
   const centerHandle = L.marker(center, {
     icon: L.divIcon({
       className: 'edit-handle center-handle',
-      html: '<span class="material-symbols-outlined" style="font-size:12px;color:#5F6368">open_with</span>',
+      html: '<span class="material-symbols-outlined edit-handle-icon">open_with</span>',
       iconSize: [20, 20],
       iconAnchor: [10, 10],
     }),
@@ -515,7 +515,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
       icon: L.divIcon({
         className: 'incident-map-marker',
         html: `<div class="incident-dot" style="--dot-color:${dotColor}">
-          <span class="material-symbols-outlined" style="font-size:18px;color:#fff">${inc.icon || 'location_on'}</span>
+          <span class="material-symbols-outlined">${inc.icon || 'location_on'}</span>
         </div>
         <div class="incident-map-label">${inc.type} #${incNumber}</div>`,
         iconSize: [200, 56],
@@ -756,7 +756,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       icon: L.divIcon({
         className: 'fleet-drone-marker',
         html: `<div class="fleet-base-dot">
-          <span class="material-symbols-outlined" style="font-size:16px;color:#fff">home</span>
+          <span class="material-symbols-outlined base-marker-icon">home</span>
           <span class="base-count">${count}</span>
         </div>
         <div class="fleet-drone-label">${group.base || 'Home Base'}</div>`,
@@ -771,11 +771,11 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     let tooltipContent = `<strong>${group.base || 'Home Base'}</strong>`;
     if (ready.length > 0) {
       const readyNames = ready.map(d => `${d.name.replace(/^Delta\s+/i, '')} (${d.battery}%)`).join(', ');
-      tooltipContent += `<br>✓ ${ready.length} ready for launch<br><span style="opacity:0.7;font-size:11px">${readyNames}</span>`;
+      tooltipContent += `<br>✓ ${ready.length} ready for launch<br><span class="tooltip-detail">${readyNames}</span>`;
     }
     if (charging.length > 0) {
       const chargingNames = charging.map(d => `${d.name.replace(/^Delta\s+/i, '')} (${d.battery}%)`).join(', ');
-      tooltipContent += `<br>⚡ ${charging.length} charging<br><span style="opacity:0.7;font-size:11px">${chargingNames}</span>`;
+      tooltipContent += `<br>⚡ ${charging.length} charging<br><span class="tooltip-detail">${chargingNames}</span>`;
     }
 
     const tooltip = L.tooltip({

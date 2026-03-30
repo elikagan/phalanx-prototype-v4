@@ -69,8 +69,8 @@ function updatePills() {
 
   if (target && target !== 'none') {
     const label = target === 'confirmed' || target === 'tracking' ? 'TARGET LOCKED' : 'TARGET DETECTED';
-    const color = target === 'confirmed' || target === 'tracking' ? 'var(--green)' : 'var(--red)';
-    pills.push(`<span class="pill" style="border-color:${color};color:${color}">${label}</span>`);
+    const pillClass = target === 'confirmed' || target === 'tracking' ? 'pill-green' : 'pill-red';
+    pills.push(`<span class="pill ${pillClass}">${label}</span>`);
   }
 
   el.innerHTML = pills.join('');

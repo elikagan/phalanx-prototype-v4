@@ -158,7 +158,7 @@ function toggleTargetMenu(circle) {
     const btn = document.createElement('button');
     btn.className = 'compass-point';
     btn.title = `View from ${dir.label}`;
-    btn.innerHTML = `<span class="material-symbols-outlined" style="transform:rotate(${dir.angle}deg);font-size:16px">arrow_upward</span>`;
+    btn.innerHTML = `<span class="material-symbols-outlined icon-sm" style="transform:rotate(${dir.angle}deg)">arrow_upward</span>`;
     const rad = (dir.angle - 90) * Math.PI / 180;
     btn.style.left = `${cx + Math.cos(rad) * arrowRadius}px`;
     btn.style.top = `${cy + Math.sin(rad) * arrowRadius}px`;

@@ -109,6 +109,84 @@
   white-space: pre-wrap;
 }
 
+/* === Auth Form === */
+.auth-form-wrap {
+  width: 100%;
+  max-width: 320px;
+}
+
+/* === Forgot Link === */
+.link-plain {
+  text-decoration: none;
+}
+
+/* === Path Selection Cards === */
+.path-row {
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.path-card {
+  width: 240px;
+}
+
+/* === Icon Color Modifiers (on card icons) === */
+.card-icon-red { color: var(--red); }
+.card-icon-accent { color: var(--accent); }
+
+/* === Inline Material Icon (small, inside text) === */
+.icon-inline {
+  font-size: 14px;
+  vertical-align: -2px;
+}
+
+/* === Icon sizes for map and UI === */
+.icon-xs { font-size: 12px; }
+.icon-sm { font-size: 16px; }
+.icon-md { font-size: 18px; }
+
+/* === Details / Summary === */
+details.card { cursor: pointer; }
+details.card > summary { padding: 4px 0; }
+
+/* === Preflight Wrapper === */
+.preflight-wrap {
+  max-width: 400px;
+}
+
+/* === Mission Summary Screen === */
+.summary-screen {
+  padding: 24px;
+  max-width: 560px;
+}
+
+.section-label-wide {
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+/* === Recommended Drone Card (accent left border) === */
+.card-recommended {
+  border-left: 3px solid var(--accent);
+}
+
+/* === Tooltip Detail Text (map base markers) === */
+.tooltip-detail {
+  opacity: 0.7;
+  font-size: 11px;
+}
+
+/* === Pill Color Variants (target status) === */
+.pill-green {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.pill-red {
+  border-color: var(--red);
+  color: var(--red);
+}
+
 /* === Password Gate === */
 .gate {
   width: 100%;

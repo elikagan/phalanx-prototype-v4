@@ -662,6 +662,27 @@
   opacity: 0.5;
 }
 
+/* ── Map icon modifiers ── */
+.incident-dot .material-symbols-outlined {
+  font-size: 18px;
+  color: #fff;
+}
+
+.fleet-drone-dot svg,
+.fleet-drone-marker svg {
+  /* rotation applied via inline style (dynamic value) */
+}
+
+.base-marker-icon {
+  font-size: 16px;
+  color: #fff;
+}
+
+.edit-handle-icon {
+  font-size: 12px;
+  color: #5F6368;
+}
+
 /* ── Edit Handles (draggable search zone) ── */
 .edit-handle {
   width: 12px;
