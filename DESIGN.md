@@ -110,11 +110,16 @@ All route lines use a dark casing underneath for legibility on satellite imagery
 ## Component Rules
 - No gratuitous borders, glows, gradients, or shadows
 - Every visual element earns its place — if removing it doesn't hurt comprehension, remove it
+- **No inline styles.** All styling via CSS classes. Only dynamic values (CSS custom properties, transform:rotate) may be inline.
 - Buttons: `--accent-dim` bg + `--accent-text` text for primary; `--bg-card` bg + `--text-secondary` text for secondary
 - Inputs: `--bg-card` bg, `--border` border, `--text-primary` text, `--border-strong` on focus
-- Cards: `--bg-card` bg, `--border` border, `--r-md` radius
+- Cards: `--bg-card` bg, `--border` border, `--r-md` radius. `.card-recommended` for accent left border.
 - Chat bubbles: SARA uses `--text-primary` (not secondary — readability over hierarchy in chat)
 - Status badges: pill shape, muted color bg at 15% opacity, status color text
+- Pills: `.pill-green` / `.pill-red` for target status coloring (no inline color)
+- Color text: use `.text-green`, `.text-red`, `.text-amber`, `.text-accent` utilities
+- Icon sizes: `.icon-inline` (14px, inline with text), `.icon-xs` (12px), `.icon-sm` (16px), `.icon-md` (18px)
+- Map markers: icon styles live in `map.css` (`.incident-dot .material-symbols-outlined`, `.base-marker-icon`, `.edit-handle-icon`)
 
 ## Decisions Log
 | Date | Decision | Rationale |
