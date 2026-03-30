@@ -54,6 +54,8 @@ function boot() {
       missionPath: '911',
       currentScreen: 3,
     });
+    // Fix history so back button goes to incidents map, not login
+    history.replaceState({ screen: 3 }, '', '');
   }
   topbar.init();
   mapComponent.init();
