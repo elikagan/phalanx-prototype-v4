@@ -526,7 +526,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #407CF5;
+  background: var(--dot-color, #a89540);
   border: none;
   display: flex;
   align-items: center;
@@ -564,7 +564,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #407CF5;
+  background: var(--dot-color, #1c1c1f);
   border: none;
   display: flex;
   align-items: center;

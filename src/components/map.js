@@ -509,10 +509,12 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
     const inc = incidents[i];
     if (!inc.coordinates) continue;
     const incNumber = inc.id.replace(/\D/g, '');
+    const hasLinkedDrone = assignedIncidentIds.has(inc.id);
+    const dotColor = hasLinkedDrone ? '#407CF5' : '#a89540';
     const marker = L.marker(inc.coordinates, {
       icon: L.divIcon({
         className: 'incident-map-marker',
-        html: `<div class="incident-dot">
+        html: `<div class="incident-dot" style="--dot-color:${dotColor}">
           <span class="material-symbols-outlined" style="font-size:18px;color:#fff">${inc.icon || 'location_on'}</span>
         </div>
         <div class="incident-map-label">${inc.type} #${incNumber}</div>`,
@@ -574,21 +576,20 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     if (!drone.coordinates) continue;
     const isAvailable = drone.status === 'available';
     const isMission = drone.status === 'in-mission';
-    const color = isAvailable ? MC.droneFriendly
-      : isMission ? MC.droneMission
-      : MC.droneOffline;
+    const isAssigned = isMission && drone.assignedIncident;
+    const dotColor = isAssigned ? '#407CF5' : '#1c1c1f';
 
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
-        html: `<div class="fleet-drone-dot">
+        html: `<div class="fleet-drone-dot" style="--dot-color:${dotColor}">
           ${FLEET_DRONE_SVG()}
         </div>
         <div class="fleet-drone-label">${drone.name}</div>`,
         iconSize: [120, 48],
         iconAnchor: [20, 20],
       }),
-      zIndexOffset: isAvailable ? 850 : 700,
+      zIndexOffset: isAssigned ? 900 : isAvailable ? 850 : 700,
       interactive: isAvailable,
     }).addTo(map);
 
