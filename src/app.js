@@ -45,17 +45,18 @@ function boot() {
   state.init();
   state.set({ isMobile: window.innerWidth < 768 });
 
-  // If returning from a reload, skip auth screens and go to incidents map
+  // If returning from a reload, restore to where we were (sessionStorage via state.init)
+  // Fall back to incidents map if authenticated but no saved screen
+  const savedScreen = state.get('currentScreen');
   if (localStorage.getItem('phalanx-auth') === 'true') {
     state.set({
       authenticated: true,
       orgName: 'Riverside County SAR',
       userName: 'J. Martinez',
-      missionPath: '911',
-      currentScreen: 3,
+      missionPath: state.get('missionPath') || '911',
+      currentScreen: savedScreen > 1 ? savedScreen : 3,
     });
-    // Fix history so back button goes to incidents map, not login
-    history.replaceState({ screen: 3 }, '', '');
+    history.replaceState({ screen: state.get('currentScreen') }, '', '');
   }
   topbar.init();
   mapComponent.init();
@@ -1073,7 +1074,29 @@ function setupSearchAreaScreen() {
 
 async function setupPreflightScreen() {
   chat.clear();
+  mapComponent.clearOverlays();
   const gen = chat.getGeneration();
+
+  // Show drone, incident, route, and search zone on map
+  const inc = state.get('selectedIncident');
+  const drone = state.get('selectedDrone');
+  const zone = state.get('searchZone');
+  if (inc) mapComponent.showIncidents([inc], () => {});
+  if (drone) mapComponent.showFleetDrones([drone], inc?.coordinates || null, () => {}, { skipRouteLines: true });
+  if (drone?.coordinates && inc?.coordinates) {
+    const dist = drone.distanceFromIncident || 2.3;
+    const etaSec = Math.round(dist / 60 * 3600);
+    const etaLabel = etaSec >= 60 ? `${Math.floor(etaSec / 60)}m ${etaSec % 60}s` : `${etaSec}s`;
+    mapComponent.addRouteLine(drone.coordinates, inc.coordinates, {
+      label: `${dist} km · ${etaLabel}`,
+    });
+  }
+  if (zone) state.set({ searchZone: zone }); // triggers map overlay
+  if (inc?.coordinates && drone?.coordinates) {
+    mapComponent.fitAllMarkers([60, 60], 13);
+  } else if (inc?.coordinates) {
+    mapComponent.focusIncident(inc.coordinates, 15);
+  }
 
   chat.appendSara("Running pre-flight checks...");
 
