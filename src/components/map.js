@@ -699,18 +699,18 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
 
     // Route line from drone to incident (skipped when caller draws its own route)
     if (incidentCoords && isReroutable && !skipRouteLines) {
-      // Recommended = Level 3 (Emphasis), Alternatives = Level 1 (Ghost)
+      // Recommended = Level 3 (Emphasis), Alternatives = Level 2 (Default)
       const isRec = isRecommended;
-      const w = isRec ? 4 : 2;
+      const w = isRec ? 4 : 3;
       const shadow = L.polyline([drone.coordinates, incidentCoords], {
-        color: '#000', weight: w + 1, opacity: isRec ? 0.4 : 0.2,
-        dashArray: isRec ? '2, 10' : '2, 12', lineCap: 'round',
+        color: '#000', weight: w + 1, opacity: isRec ? 0.4 : 0.25,
+        dashArray: '2, 10', lineCap: 'round',
         className: 'route-shadow',
       }).addTo(map);
       distanceLines.push(shadow);
       const line = L.polyline([drone.coordinates, incidentCoords], {
-        color: '#fff', weight: w, opacity: isRec ? 0.95 : 0.45,
-        dashArray: isRec ? '2, 10' : '2, 12', lineCap: 'round',
+        color: '#fff', weight: w, opacity: isRec ? 0.95 : 0.6,
+        dashArray: '2, 10', lineCap: 'round',
       }).addTo(map);
       distanceLines.push(line);
 
