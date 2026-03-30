@@ -91,21 +91,76 @@
 
 ## Map Route Lines — 4 Emphasis Levels
 
-All route lines use a dark casing underneath for legibility on satellite imagery. Dots are achieved with very short dashes + `lineCap: 'round'`.
+All dotted route lines use a 1px offset drop shadow (`.route-shadow` class) for legibility on satellite imagery. Dots are achieved with very short dashes + `lineCap: 'round'`.
 
-| Level | Name | Use Case | Weight | Dash | Opacity | Color | Casing |
+| Level | Name | Use Case | Weight | Dash | Opacity | Color | Shadow |
 |-------|------|----------|--------|------|---------|-------|--------|
-| 1 | Ghost | Alternative routes, not selected | 2 | `'2, 12'` | 0.45 | `#fff` | 5px, 0.2 |
-| 2 | Default | Proposed route, standard | 3 | `'2, 10'` | 0.7 | `#fff` | 7px, 0.3 |
-| 3 | Emphasis | Recommended / selected route | 4 | `'2, 10'` | 0.95 | `#fff` | 8px, 0.4 |
-| 4 | Solid | Active mission, confirmed path | 4 | none | 0.9 | `#407CF5` | 8px, 0.4 |
+| 1 | Ghost | Alternative routes, not selected | 2 | `'2, 12'` | 0.45 | `#fff` | weight+1, 0.2 |
+| 2 | Default | Proposed route, standard | 3 | `'2, 10'` | 0.7 | `#fff` | weight+1, 0.3 |
+| 3 | Emphasis | Recommended / selected route | 4 | `'2, 10'` | 0.95 | `#fff` | weight+1, 0.4 |
+| 4 | Solid | Active mission, confirmed path | 4 | none | 0.9 | `#407CF5` | weight+1, 0.4 |
 
 **Rules:**
 - `lineCap: 'round'` on ALL lines (dots, not ticks)
-- Casing is always solid black, never dashed
+- Shadow is always 1px offset via CSS `transform: translate(1px, 1px)`, same dash pattern as the route line
 - Dash `'2, 10'` = 2px dot + 10px gap = evenly spaced round dots
 - Ghost level uses wider gap (`'2, 12'`) so dots feel sparser
 - Only Level 4 (active/confirmed) uses color. All others are white.
+
+## Map Overlays — Complete System
+
+All map overlays sit on satellite imagery. Dark backgrounds with light text is the standard for aviation/tactical maps (Mapbox Navigation night, QGroundControl).
+
+### Hierarchy (loudest → quietest)
+| Tier | Element | Purpose |
+|------|---------|---------|
+| LOUD | Incident pin | The emergency. Bright color dot (amber P1-P2, red critical), white icon, 40px |
+| MEDIUM | Route lines | Movement paths. White dotted (proposed) or blue solid (active). See Route Lines below |
+| MEDIUM | Target marker | Red 24px dot, white border, pulsing ring. Green when confirmed |
+| QUIET | Labels | Info when you need it. Dark pill bg, light text. All share one base style |
+| BACKGROUND | Search zones | Amber fill, no stroke, very subtle. Context, not focus |
+| BACKGROUND | Orbit zones | White dashed circle, blue fill at 0.15-0.18 opacity |
+
+### Drone Marker — One Look Everywhere
+All drones use the fleet-drone-dot style: a colored circle (32px) with a white flying-wing SVG inside, rotated to heading. Never the old teal standalone SVG.
+
+| Condition | Dot Color | Notes |
+|-----------|-----------|-------|
+| Available/surveillance | `#1c1c1f` (dark) | Quiet, blends with map |
+| Recommended/selected | `#407CF5` (route blue) | Stands out from alternatives |
+| In-mission/assigned | `#407CF5` (route blue) | Active assignment |
+
+### Route Line Shadows
+All route lines use a **1px offset drop shadow**, not thick centered casing. The shadow line is `weight + 1`, `opacity: 0.3`, black, with CSS `transform: translate(1px, 1px)` via the `.route-shadow` class. This creates a subtle depth effect without the heavy black border of centered casing.
+
+### Map Labels — One Base Style
+All map labels (route labels, drone labels, incident labels, target labels) share the same visual treatment:
+- Font: Geist 10px, weight 500
+- Text: `rgba(237, 239, 242, 0.9)` (near-white)
+- Background: `rgba(0, 0, 0, 0.45)` (dark translucent)
+- Padding: `1px 6px`, border-radius: `3px`
+- Variants: `.route-label-primary` bumps bg to `0.6` and text to `#fff`. `.route-label-dim` reduces opacity to 0.5. Status labels (target-located, target-map) use status color text instead.
+
+### Map Color Palette
+Map-specific colors that pair with the satellite imagery. These are intentional deviations from UI tokens, not conflicts.
+
+| Token | Hex | Usage | Notes |
+|-------|-----|-------|-------|
+| Route blue | `#407CF5` | Active route lines, flight trail, assigned markers | Mapbox Navigation standard |
+| Route casing | `#1B43B4` | Flight trail outline (casing only on active trail) | Deep blue, not black |
+| Alt route | `#5f8fad` | Return-to-base route, secondary routes | Matches `--accent` |
+| Incident amber | `#D4A017` | P1-P2 incident dots, search zone fill | Warm amber for satellite contrast |
+| Incident red | `#c95454` | Critical incidents, target-map-label | Desaturated red |
+| Green | `#4a9a65` | Confirmed target, orbit zone | Matches `--green` |
+| Label bg | `rgba(0, 0, 0, 0.45)` | All map label backgrounds | One value everywhere |
+| Label text | `rgba(237, 239, 242, 0.9)` | All map label text | Near-white |
+
+### Flight Trail
+The flight trail uses thick centered casing (NOT offset shadow) because it's a continuous path, not a dotted route:
+- Outline: `#1B43B4`, weight 7, opacity 0.8
+- Route: `#407CF5`, weight 4, opacity 1.0
+- Both use `lineCap: 'round'`
+- Trail is cleared on every `clearOverlays()` call
 
 ## Component Rules
 - No gratuitous borders, glows, gradients, or shadows
@@ -129,3 +184,4 @@ All route lines use a dark casing underneath for legibility on satellite imagery
 | 2026-03-27 | Compact 4px base spacing | Tactical tool, data-dense screens, operator efficiency |
 | 2026-03-27 | Minimal-functional motion | Operators need clarity, not delight. Every animation serves spatial understanding |
 | 2026-03-27 | Fresh component design | v1-v3 components carried over without thought. All components designed from scratch for v4 |
+| 2026-03-30 | Unified map overlay system | One drone marker style, one shadow style (1px offset), one label base class, aligned palette, trail clears on screen change |

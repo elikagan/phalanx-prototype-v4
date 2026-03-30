@@ -2,17 +2,16 @@
 @import 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
 
 /*
- * MAP OVERLAY DESIGN SYSTEM
- * Sources: Mapbox Navigation (night), QGroundControl, MIL-STD-2525
+ * MAP OVERLAY DESIGN SYSTEM — see DESIGN.md "Map Overlays"
  *
  * HIERARCHY:
- *   1. Incident pin  — desaturated MIL-STD red, white border
- *   2. Route lines   — Mapbox blue #407CF5, 4px with #1B43B4 casing at 7px
- *   3. Labels        — dark bg rgba(24,27,32,0.85), light text #EDEFF2
- *   4. Search zones  — steel blue #5f8fad, 2px dashed, 0.12 fill
- *   5. Drone markers — MIL-STD cyan #5fb8c2
+ *   1. Incident pin  — amber/red dot, white icon, 40px
+ *   2. Route lines   — white dotted or #407CF5 solid, 1px offset shadow
+ *   3. Labels        — dark bg rgba(0,0,0,0.45), light text
+ *   4. Search zones  — amber fill, no stroke
+ *   5. Drone markers — fleet-drone-dot (colored circle + white SVG)
  *
- * Dark labels on satellite = aviation/tactical industry standard.
+ * ONE drone look, ONE shadow style, ONE label base.
  */
 
 /* === Map Overlays === */
@@ -20,18 +19,8 @@
   background: var(--bg-void);
 }
 
-/* ── Drone marker ── */
-.drone-marker {
-  width: 36px;
-  height: 36px;
-  transition: transform var(--dur-normal) var(--ease-out);
-}
-
-.drone-marker svg {
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 4px rgba(95, 184, 194, 0.4));
-}
+/* ── Drone marker — uses fleet-drone-dot everywhere (see DESIGN.md) ── */
+/* Old .drone-marker class removed — all drones use .fleet-drone-dot now */
 
 /* ── Search zone label — QUIET tier (ghost text, no bg) ── */
 .search-zone-label {
@@ -142,15 +131,15 @@
   color: var(--green);
 }
 
-/* Target label on map — MEDIUM tier with status color */
+/* Target label on map — same base bg, status color text */
 .target-map-label {
-  font-family: var(--font-mono);
+  font-family: 'Geist', var(--font-ui);
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.5px;
-  color: #c95454;
-  background: rgba(24, 27, 32, 0.55);
-  padding: 2px 6px;
+  letter-spacing: 0.1px;
+  color: #b85454;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1px 6px;
   border-radius: 3px;
   white-space: nowrap;
   pointer-events: none;
@@ -539,16 +528,16 @@
   50% { box-shadow: 0 0 0 8px rgba(64, 124, 245, 0), 0 2px 6px rgba(0, 0, 0, 0.35); }
 }
 
-/* Incident label — sized to content, subtle dark bg */
+/* Incident label — same base style as all map labels */
 .incident-map-label {
   font-family: 'Geist', var(--font-ui);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.1px;
   color: rgba(237, 239, 242, 0.9);
-  background: rgba(24, 27, 32, 0.6);
-  padding: 3px 8px;
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1px 6px;
+  border-radius: 3px;
   white-space: nowrap;
   width: fit-content;
   margin-top: 4px;
@@ -619,11 +608,7 @@
   margin-top: 3px;
 }
 
-/* ── Route Labels — white chip, dark text (Google Maps style) ── */
-/*
- * Route label — MEDIUM tier (semi-transparent, not boxed)
- * Key info (distance, ETA) but shouldn't dominate.
- */
+/* ── Route Labels — dark pill, light text (matches all map labels) ── */
 /* Route line shadow — 1px offset drop shadow */
 .route-shadow {
   transform: translate(1px, 1px);

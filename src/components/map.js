@@ -1,20 +1,18 @@
 /**
  * Map Component — Leaflet satellite map
  *
- * MAP OVERLAY DESIGN SYSTEM
- * Modeled after Google Maps satellite view. Hierarchy is everything.
+ * MAP OVERLAY DESIGN SYSTEM (see DESIGN.md "Map Overlays" for full docs)
  *
- * LOUD  (1 thing):  Incident pin — bright red, white border. The emergency.
- * MEDIUM:           Route lines — #1A73E8 Google blue, thin (3px), dark outline.
- * QUIET:            Labels — white pill, dark text, small. Info when you need it.
- * BACKGROUND:       Search zones — thin dashed outline, barely-there fill.
+ * LOUD:       Incident pin — amber/red dot, white icon, 40px
+ * MEDIUM:     Route lines — white dotted (proposed) or #407CF5 solid (active)
+ * MEDIUM:     Target marker — red/green 24px dot with pulse
+ * QUIET:      Labels — dark pill bg rgba(0,0,0,0.45), light text, 10px
+ * BACKGROUND: Search zones — amber fill, no stroke
+ * BACKGROUND: Orbit zones — white dashed circle, blue fill 0.15
  *
- * Rules:
- *   - Only the incident marker should grab your eye
- *   - Route lines are visible but calm
- *   - Labels are white chips, not colored billboards
- *   - Drone markers are dark circles with subtle icons
- *   - Less stroke weight = more professional
+ * ONE drone marker look: fleet-drone-dot (colored circle + white SVG)
+ * ONE shadow style: 1px offset via .route-shadow CSS class
+ * ONE label base: .route-label / .fleet-drone-label (same visual)
  */
 
 import L from 'leaflet';
@@ -24,34 +22,23 @@ import { MAP_CENTER, MAP_ZOOM } from '../scenarios/san-diego-pursuit.js';
 // ── Map Overlay Palette ────────────────────────────────────
 // Sourced from Mapbox Navigation (night), QGroundControl, MIL-STD-2525
 // Dark labels on satellite = industry standard for aviation/tactical maps
+// See DESIGN.md "Map Color Palette" for documentation
 const MC = {
   // Route — Mapbox Navigation night guidance
   routeBlue: '#407CF5',
   routeCasing: '#1B43B4',
-  altRoute: '#5f8fad',        // steel blue for secondary/return routes
+  altRoute: '#5f8fad',        // matches --accent, for RTB/secondary routes
 
-  // Incident — MIL-STD hostile red (desaturated)
-  incidentRed: '#c95454',
+  // Incident — matches DESIGN.md status colors
+  incidentRed: '#b85454',     // matches --red
   incidentAmber: '#D4A017',
 
-  // Status — MIL-STD desaturated
-  green: '#4a9a65',
-  amber: '#D4A017',
+  // Status — matches DESIGN.md
+  green: '#4a9a65',           // matches --green
+  amber: '#a89540',           // matches --amber
 
-  // Labels — Mapbox Navigation night mode (dark bg, light text)
-  labelBg: 'rgba(24, 27, 32, 0.85)',
-  labelText: '#EDEFF2',
-  labelSecondary: '#A6B2C6',
-  labelBorder: 'rgba(255, 255, 255, 0.12)',
-
-  // Search zone — steel blue, subtle
-  zoneLine: '#5f8fad',
-  zoneFill: '#5f8fad',
-
-  // Drone — MIL-STD friendly cyan (desaturated)
-  droneFriendly: '#5fb8c2',
-  droneMission: '#D4A017',
-  droneOffline: '#585858',
+  // Search zone
+  zoneFill: '#D4A017',        // amber, same as incident
 };
 
 let map = null;
@@ -71,25 +58,11 @@ let incidentMarkers = [];
 let fleetMarkers = [];
 let distanceLines = [];
 
-// Drone SVG — stealth flying wing, cyan fill (MIL-STD friendly)
-const DRONE_SVG = `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <path d="M16 6 L4 24 L8 22 L16 20 L24 22 L28 24 Z"
-    fill="${MC.droneFriendly}" stroke="#fff" stroke-width="0.8" opacity="0.95"/>
-  <path d="M16 6 L16 20" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>
+// Fleet drone SVG — white flying wing on colored circle
+// This is the ONE drone look used everywhere (see DESIGN.md "Drone Marker")
+const FLEET_DRONE_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
 </svg>`;
-
-// Fleet drone SVG — white icon on blue circle
-const FLEET_DRONE_SVG = () => `<svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
-  <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z"
-    fill="#fff" stroke="none"/>
-</svg>`;
-
-const droneIcon = L.divIcon({
-  className: 'drone-marker',
-  html: DRONE_SVG,
-  iconSize: [36, 36],
-  iconAnchor: [18, 18],
-});
 
 export function init() {
   const el = document.getElementById('map');
@@ -149,7 +122,20 @@ function onDroneMove(pos) {
   const latlng = [pos.lat, pos.lng];
 
   if (!droneMarker) {
-    droneMarker = L.marker(latlng, { icon: droneIcon, zIndexOffset: 1000 }).addTo(map);
+    const heading = state.get('droneHeading') || 0;
+    droneMarker = L.marker(latlng, {
+      icon: L.divIcon({
+        className: 'fleet-drone-marker',
+        html: `<div class="fleet-drone-dot" style="--dot-color:#407CF5">
+          <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${Math.round(heading)}deg)">
+            <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
+          </svg>
+        </div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+      }),
+      zIndexOffset: 1000,
+    }).addTo(map);
   } else {
     droneMarker.setLatLng(latlng);
   }
@@ -170,8 +156,11 @@ export function hideDroneMarker() {
 function onDroneHeading(heading) {
   if (!droneMarker) return;
   const el = droneMarker.getElement();
-  if (el) {
-    el.style.transform = `${el.style.transform.replace(/rotate\([^)]*\)/, '')} rotate(${heading}deg)`;
+  if (!el) return;
+  // Rotate the SVG inside the fleet-drone-dot, not the whole marker
+  const svg = el.querySelector('svg');
+  if (svg) {
+    svg.style.transform = `rotate(${Math.round(heading)}deg)`;
   }
 }
 
@@ -692,12 +681,13 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       });
       distanceLines.push(orbitZone);
 
-      // Solid route line (not dashed — this is an active assignment, not proposed)
-      // Non-interactive so clicks pass through to the orbit zone
-      const casing = L.polyline([drone.coordinates, targetCoords], {
-        color: '#000', weight: 7, opacity: 0.3, lineCap: 'round', interactive: false,
+      // Solid route line (Level 4 — active assignment, not proposed)
+      // 1px offset shadow, not thick centered casing
+      const shadow = L.polyline([drone.coordinates, targetCoords], {
+        color: '#000', weight: 4, opacity: 0.3, lineCap: 'round', interactive: false,
+        className: 'route-shadow',
       }).addTo(map);
-      distanceLines.push(casing);
+      distanceLines.push(shadow);
       const line = L.polyline([drone.coordinates, targetCoords], {
         color: '#407CF5', weight: 3, opacity: 0.8, lineCap: 'round', interactive: false,
       }).addTo(map);
@@ -706,14 +696,17 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
 
     // Route line from drone to incident (skipped when caller draws its own route)
     if (incidentCoords && isReroutable && !skipRouteLines) {
-      // Recommended: bold white dashed. Alternatives: thinner white dashed.
+      // Recommended = Level 3 (Emphasis), Alternatives = Level 1 (Ghost)
       const isRec = isRecommended;
-      const casing = L.polyline([drone.coordinates, incidentCoords], {
-        color: '#000', weight: isRec ? 8 : 6, opacity: isRec ? 0.4 : 0.3, lineCap: 'round',
+      const w = isRec ? 4 : 2;
+      const shadow = L.polyline([drone.coordinates, incidentCoords], {
+        color: '#000', weight: w + 1, opacity: isRec ? 0.4 : 0.2,
+        dashArray: isRec ? '2, 10' : '2, 12', lineCap: 'round',
+        className: 'route-shadow',
       }).addTo(map);
-      distanceLines.push(casing);
+      distanceLines.push(shadow);
       const line = L.polyline([drone.coordinates, incidentCoords], {
-        color: '#fff', weight: isRec ? 4 : 2.5, opacity: isRec ? 0.95 : 0.6,
+        color: '#fff', weight: w, opacity: isRec ? 0.95 : 0.45,
         dashArray: isRec ? '2, 10' : '2, 12', lineCap: 'round',
       }).addTo(map);
       distanceLines.push(line);
@@ -830,6 +823,7 @@ export function clearOverlays() {
   clearIncidentMarkers();
   clearFleetMarkers();
   clearRouteLines();
+  clearTrail();
 }
 
 // ── Route Lines with Labels ──────────────────────────────
