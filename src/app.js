@@ -1046,17 +1046,65 @@ async function setupPreflightScreen() {
 
 function setupMissionScreen() {
   chat.clear();
+  mapComponent.clearOverlays();
+
+  const drone = state.get('selectedDrone');
+  const inc = state.get('selectedIncident');
+  const droneCoords = drone?.coordinates || [32.7680, -117.1820];
+  const incCoords = inc?.coordinates || SEARCH_ZONE.origin;
+
   state.set({
-    dronePosition: { lat: 32.7210, lng: -117.1498 },
+    dronePosition: { lat: droneCoords[0], lng: droneCoords[1] },
     droneHeading: 180,
     droneAltitude: 120,
     droneSpeed: 35,
   });
 
-  chat.appendSara("Mission active. Drone is airborne and heading to search area. Use the mic or type to communicate.");
+  // Start in map view (not FPV) so the operator sees the tactical picture
+  const fpvLayer = document.getElementById('fpv-layer');
+  const thumb = document.getElementById('view-thumb');
+  const thumbLabel = document.getElementById('view-thumb-label');
+  if (fpvLayer) fpvLayer.style.display = 'none';
+  if (thumb) thumb.classList.add('showing-map');
+  if (thumbLabel) thumbLabel.textContent = 'CAM';
+
+  // Map overlays — same visual language as briefing screen
+  if (inc) mapComponent.showIncidents([inc], () => {});
+  if (inc?.coordinates) {
+    mapComponent.showSearchZonePreview(incCoords, SEARCH_ZONE.radius, 0.15);
+  }
+  // Drone marker pointed at incident
+  if (drone) {
+    mapComponent.showFleetDrones([drone], incCoords, () => {});
+  }
+  // Route line from drone to incident with distance/ETA
+  if (drone?.coordinates && inc?.coordinates) {
+    const R = 6371;
+    const dLat = (incCoords[0] - droneCoords[0]) * Math.PI / 180;
+    const dLng = (incCoords[1] - droneCoords[1]) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(droneCoords[0] * Math.PI / 180) * Math.cos(incCoords[0] * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+    const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const etaSec = Math.round(distKm / 60 * 3600);
+    const etaStr = etaSec >= 60 ? `${Math.floor(etaSec / 60)}m ${etaSec % 60}s` : `${etaSec}s`;
+    mapComponent.addRouteLine(droneCoords, incCoords, {
+      label: `${distKm.toFixed(1)} km · ${etaStr}`,
+    });
+  }
+  // Fit both drone and incident in view
+  if (inc?.coordinates && drone?.coordinates) {
+    mapComponent.fitAllMarkers([60, 60], 13);
+  } else if (inc?.coordinates) {
+    mapComponent.focusIncident(incCoords, 15);
+  }
+
+  // Resize map since we started in map view
+  requestAnimationFrame(() => mapComponent.resize());
+
+  const shortName = drone?.name?.replace(/^Delta\s+/i, '') || 'Drone';
+  chat.appendSara(`${shortName} launched and en route to search area. Use the mic or type to communicate.`);
 
   // Pre-type first exchange into textarea after a delay
-  setTimeout(() => orchestrator.preTypeNext(), 2000);
+  setTimeout(() => orchestrator.preTypeNext(), 3000);
 }
 
 function setupTargetSpottedScreen() {
