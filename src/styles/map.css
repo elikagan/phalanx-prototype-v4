@@ -638,6 +638,22 @@
   width: fit-content;
 }
 
+/* ── Target Located Label (live orbit zone) ── */
+.target-located-label {
+  font-family: 'Geist', var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: #D4A017;
+  background: rgba(24, 27, 32, 0.75);
+  padding: 3px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+  text-align: center;
+  width: fit-content;
+}
+
 /* ── Edit Handles (draggable search zone) ── */
 .edit-handle {
   width: 12px;

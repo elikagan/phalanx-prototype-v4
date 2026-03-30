@@ -425,12 +425,12 @@ function onTargetStatus(status) {
     const pos = state.get('targetPosition');
     if (pos && !orbitCircle) {
       orbitCircle = L.circle([pos.lat, pos.lng], {
-        radius: 80,
+        radius: 120,
         color: MC.green,
         weight: 2,
-        dashArray: '6 4',
+        dashArray: '8 6',
         fillColor: MC.green,
-        fillOpacity: 0.08,
+        fillOpacity: 0.10,
       }).addTo(map);
     }
   }
@@ -639,13 +639,13 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
 
       // Orbit/surveillance zone around incident (blue tint, shows active coverage)
       const orbitZone = L.circle(targetCoords, {
-        radius: 200,
-        color: '#407CF5',
-        weight: 1.5,
-        opacity: 0.5,
-        dashArray: '6 4',
+        radius: 300,
+        color: '#fff',
+        weight: 3,
+        opacity: 0.7,
+        dashArray: '12, 8',
         fillColor: '#407CF5',
-        fillOpacity: 0.12,
+        fillOpacity: 0.15,
       }).addTo(map);
       distanceLines.push(orbitZone);
 
@@ -842,6 +842,39 @@ export function showReturnRoute(dronePos, basePos) {
     color: MC.altRoute,
     label: `RTB · ${dist.toFixed(1)} km · ${etaStr}`,
   });
+}
+
+// ── Live Orbit Zone (drone actively on scene) ──────────
+// Big, bold, unmistakable — thick white dashed border, strong blue fill
+export function showLiveOrbitZone(center, radius = 350) {
+  if (!map) return;
+
+  // Large blue fill zone
+  const zone = L.circle(center, {
+    radius,
+    color: '#fff',
+    weight: 4,
+    opacity: 0.85,
+    dashArray: '14, 10',
+    fillColor: '#407CF5',
+    fillOpacity: 0.18,
+  }).addTo(map);
+  routeLineOverlays.push(zone);
+
+  // "TARGET LOCATED" label below the incident
+  const labelOffset = radius / 111320 * 0.6; // offset south
+  const labelPos = [center[0] - labelOffset, center[1]];
+  const label = L.marker(labelPos, {
+    icon: L.divIcon({
+      className: 'target-located-label',
+      html: 'TARGET LOCATED',
+      iconSize: [140, 24],
+      iconAnchor: [70, 12],
+    }),
+    interactive: false,
+    zIndexOffset: 870,
+  }).addTo(map);
+  routeLineOverlays.push(label);
 }
 
 export function showSearchZonePreview(center, radius, fillOpacity = 0.25) {

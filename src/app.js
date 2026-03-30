@@ -1046,16 +1046,6 @@ async function setupLiveSceneScreen() {
   const inc = state.get('selectedIncident');
   const drone = state.get('selectedDrone');
 
-  // Position drone at incident location for the FPV view
-  if (inc?.coordinates) {
-    state.set({
-      dronePosition: { lat: inc.coordinates[0], lng: inc.coordinates[1] },
-      droneHeading: 220,
-      droneAltitude: 85,
-      droneSpeed: 0,
-    });
-  }
-
   // Use static aerial image for the FPV feed
   fpv.setStaticImage(`${import.meta.env.BASE_URL}aerial_view_red_car.png`);
 
@@ -1067,12 +1057,13 @@ async function setupLiveSceneScreen() {
   }, handleTargetAction);
 
   // Show incident + drone on the underlying map (visible via toggle)
+  // Pass incidents so the in-mission drone gets its orbit zone + connection line
   if (inc) mapComponent.showIncidents([inc], () => {});
-  if (drone) mapComponent.showFleetDrones([drone], null, () => {});
-  // Show orbit circle around target on map
+  if (drone) mapComponent.showFleetDrones([drone], null, () => {}, { skipFitBounds: true, incidents: [inc] });
+  // Show large orbit zone around target on map (drone is actively on scene)
   if (inc?.coordinates) {
-    state.set({ targetPosition: { lat: inc.coordinates[0], lng: inc.coordinates[1] } });
-    state.set({ targetStatus: 'confirmed' });
+    mapComponent.showLiveOrbitZone(inc.coordinates, 350);
+    mapComponent.focusIncident(inc.coordinates, 16);
   }
 
   const incNumber = inc?.id?.replace(/\D/g, '') || '—';
