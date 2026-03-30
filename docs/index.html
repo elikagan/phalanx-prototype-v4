@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
   <script>
     // Instant session restore — runs before first paint, no flash
-    if (sessionStorage.getItem('phalanx-auth') === 'true') {
+    if (localStorage.getItem('phalanx-auth') === 'true') {
       document.documentElement.classList.add('authed');
     }
   </script>
@@ -22,7 +22,7 @@
     html.authed .shell { display: flex !important; visibility: visible !important; }
     html.authed .shell.hidden { display: flex !important; }
   </style>
-  <script type="module" crossorigin src="/phalanx-prototype-v4/assets/index-CqPJ6cXL.js"></script>
+  <script type="module" crossorigin src="/phalanx-prototype-v4/assets/index-D0m9RgIK.js"></script>
   <link rel="stylesheet" crossorigin href="/phalanx-prototype-v4/assets/index-DoFvREwd.css">
 </head>
 <body>

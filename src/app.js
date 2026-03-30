@@ -18,7 +18,7 @@ import { INCIDENTS, DRONES, SEARCH_ZONE, WAYPOINTS, PREFLIGHT_CHECKS, MISSION_SU
 const PASSWORD = 'phalanx';
 
 // Auto-restore session if already authenticated
-if (sessionStorage.getItem('phalanx-auth') === 'true') {
+if (localStorage.getItem('phalanx-auth') === 'true') {
   document.getElementById('password-gate')?.classList.add('hidden');
   document.getElementById('app-shell')?.classList.remove('hidden');
   requestAnimationFrame(() => boot());
@@ -29,7 +29,7 @@ document.getElementById('gate-form')?.addEventListener('submit', (e) => {
   const input = document.getElementById('gate-input');
   const error = document.getElementById('gate-error');
   if (input.value === PASSWORD) {
-    sessionStorage.setItem('phalanx-auth', 'true');
+    localStorage.setItem('phalanx-auth', 'true');
     document.getElementById('password-gate').classList.add('hidden');
     document.getElementById('app-shell').classList.remove('hidden');
     boot();

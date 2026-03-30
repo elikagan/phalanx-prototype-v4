@@ -19,7 +19,7 @@
   <link rel="stylesheet" href="/src/styles/animations.css">
   <script>
     // Instant session restore — runs before first paint, no flash
-    if (sessionStorage.getItem('phalanx-auth') === 'true') {
+    if (localStorage.getItem('phalanx-auth') === 'true') {
       document.documentElement.classList.add('authed');
     }
   </script>
