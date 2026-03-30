@@ -159,6 +159,14 @@ function onDroneMove(pos) {
   flightTrail.setLatLngs(trailCoords);
 }
 
+/** Hide the state-driven drone marker (use when showing fleet drone marker instead) */
+export function hideDroneMarker() {
+  if (droneMarker && map) {
+    map.removeLayer(droneMarker);
+    droneMarker = null;
+  }
+}
+
 function onDroneHeading(heading) {
   if (!droneMarker) return;
   const el = droneMarker.getElement();
@@ -563,7 +571,7 @@ export function focusIncident(coordinates, zoom = 16) {
 // ── Fleet Drone Markers ───────────────────────────────────
 // Three types: surveillance (airborne), in-mission (assigned), standby (ground/home base)
 
-export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false, incidents = [], onIncidentSelect = null, recommendedDroneId = null } = {}) {
+export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false, incidents = [], onIncidentSelect = null, recommendedDroneId = null, skipRouteLines = false } = {}) {
   clearFleetMarkers();
   if (!map) return;
 
@@ -696,8 +704,8 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       distanceLines.push(line);
     }
 
-    // Route line from drone to incident
-    if (incidentCoords && isReroutable) {
+    // Route line from drone to incident (skipped when caller draws its own route)
+    if (incidentCoords && isReroutable && !skipRouteLines) {
       // Recommended: bold white dashed. Alternatives: thinner white dashed.
       const isRec = isRecommended;
       const casing = L.polyline([drone.coordinates, incidentCoords], {
@@ -831,10 +839,13 @@ let routeLineOverlays = [];
 export function addRouteLine(from, to, { color = '#fff', weight = 3, opacity = 0.7, dashArray = '2, 10', label = '' } = {}) {
   if (!map) return;
 
-  // Solid casing (always solid, never dashed)
-  const casing = L.polyline([from, to], { color: '#000', weight: weight + 4, opacity: 0.4, lineCap: 'round' }).addTo(map);
-  routeLineOverlays.push(casing);
-  // Dashed route on top
+  // Shadow line — 1px offset, subtle drop shadow effect
+  const shadow = L.polyline([from, to], {
+    color: '#000', weight: weight + 1, opacity: 0.3, dashArray, lineCap: 'round',
+    className: 'route-shadow',
+  }).addTo(map);
+  routeLineOverlays.push(shadow);
+  // Route line on top
   const line = L.polyline([from, to], { color, weight, opacity, dashArray, lineCap: 'round' }).addTo(map);
   routeLineOverlays.push(line);
 

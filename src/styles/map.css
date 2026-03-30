@@ -624,6 +624,11 @@
  * Route label — MEDIUM tier (semi-transparent, not boxed)
  * Key info (distance, ETA) but shouldn't dominate.
  */
+/* Route line shadow — 1px offset drop shadow */
+.route-shadow {
+  transform: translate(1px, 1px);
+}
+
 .route-label {
   font-family: 'Geist', var(--font-ui);
   font-size: 10px;

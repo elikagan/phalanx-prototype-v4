@@ -923,8 +923,8 @@ function setupBriefingScreen() {
   const inc = state.get('selectedIncident');
   const drone = state.get('selectedDrone');
   if (inc) mapComponent.showIncidents([inc], () => {});
-  // Show drone marker only — no route line from showFleetDrones (we draw our own below)
-  if (drone) mapComponent.showFleetDrones([drone], null, () => {});
+  // Show drone marker only — no fleet route line (we draw our own below)
+  if (drone) mapComponent.showFleetDrones([drone], inc?.coordinates || null, () => {}, { skipRouteLines: true });
   // Show search zone preview centered on incident + route line from drone
   if (inc?.coordinates) {
     mapComponent.showSearchZonePreview(inc.coordinates, SEARCH_ZONE.radius, 0.15);
@@ -1068,14 +1068,17 @@ function setupMissionScreen() {
   if (thumb) thumb.classList.add('showing-map');
   if (thumbLabel) thumbLabel.textContent = 'CAM';
 
+  // Hide state-driven drone marker (teal SVG) — we use fleet drone marker instead
+  mapComponent.hideDroneMarker();
+
   // Map overlays — same visual language as briefing screen
   if (inc) mapComponent.showIncidents([inc], () => {});
   if (inc?.coordinates) {
     mapComponent.showSearchZonePreview(incCoords, SEARCH_ZONE.radius, 0.15);
   }
-  // Drone marker pointed at incident
+  // Drone marker only (no fleet route lines — we draw Level 4 solid route below)
   if (drone) {
-    mapComponent.showFleetDrones([drone], incCoords, () => {});
+    mapComponent.showFleetDrones([drone], incCoords, () => {}, { skipRouteLines: true });
   }
   // Route line from drone to incident with distance/ETA
   if (drone?.coordinates && inc?.coordinates) {
