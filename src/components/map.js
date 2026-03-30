@@ -579,13 +579,15 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     const isAssigned = isMission && drone.assignedIncident;
     const dotColor = isAssigned ? '#407CF5' : '#1c1c1f';
 
+    // Short label: "SA-128" instead of "Delta SA-128"
+    const shortName = drone.name.replace(/^Delta\s+/i, '');
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
         html: `<div class="fleet-drone-dot" style="--dot-color:${dotColor}">
           ${FLEET_DRONE_SVG()}
         </div>
-        <div class="fleet-drone-label">${drone.name}</div>`,
+        <div class="fleet-drone-label">${shortName}</div>`,
         iconSize: [120, 48],
         iconAnchor: [20, 20],
       }),
@@ -608,21 +610,21 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     tooltip.setContent(`<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`);
     marker.bindTooltip(tooltip);
 
-    // Route line — Mapbox Navigation style (casing + route)
+    // Route line — white with dark shadow
     if (incidentCoords && isAvailable) {
-      // Casing layer (wider, darker)
+      // Shadow layer (wider, dark)
       const outline = L.polyline([drone.coordinates, incidentCoords], {
-        color: MC.routeCasing,
-        weight: 7,
-        opacity: 0.8,
+        color: '#000',
+        weight: 6,
+        opacity: 0.3,
         lineCap: 'round',
       }).addTo(map);
       distanceLines.push(outline);
-      // Route layer (brighter, narrower)
+      // White route layer
       const line = L.polyline([drone.coordinates, incidentCoords], {
-        color: MC.routeBlue,
-        weight: 4,
-        opacity: 1.0,
+        color: '#fff',
+        weight: 3,
+        opacity: 0.9,
         lineCap: 'round',
       }).addTo(map);
       distanceLines.push(line);
@@ -695,10 +697,10 @@ export function clearOverlays() {
 
 let routeLineOverlays = [];
 
-export function addRouteLine(from, to, { color = MC.routeBlue, weight = 4, opacity = 1.0, label = '' } = {}) {
+export function addRouteLine(from, to, { color = '#fff', weight = 3, opacity = 0.9, label = '' } = {}) {
   if (!map) return;
 
-  const casing = L.polyline([from, to], { color: MC.routeCasing, weight: weight + 3, opacity: 0.8, lineCap: 'round' }).addTo(map);
+  const casing = L.polyline([from, to], { color: '#000', weight: weight + 3, opacity: 0.3, lineCap: 'round' }).addTo(map);
   routeLineOverlays.push(casing);
   const line = L.polyline([from, to], { color, weight, opacity, lineCap: 'round' }).addTo(map);
   routeLineOverlays.push(line);
