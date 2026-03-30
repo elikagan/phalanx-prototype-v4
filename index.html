@@ -17,6 +17,17 @@
   <link rel="stylesheet" href="/src/styles/map.css">
   <link rel="stylesheet" href="/src/styles/mobile.css">
   <link rel="stylesheet" href="/src/styles/animations.css">
+  <script>
+    // Instant session restore — runs before first paint, no flash
+    if (sessionStorage.getItem('phalanx-auth') === 'true') {
+      document.documentElement.classList.add('authed');
+    }
+  </script>
+  <style>
+    html.authed #password-gate { display: none !important; }
+    html.authed .shell { display: flex !important; visibility: visible !important; }
+    html.authed .shell.hidden { display: flex !important; }
+  </style>
 </head>
 <body>
   <div id="app">
