@@ -264,6 +264,8 @@ function _showHandles() {
     searchCircle.setTilt(tilt);
   }
 
+  let moveHandle = null;
+
   function repositionHandles() {
     const nPos = edgePoint(tilt);         // "top" in ellipse local frame
     const sPos = edgePoint(tilt + 180);
@@ -288,6 +290,8 @@ function _showHandles() {
       iconSize: [0, 0],
       iconAnchor: [0, 0],
     }));
+    // Move handle follows center
+    if (moveHandle) moveHandle.setLatLng(centerLL);
   }
 
   function rebuild() {
@@ -378,32 +382,25 @@ function _showHandles() {
     if (_onChange) _onChange({ center: [centerLL.lat, centerLL.lng], radiusX: rx, radiusY: ry, rotation: tilt });
   });
 
-  // ── Drag zone fill to reposition ──
-  let dragStart = null;
-  searchCircle.on('mousedown', (e) => {
-    L.DomEvent.stop(e);
-    dragStart = e.latlng;
-    map.dragging.disable();
-    map.on('mousemove', onDrag);
-    map.once('mouseup', onDragEnd);
-  });
+  // ── Move handle at center ──
+  moveHandle = L.marker(centerLL, {
+    icon: L.divIcon({
+      className: 'edit-handle edit-handle-move',
+      html: '<span class="material-symbols-outlined edit-handle-icon">open_with</span>',
+      iconSize: [20, 20], iconAnchor: [10, 10],
+    }),
+    draggable: true, zIndexOffset: 900,
+  }).addTo(map);
+  editHandles.push(moveHandle);
 
-  function onDrag(e) {
-    if (!dragStart) return;
-    const dLat = e.latlng.lat - dragStart.lat;
-    const dLng = e.latlng.lng - dragStart.lng;
-    centerLL = L.latLng(centerLL.lat + dLat, centerLL.lng + dLng);
-    dragStart = e.latlng;
+  moveHandle.on('drag', (e) => {
+    centerLL = e.target.getLatLng();
     rebuild();
-  }
-
-  function onDragEnd() {
-    dragStart = null;
-    map.dragging.enable();
-    map.off('mousemove', onDrag);
+  });
+  moveHandle.on('dragend', () => {
     _guardMapClick();
     if (_onChange) _onChange({ center: [centerLL.lat, centerLL.lng], radiusX: rx, radiusY: ry, rotation: tilt });
-  }
+  });
 
   // ── Click map background → dismiss ──
   if (_onMapClickDismiss) map.off('click', _onMapClickDismiss);
@@ -423,7 +420,6 @@ function _dismissHandles() {
   editHandles = [];
   if (searchCircle) {
     searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18 });
-    searchCircle.off('mousedown');
     const el = searchCircle.getElement();
     if (el) el.style.cursor = 'pointer';
   }

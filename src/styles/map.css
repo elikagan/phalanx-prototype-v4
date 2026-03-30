@@ -741,6 +741,24 @@
   color: #D4A017;
 }
 
+.edit-handle.edit-handle-move {
+  width: 20px;
+  height: 20px;
+  background: rgba(28, 28, 31, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: move;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.edit-handle-move .edit-handle-icon {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
 /* ── Map Tooltips — dark (Mapbox night) ── */
 .map-tooltip {
   background: rgba(24, 27, 32, 0.92);
