@@ -202,11 +202,10 @@ let editHandles = [];
 let _onChange = null;
 let _selected = false;
 let _editState = null;
-let _dismissListener = null; // native pointerdown on document
-let _zoneClickListener = null; // native click on SVG element
+let _dismissListener = null;
+let _zoneLeafletClick = null; // Leaflet click handler (reliable for select — survives SVG re-renders)
 
 function _isInsideEditUI(target) {
-  // Check if a DOM event target is part of the search zone or any edit handle
   const zoneEl = searchCircle?.getElement();
   if (zoneEl && zoneEl.contains(target)) return true;
   for (const h of editHandles) {
@@ -224,29 +223,25 @@ export function makeSearchZoneEditable(onChange) {
   // Start unselected: amber stroke, clickable, pointer cursor
   searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: true });
   const el = searchCircle.getElement();
-  if (el) {
-    el.style.cursor = 'pointer';
-    // Native click on the SVG path — completely bypasses Leaflet event system
-    _zoneClickListener = (evt) => {
-      evt.stopPropagation();
-      if (!_selected) {
-        _selectZone();
-      }
-    };
-    el.addEventListener('click', _zoneClickListener);
-  }
+  if (el) el.style.cursor = 'pointer';
 
-  // Native pointerdown on document to detect clicks outside zone/handles
+  // Use Leaflet's click for select — it survives SVG element replacement
+  // (Leaflet rebinds after re-render). This is the ONE thing Leaflet click is reliable for.
+  _zoneLeafletClick = (e) => {
+    L.DomEvent.stop(e);
+    if (!_selected) _selectZone();
+  };
+  searchCircle.on('click', _zoneLeafletClick);
+
+  // Native pointerdown on document for dismiss — bypasses Leaflet's broken propagation
   _dismissListener = (evt) => {
     if (!_selected) return;
-    // If clicking inside the edit UI, do nothing
     if (_isInsideEditUI(evt.target)) return;
-    // If clicking in the chat panel (not the map), do nothing
+    // Only dismiss if clicking on the map, not the chat panel
     const mapContainer = map.getContainer();
     if (!mapContainer.contains(evt.target)) return;
     _deselectZone();
   };
-  // Use setTimeout so the current click that triggered makeSearchZoneEditable doesn't immediately fire
   setTimeout(() => document.addEventListener('pointerdown', _dismissListener), 0);
 }
 
@@ -279,16 +274,9 @@ function _selectZone() {
     searchCircle.setLatLng(s.centerLL);
     searchCircle.setRadius([s.rx, s.ry]);
     searchCircle.setTilt(s.tilt);
-    // Leaflet re-renders SVG — re-attach native click listener + cursor
+    // Leaflet re-renders SVG — restore cursor
     const newEl = searchCircle.getElement();
-    if (newEl) {
-      newEl.style.cursor = _selected ? 'grab' : 'pointer';
-      // Re-attach native click if the element was recreated
-      if (_zoneClickListener) {
-        newEl.removeEventListener('click', _zoneClickListener);
-        newEl.addEventListener('click', _zoneClickListener);
-      }
-    }
+    if (newEl) newEl.style.cursor = _selected ? 'grab' : 'pointer';
   }
 
   function fireChange() {
@@ -476,15 +464,13 @@ export function clearEditHandles() {
   editHandles = [];
   _editState = null;
   _selected = false;
-  // Remove native listeners
   if (_dismissListener) {
     document.removeEventListener('pointerdown', _dismissListener);
     _dismissListener = null;
   }
-  if (_zoneClickListener && searchCircle) {
-    const el = searchCircle.getElement();
-    if (el) el.removeEventListener('click', _zoneClickListener);
-    _zoneClickListener = null;
+  if (_zoneLeafletClick && searchCircle) {
+    searchCircle.off('click', _zoneLeafletClick);
+    _zoneLeafletClick = null;
   }
   if (searchCircle) {
     searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: false });

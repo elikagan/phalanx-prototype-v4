@@ -1055,7 +1055,7 @@ function setupSearchAreaScreen() {
       `${drone?.name || 'Drone'} assigned. Search area configured based on dispatch data. Drag handles to adjust.`,
       {
         choices: [
-          { label: `Launch ${shortName}`, className: 'btn-deploy', action: () => { mapComponent.clearEditHandles(); state.goToScreen(8); } },
+          { label: `Launch ${shortName}`, className: 'btn-deploy', action: () => { mapComponent.clearEditHandles(); state.goToScreen(9); } },
         ],
       }
     );
@@ -1064,7 +1064,7 @@ function setupSearchAreaScreen() {
       "Set your search area on the map. Drag to position, pinch to resize.",
       {
         choices: [
-          { label: 'Done', primary: true, action: () => state.goToScreen(8) },
+          { label: 'Done', primary: true, action: () => state.goToScreen(9) },
         ],
       }
     );
