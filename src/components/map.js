@@ -301,6 +301,11 @@ function _rebuildEllipse(s) {
   searchCircle.setLatLng(s.centerLL);
   searchCircle.setRadius([s.rx, s.ry]);
   searchCircle.setTilt(s.tilt);
+  // leaflet-ellipse re-renders SVG on geometry changes, resetting style to
+  // original options (amber). Re-apply selected style every time.
+  if (_selected) {
+    searchCircle.setStyle({ weight: 3, color: '#fff', fillOpacity: 0.25 });
+  }
   const el = searchCircle.getElement();
   if (el) {
     el.style.cursor = _selected ? 'grab' : 'pointer';
