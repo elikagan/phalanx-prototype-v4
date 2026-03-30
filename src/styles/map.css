@@ -572,6 +572,38 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
+/* Fleet base dot — home base with count badge */
+.fleet-base-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #2a2a2f;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  position: relative;
+}
+
+.base-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #D4A017;
+  color: #000;
+  font-family: 'Geist', var(--font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
 /* Fleet drone label — small dark pill for legibility on satellite */
 .fleet-drone-label {
   font-family: 'Geist', var(--font-ui);

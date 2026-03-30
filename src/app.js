@@ -543,7 +543,7 @@ function handleChatCommand(text, screen) {
   // Screen 5: drone selection
   if (screen === 5) {
     const match = DRONES.find(d =>
-      d.status === 'available' && (
+      d.status === 'surveillance' && (
         d.name.toLowerCase().includes(lower) ||
         d.id.includes(lower)
       )
@@ -706,12 +706,13 @@ async function setupIncidentMapScreen() {
   mapComponent.fitAllMarkers([60, 60], 12);
 
   // Fleet status
-  const inFlight = DRONES.filter(d => d.status === 'in-mission').length;
-  const available = DRONES.filter(d => d.status === 'available').length;
+  const surveillance = DRONES.filter(d => d.status === 'surveillance').length;
+  const inMission = DRONES.filter(d => d.status === 'in-mission').length;
+  const standby = DRONES.filter(d => d.status === 'standby').length;
 
   // Welcome message — typed out for a live feel
   await chat.appendSaraWordByWord(
-    `Welcome back, Riverside County SAR. ${inFlight} drone${inFlight !== 1 ? 's' : ''} in flight. ${available} more available for immediate launch.`
+    `Welcome back. ${surveillance} drones on surveillance, ${inMission} responding to incidents. ${standby} on standby ready for launch.`
   );
 
   // Compact incident cards — numbered, structured rows, expandable on hover
@@ -752,8 +753,8 @@ function setupAnalysisScreen() {
     mapComponent.showIncidents([inc], () => {});
   }
 
-  // Show available drones on map with distance lines to incident
-  const availableDrones = DRONES.filter(d => d.status === 'available');
+  // Show surveillance drones on map (can be rerouted to incident)
+  const availableDrones = DRONES.filter(d => d.status === 'surveillance');
   const closestDrone = [...availableDrones].sort((a, b) =>
     (a.distanceFromIncident ?? Infinity) - (b.distanceFromIncident ?? Infinity)
   )[0];
@@ -834,10 +835,11 @@ function setupDroneMapScreen() {
     : DRONES;
 
   const cardsHtml = sorted.map((drone, i) => {
-    const isAvailable = drone.status === 'available';
+    const isAvailable = drone.status === 'surveillance';
     const isClosest = path === '911' && i === 0 && isAvailable;
-    const statusLabel = drone.status === 'available' ? 'Available'
+    const statusLabel = drone.status === 'surveillance' ? `Surveillance — ${drone.patrol || 'patrol'}`
       : drone.status === 'in-mission' ? `In Mission (${drone.operator})`
+      : drone.status === 'standby' ? `Standby — ${drone.base || 'Home Base'}`
       : 'Offline';
     const distText = drone.distanceFromIncident != null ? `${drone.distanceFromIncident} km` : '—';
     return `

@@ -132,10 +132,11 @@ export function screen5() {
     : DRONES;
 
   const cards = sorted.map((drone, i) => {
-    const isAvailable = drone.status === 'available';
+    const isAvailable = drone.status === 'surveillance';
     const isClosest = path === '911' && i === 0 && isAvailable;
-    const statusLabel = drone.status === 'available' ? 'Available'
+    const statusLabel = drone.status === 'surveillance' ? `Surveillance — ${drone.patrol || 'patrol'}`
       : drone.status === 'in-mission' ? `In Mission (${drone.operator})`
+      : drone.status === 'standby' ? `Standby — ${drone.base || 'Home Base'}`
       : 'Offline';
     const statusClass = drone.status;
     const distText = drone.distanceFromIncident != null ? `${drone.distanceFromIncident} km` : '—';

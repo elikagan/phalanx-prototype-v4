@@ -49,26 +49,41 @@ export const INCIDENTS = [
   },
 ];
 
-// Fleet drones — spread across the metro
+// Fleet drones — realistic mix of ground, surveillance, and mission
+// Statuses: 'standby' (ground/home), 'surveillance' (airborne patrol), 'in-mission' (assigned), 'offline'
 export const DRONES = [
+  // ── Surveillance drones (airborne, can be rerouted) ──
   {
     id: 'dsa-128',
     name: 'Delta SA-128',
-    status: 'available',
-    battery: 98,
+    status: 'surveillance',
+    battery: 72,
     signal: 'strong',
     coordinates: [32.7340, -117.1450],
-    distanceFromIncident: 2.3, // km from inc-4471
+    distanceFromIncident: 2.3,
+    patrol: 'North Park grid',
   },
   {
     id: 'dsa-064',
     name: 'Delta SA-064',
-    status: 'available',
+    status: 'surveillance',
     battery: 67,
     signal: 'good',
     coordinates: [32.7900, -117.1520],
     distanceFromIncident: 4.8,
+    patrol: 'Hillcrest grid',
   },
+  {
+    id: 'dsa-091',
+    name: 'Delta SA-091',
+    status: 'surveillance',
+    battery: 81,
+    signal: 'strong',
+    coordinates: [32.7150, -117.1650],
+    distanceFromIncident: 5.1,
+    patrol: 'Downtown grid',
+  },
+  // ── In-mission drone (assigned to incident) ──
   {
     id: 'dsa-256',
     name: 'Delta SA-256',
@@ -80,13 +95,45 @@ export const DRONES = [
     coordinates: [32.6780, -117.1010],
     distanceFromIncident: null,
   },
+  // ── Standby drones (on ground at home bases) ──
   {
     id: 'dsa-032',
     name: 'Delta SA-032',
-    status: 'offline',
-    battery: 12,
-    signal: 'none',
-    coordinates: null,
+    status: 'standby',
+    battery: 98,
+    signal: 'strong',
+    base: 'HQ — Kearny Mesa',
+    coordinates: [32.7990, -117.1530],
+    distanceFromIncident: null,
+  },
+  {
+    id: 'dsa-044',
+    name: 'Delta SA-044',
+    status: 'standby',
+    battery: 100,
+    signal: 'strong',
+    base: 'HQ — Kearny Mesa',
+    coordinates: [32.7990, -117.1530],
+    distanceFromIncident: null,
+  },
+  {
+    id: 'dsa-077',
+    name: 'Delta SA-077',
+    status: 'standby',
+    battery: 95,
+    signal: 'strong',
+    base: 'Station 2 — National City',
+    coordinates: [32.6820, -117.1100],
+    distanceFromIncident: null,
+  },
+  {
+    id: 'dsa-015',
+    name: 'Delta SA-015',
+    status: 'standby',
+    battery: 100,
+    signal: 'strong',
+    base: 'Station 2 — National City',
+    coordinates: [32.6820, -117.1100],
     distanceFromIncident: null,
   },
 ];

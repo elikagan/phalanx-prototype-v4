@@ -561,7 +561,7 @@ export function focusIncident(coordinates, zoom = 16) {
 }
 
 // ── Fleet Drone Markers ───────────────────────────────────
-// Medium volume. Dark circles, subtle icons.
+// Three types: surveillance (airborne), in-mission (assigned), standby (ground/home base)
 
 export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false } = {}) {
   clearFleetMarkers();
@@ -572,14 +572,30 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
 
   let labelIndex = 0;
 
+  // Group standby drones by base location
+  const baseGroups = new Map();
+
   for (const drone of drones) {
     if (!drone.coordinates) continue;
-    const isAvailable = drone.status === 'available';
+
+    // Standby drones get grouped at their base
+    if (drone.status === 'standby') {
+      const baseKey = drone.coordinates.join(',');
+      if (!baseGroups.has(baseKey)) {
+        baseGroups.set(baseKey, { coords: drone.coordinates, base: drone.base, drones: [] });
+      }
+      baseGroups.get(baseKey).drones.push(drone);
+      continue;
+    }
+
+    const isSurveillance = drone.status === 'surveillance';
     const isMission = drone.status === 'in-mission';
     const isAssigned = isMission && drone.assignedIncident;
+    const isReroutable = isSurveillance; // surveillance drones can be sent to incidents
+
+    // Color: blue if assigned, black otherwise
     const dotColor = isAssigned ? '#407CF5' : '#1c1c1f';
 
-    // Short label: "SA-128" instead of "Delta SA-128"
     const shortName = drone.name.replace(/^Delta\s+/i, '');
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
@@ -591,15 +607,15 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         iconSize: [120, 48],
         iconAnchor: [20, 20],
       }),
-      zIndexOffset: isAssigned ? 900 : isAvailable ? 850 : 700,
-      interactive: isAvailable,
+      zIndexOffset: isAssigned ? 900 : isReroutable ? 850 : 700,
+      interactive: isReroutable,
     }).addTo(map);
 
-    if (isAvailable) {
+    if (isReroutable) {
       marker.on('click', () => onSelect?.(drone));
     }
 
-    const statusLabel = drone.status === 'available' ? 'Available'
+    const statusLabel = isSurveillance ? `Surveillance — ${drone.patrol || 'patrol'}`
       : isMission ? `In Mission (${drone.operator})`
       : 'Offline';
     const tooltip = L.tooltip({
@@ -610,53 +626,87 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     tooltip.setContent(`<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`);
     marker.bindTooltip(tooltip);
 
-    // Route line — white with dark shadow
-    if (incidentCoords && isAvailable) {
-      // Shadow layer (wider, dark)
-      const outline = L.polyline([drone.coordinates, incidentCoords], {
+    // Route line — dashed white on solid dark casing
+    if (incidentCoords && isReroutable) {
+      const casing = L.polyline([drone.coordinates, incidentCoords], {
         color: '#000',
-        weight: 6,
-        opacity: 0.3,
+        weight: 7,
+        opacity: 0.4,
         lineCap: 'round',
       }).addTo(map);
-      distanceLines.push(outline);
-      // White route layer
+      distanceLines.push(casing);
       const line = L.polyline([drone.coordinates, incidentCoords], {
         color: '#fff',
         weight: 3,
         opacity: 0.9,
+        dashArray: '10, 8',
         lineCap: 'round',
       }).addTo(map);
       distanceLines.push(line);
 
-      // White chip label — quiet, informational
-      if (drone.distanceFromIncident != null) {
-        const t = 0.35 + labelIndex * 0.3;
-        const mid = [
-          drone.coordinates[0] + (incidentCoords[0] - drone.coordinates[0]) * t,
-          drone.coordinates[1] + (incidentCoords[1] - drone.coordinates[1]) * t,
-        ];
-        const etaSec = Math.round(drone.distanceFromIncident / 60 * 3600);
-        const etaMin = Math.floor(etaSec / 60);
-        const etaRemSec = etaSec % 60;
-        const etaStr = etaMin > 0 ? `${etaMin}m ${etaRemSec}s` : `${etaRemSec}s`;
-        const labelMarker = L.marker(mid, {
-          icon: L.divIcon({
-            className: 'route-label',
-            html: `${drone.distanceFromIncident} km · ${etaStr}`,
-            iconSize: [120, 22],
-            iconAnchor: [60, 11],
-          }),
-          interactive: false,
-          zIndexOffset: 860,
-        }).addTo(map);
-        distanceLines.push(labelMarker);
-        labelIndex++;
-      }
+      // Calculate distance dynamically
+      const R = 6371;
+      const dLat = (incidentCoords[0] - drone.coordinates[0]) * Math.PI / 180;
+      const dLng = (incidentCoords[1] - drone.coordinates[1]) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(drone.coordinates[0]*Math.PI/180)*Math.cos(incidentCoords[0]*Math.PI/180)*Math.sin(dLng/2)**2;
+      const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      const etaSec = Math.round(distKm / 60 * 3600);
+      const etaMin = Math.floor(etaSec / 60);
+      const etaRemSec = etaSec % 60;
+      const etaStr = etaMin > 0 ? `${etaMin}m ${etaRemSec}s` : `${etaRemSec}s`;
+
+      const t = 0.3 + labelIndex * 0.15;
+      const mid = [
+        drone.coordinates[0] + (incidentCoords[0] - drone.coordinates[0]) * t,
+        drone.coordinates[1] + (incidentCoords[1] - drone.coordinates[1]) * t,
+      ];
+      const labelMarker = L.marker(mid, {
+        icon: L.divIcon({
+          className: 'route-label',
+          html: `${distKm.toFixed(1)} km · ${etaStr}`,
+          iconSize: [120, 22],
+          iconAnchor: [60, 11],
+        }),
+        interactive: false,
+        zIndexOffset: 860,
+      }).addTo(map);
+      distanceLines.push(labelMarker);
+      labelIndex++;
     }
 
     fleetMarkers.push(marker);
     bounds.push(drone.coordinates);
+  }
+
+  // Render grouped standby (home base) markers
+  for (const [, group] of baseGroups) {
+    const count = group.drones.length;
+    const marker = L.marker(group.coords, {
+      icon: L.divIcon({
+        className: 'fleet-drone-marker',
+        html: `<div class="fleet-base-dot">
+          <span class="material-symbols-outlined" style="font-size:16px;color:#fff">home</span>
+          <span class="base-count">${count}</span>
+        </div>
+        <div class="fleet-drone-label">${group.base || 'Home Base'}</div>`,
+        iconSize: [120, 48],
+        iconAnchor: [20, 20],
+      }),
+      zIndexOffset: 600,
+      interactive: false,
+    }).addTo(map);
+
+    const droneNames = group.drones.map(d => d.name).join(', ');
+    const tooltip = L.tooltip({
+      direction: 'top',
+      offset: [0, -20],
+      className: 'map-tooltip',
+    });
+    tooltip.setContent(`<strong>${group.base || 'Home Base'}</strong><br>${count} drone${count > 1 ? 's' : ''} ready for launch<br>${droneNames}`);
+    marker.bindTooltip(tooltip);
+
+    fleetMarkers.push(marker);
+    bounds.push(group.coords);
   }
 
   if (!skipFitBounds && bounds.length > 1) {
@@ -697,12 +747,14 @@ export function clearOverlays() {
 
 let routeLineOverlays = [];
 
-export function addRouteLine(from, to, { color = '#fff', weight = 3, opacity = 0.9, label = '' } = {}) {
+export function addRouteLine(from, to, { color = '#fff', weight = 3, opacity = 0.9, dashArray = '10, 8', label = '' } = {}) {
   if (!map) return;
 
-  const casing = L.polyline([from, to], { color: '#000', weight: weight + 3, opacity: 0.3, lineCap: 'round' }).addTo(map);
+  // Solid casing (always solid, never dashed)
+  const casing = L.polyline([from, to], { color: '#000', weight: weight + 4, opacity: 0.4, lineCap: 'round' }).addTo(map);
   routeLineOverlays.push(casing);
-  const line = L.polyline([from, to], { color, weight, opacity, lineCap: 'round' }).addTo(map);
+  // Dashed route on top
+  const line = L.polyline([from, to], { color, weight, opacity, dashArray, lineCap: 'round' }).addTo(map);
   routeLineOverlays.push(line);
 
   if (label) {
