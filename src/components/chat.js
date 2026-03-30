@@ -75,6 +75,20 @@ export async function appendSaraWordByWord(text, interval = 120) {
   return msg;
 }
 
+/** Append a deemphasized system note (small, gray, mono) */
+export function appendSystem(text) {
+  const el = chatEl();
+  if (!el) return null;
+
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg chat-msg-system';
+  msg.innerHTML = `<div class="chat-msg-text">${escapeHtml(text)}</div>`;
+
+  el.appendChild(msg);
+  scrollToBottom();
+  return msg;
+}
+
 /** Append a dispatch/radio message */
 export function appendMessage(type, label, text) {
   const el = chatEl();

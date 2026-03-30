@@ -532,17 +532,37 @@ function handleChatCommand(text, screen) {
     return;
   }
 
-  // Screen 4: move to drone select
+  // Screen 4: deploy with selected drone
   if (screen === 4) {
-    if (lower.includes('drone') || lower.includes('select') || lower.includes('next') || lower.includes('yes')) {
-      state.goToScreen(5);
+    if (lower.includes('deploy') || lower.includes('launch') || lower.includes('go') || lower.includes('yes') || lower.includes('next')) {
+      const inc = state.get('selectedIncident');
+      if (inc?.coordinates) {
+        state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
+      }
+      state.goToScreen(7);
       return;
     }
-    chat.appendSara("Ready to select a drone? Say \"select drone\" or click the button.");
+    // Try to match a drone by name
+    const match = DRONES.find(d =>
+      d.status === 'surveillance' && (
+        d.name.toLowerCase().includes(lower) ||
+        d.id.includes(lower)
+      )
+    );
+    if (match) {
+      state.set({ selectedDrone: match });
+      const inc = state.get('selectedIncident');
+      if (inc?.coordinates) {
+        state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
+      }
+      state.goToScreen(7);
+      return;
+    }
+    chat.appendSara("Say \"deploy\" or select a drone on the map.");
     return;
   }
 
-  // Screen 5: drone selection
+  // Screen 5: drone selection (manual path)
   if (screen === 5) {
     const match = DRONES.find(d =>
       d.status === 'surveillance' && (
@@ -552,20 +572,10 @@ function handleChatCommand(text, screen) {
     );
     if (match) {
       state.set({ selectedDrone: match });
-      state.goToScreen(state.get('missionPath') === '911' ? 6 : 7);
-      return;
-    }
-    chat.appendSara(`No available drone matching "${text}". Select from the list or click a drone on the map.`);
-    return;
-  }
-
-  // Screen 6: confirm mission
-  if (screen === 6) {
-    if (lower.includes('confirm') || lower.includes('go') || lower.includes('yes') || lower.includes('launch')) {
       state.goToScreen(7);
       return;
     }
-    chat.appendSara("Say \"confirm\" to proceed to search area configuration.");
+    chat.appendSara(`No available drone matching "${text}". Select from the list or click a drone on the map.`);
     return;
   }
 }
@@ -605,18 +615,14 @@ function handleAction(action, dataset) {
       const drone = DRONES.find(d => d.id === dataset.id);
       if (drone) {
         state.set({ selectedDrone: drone });
-        if (state.get('missionPath') === '911') {
-          state.goToScreen(6);
-        } else {
-          state.goToScreen(7);
+        const inc = state.get('selectedIncident');
+        if (inc?.coordinates) {
+          state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
         }
+        state.goToScreen(7);
       }
       break;
     }
-
-    case 'confirm-mission':
-      state.goToScreen(7);
-      break;
 
     case 'confirm-search':
       state.goToScreen(8);
@@ -792,7 +798,8 @@ function setupAnalysisScreen() {
 
   mapComponent.showFleetDrones(availableDrones, inc?.coordinates, (drone) => {
     state.set({ selectedDrone: drone });
-    state.goToScreen(6);
+    state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
+    state.goToScreen(7);
   }, { skipFitBounds: true, recommendedDroneId: closestDrone?.id });
 
   // Show search zone preview circle centered on incident
@@ -853,15 +860,18 @@ function setupAnalysisScreen() {
     `I've analyzed ${SARA_ANALYSIS.transcriptsAnalyzed} dispatch recordings for this incident. ${closestDrone ? `${closestDrone.name} is the closest drone at ${distKm?.toFixed(1)} km, ETA ${etaStr}.` : 'No drones currently available.'}`,
     profileHtml,
     {
-      choices: [
-        { label: closestDrone ? `Deploy ${shortName}` : 'Launch', primary: true, action: () => {
+      choices: closestDrone ? [
+        { label: `Deploy ${shortName}`, primary: true, action: () => {
           state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
-          state.goToScreen(8);
+          state.goToScreen(7);
         }},
-        { label: 'Choose Different Drone', primary: false, action: () => state.goToScreen(5) },
-      ],
+      ] : [],
     }
   );
+
+  if (availableDrones.length > 1) {
+    chat.appendSystem(`${availableDrones.length} drones available — select a different drone on the map to reassign.`);
+  }
 }
 
 function setupDroneMapScreen() {
@@ -872,11 +882,11 @@ function setupDroneMapScreen() {
   if (inc) mapComponent.showIncidents([inc], () => {});
   mapComponent.showFleetDrones(DRONES, incCoords, (drone) => {
     state.set({ selectedDrone: drone });
-    if (state.get('missionPath') === '911') {
-      state.goToScreen(6);
-    } else {
-      state.goToScreen(7);
+    const incForZone = state.get('selectedIncident');
+    if (incForZone?.coordinates) {
+      state.set({ searchZone: { center: incForZone.coordinates, radius: SEARCH_ZONE.radius } });
     }
+    state.goToScreen(7);
   });
 
   const path = state.get('missionPath');
@@ -971,40 +981,68 @@ function setupBriefingScreen() {
 function setupSearchAreaScreen() {
   const path = state.get('missionPath');
   chat.clear();
+  mapComponent.clearOverlays();
+
+  const inc = state.get('selectedIncident');
+  const drone = state.get('selectedDrone');
+  const incCoords = inc?.coordinates || SEARCH_ZONE.center;
 
   if (path === '911') {
-    const inc = state.get('selectedIncident');
-    // Use circle centered on incident for editability — drag handles need a circle
-    const editableZone = { center: inc?.coordinates || SEARCH_ZONE.center, radius: SEARCH_ZONE.radius };
-    state.set({
-      searchZone: editableZone,
-      dronePosition: { lat: 32.7210, lng: -117.1498 },
-    });
+    // Set up the search zone state
+    const editableZone = { center: incCoords, radius: SEARCH_ZONE.radius };
+    state.set({ searchZone: editableZone });
+
+    // Track if user modifies the search area
+    let searchAreaModified = false;
+    const onSearchZoneChange = () => {
+      if (!searchAreaModified) {
+        searchAreaModified = true;
+        chat.appendSystem('Search area modified by operator.');
+      }
+    };
 
     requestAnimationFrame(() => {
       mapComponent.resize();
       requestAnimationFrame(() => {
-        // Show incident marker so search zone visually connects to it
+        // Show incident marker
         if (inc) mapComponent.showIncidents([inc], () => {});
+        // Show selected drone as blue, with route line to incident
+        if (drone) {
+          mapComponent.showFleetDrones([drone], incCoords, () => {}, {
+            skipRouteLines: true,
+            recommendedDroneId: drone.id, // Always blue on this screen
+          });
+        }
+        // Route line from drone to search zone
+        if (drone?.coordinates) {
+          const dist = drone.distanceFromIncident || 2.3;
+          const etaSec = Math.round(dist / 60 * 3600);
+          const etaLabel = etaSec >= 60 ? `${Math.floor(etaSec / 60)}m ${etaSec % 60}s` : `${etaSec}s`;
+          mapComponent.addRouteLine(drone.coordinates, incCoords, {
+            label: `${dist} km · ${etaLabel}`,
+          });
+        }
+        // Last known waypoint
         mapComponent.addWaypoint('lastKnown', WAYPOINTS.lastKnown.coordinates, WAYPOINTS.lastKnown.label);
-        // Zoom to fit both incident and search zone
-        mapComponent.flyTo(
-          (SEARCH_ZONE.origin[0] + SEARCH_ZONE.center[0]) / 2,
-          SEARCH_ZONE.center[1],
-          14, 1.5
-        );
+        // Fit and zoom
+        if (drone?.coordinates) {
+          mapComponent.fitAllMarkers([60, 60], 13);
+        } else {
+          mapComponent.flyTo(incCoords[0], incCoords[1], 14, 1.5);
+        }
         // Make search zone editable with drag handles
         setTimeout(() => {
-          mapComponent.makeSearchZoneEditable();
-        }, 500);
+          mapComponent.makeSearchZoneEditable(onSearchZoneChange);
+        }, 400);
       });
     });
 
+    const shortName = drone?.name?.replace(/^Delta\s+/i, '') || 'drone';
     chat.appendSara(
-      "Based on dispatch data, I've configured the search area. Drag the handles to resize, or drag the center to reposition.",
+      `${drone?.name || 'Drone'} assigned. Search area configured based on dispatch data. Drag handles to adjust.`,
       {
         choices: [
-          { label: 'Confirm Search Area', primary: true, action: () => { mapComponent.clearEditHandles(); state.goToScreen(8); } },
+          { label: `Launch ${shortName}`, primary: true, action: () => { mapComponent.clearEditHandles(); state.goToScreen(8); } },
         ],
       }
     );
@@ -1038,7 +1076,7 @@ async function setupPreflightScreen() {
   await wait(1200);
   if (chat.getGeneration() !== gen) return;
 
-  chat.appendSara("All systems go. Launching...");
+  chat.appendSystem('All checks passed. Launching...');
   await wait(800);
   if (chat.getGeneration() !== gen) return;
   state.goToScreen(9);
@@ -1076,9 +1114,9 @@ function setupMissionScreen() {
   if (inc?.coordinates) {
     mapComponent.showSearchZonePreview(incCoords, SEARCH_ZONE.radius, 0.15);
   }
-  // Drone marker only (no fleet route lines — we draw Level 4 solid route below)
+  // Drone marker only (blue, no fleet route lines — we draw our own route below)
   if (drone) {
-    mapComponent.showFleetDrones([drone], incCoords, () => {}, { skipRouteLines: true });
+    mapComponent.showFleetDrones([drone], incCoords, () => {}, { skipRouteLines: true, recommendedDroneId: drone.id });
   }
   // Route line from drone to incident with distance/ETA
   if (drone?.coordinates && inc?.coordinates) {

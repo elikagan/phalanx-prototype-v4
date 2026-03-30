@@ -267,10 +267,10 @@ export function makeSearchZoneEditable(onChange) {
 
   const radiusLabel = L.marker(center, {
     icon: L.divIcon({
-      className: 'route-label',
+      className: 'map-label',
       html: `${Math.round(radius)}m radius`,
-      iconSize: [110, 22],
-      iconAnchor: [55, 11],
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
     }),
     interactive: false,
     zIndexOffset: 870,
@@ -307,10 +307,10 @@ export function makeSearchZoneEditable(onChange) {
         editHandles[i + 1].setLatLng(hp);
       }
       radiusLabel.setIcon(L.divIcon({
-        className: 'route-label',
+        className: 'map-label',
         html: `${Math.round(clamped)}m radius`,
-        iconSize: [110, 22],
-        iconAnchor: [55, 11],
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
       }));
       if (onChange) onChange({ center: [center.lat, center.lng], radius: clamped });
     });
@@ -615,11 +615,14 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     }
 
     const shortName = drone.name.replace(/^Delta\s+/i, '');
+    const isDimmed = isReroutable && !isRecommended && !isAssigned;
+    const dotDimClass = isDimmed ? ' fleet-drone-dot-dim' : '';
+    const svgSize = isDimmed ? 13 : 16;
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
-        html: `<div class="fleet-drone-dot" style="--dot-color:${dotColor}">
-          <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${Math.round(headingDeg)}deg)">
+        html: `<div class="fleet-drone-dot${dotDimClass}" style="--dot-color:${dotColor}">
+          <svg viewBox="0 0 24 24" width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${Math.round(headingDeg)}deg)">
             <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
           </svg>
         </div>
@@ -728,13 +731,13 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         drone.coordinates[1] + (incidentCoords[1] - drone.coordinates[1]) * t,
       ];
       // Recommended label is brighter, alternatives are dimmer
-      const labelClass = isRecommended ? 'route-label route-label-primary' : 'route-label route-label-dim';
+      const labelClass = isRecommended ? 'map-label map-label-primary' : 'map-label map-label-dim';
       const labelMarker = L.marker(mid, {
         icon: L.divIcon({
           className: labelClass,
           html: `${distKm.toFixed(1)} km · ${etaStr}`,
-          iconSize: [120, 22],
-          iconAnchor: [60, 11],
+          iconSize: [0, 0],
+          iconAnchor: [0, 0],
         }),
         interactive: false,
         zIndexOffset: isRecommended ? 865 : 860,
@@ -847,10 +850,10 @@ export function addRouteLine(from, to, { color = '#fff', weight = 3, opacity = 0
     const mid = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2];
     const labelMarker = L.marker(mid, {
       icon: L.divIcon({
-        className: 'route-label route-label-primary',
+        className: 'map-label map-label-primary',
         html: label,
-        iconSize: [120, 22],
-        iconAnchor: [60, 11],
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
       }),
       interactive: false,
       zIndexOffset: 865,
@@ -928,10 +931,10 @@ export function showLiveOrbitScene(center, drone, radius = 300) {
   const labelPos = offsetLatLng(L.latLng(center[0], center[1]), radius * 0.45, 180);
   const label = L.marker([labelPos.lat, labelPos.lng], {
     icon: L.divIcon({
-      className: 'fleet-drone-marker',
-      html: '<div class="target-located-label">TARGET LOCATED</div>',
-      iconSize: [120, 22],
-      iconAnchor: [60, 11],
+      className: 'map-label map-label-amber',
+      html: 'TARGET LOCATED',
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
     }),
     interactive: false,
     zIndexOffset: 870,
@@ -951,10 +954,10 @@ export function showSearchZonePreview(center, radius, fillOpacity = 0.25) {
   routeLineOverlays.push(circle);
   const label = L.marker(center, {
     icon: L.divIcon({
-      className: 'search-zone-label',
+      className: 'map-label map-label-dim',
       html: 'SEARCH AREA',
-      iconSize: [110, 20],
-      iconAnchor: [55, 10],
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
     }),
     interactive: false,
   }).addTo(map);

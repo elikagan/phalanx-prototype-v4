@@ -162,6 +162,26 @@ The flight trail uses thick centered casing (NOT offset shadow) because it's a c
 - Both use `lineCap: 'round'`
 - Trail is cleared on every `clearOverlays()` call
 
+## Chat Message Hierarchy
+
+Messages in the chat panel follow a strict visual hierarchy. Not everything deserves the same prominence.
+
+| Tier | Class | Font | Color | Border | Use Case |
+|------|-------|------|-------|--------|----------|
+| **SARA primary** | `.chat-msg-sara` | 13px body | `--text-primary` | 2px accent left | Main AI communication: instructions, analysis, questions |
+| **Content block** | `.chat-content-block` | inherits | inherits | none | Rich cards, data grids, checklists embedded after SARA messages |
+| **Action buttons** | `.chat-choices` | 12px | button styles | none | Primary/secondary buttons for operator decisions |
+| **System note** | `.chat-msg-system` | 11px mono | `--text-muted` | none | Deemphasized status: "Search area modified", "All checks passed", availability notes |
+| **User message** | `.chat-msg-user` | 13px body | `--text-muted` | 2px border right | Operator's spoken/typed input |
+| **Dispatch** | `.chat-msg-dispatch` | 13px body | `--text-secondary` | 2px amber left | Incoming dispatch updates |
+| **Radio chatter** | `.chat-msg-radio` | 10px mono | `--text-muted` | 2px border left | Background radio traffic, lowest priority |
+
+**Rules:**
+- System notes have no label ("SARA"), no border. They're ambient context, not conversation.
+- SARA primary should be reserved for messages that require operator attention or action.
+- Status confirmations ("All checks passed", "Search area modified") are system notes, not SARA messages.
+- Content blocks appear directly after SARA messages. Never standalone.
+
 ## Component Rules
 - No gratuitous borders, glows, gradients, or shadows
 - Every visual element earns its place — if removing it doesn't hurt comprehension, remove it
@@ -185,3 +205,6 @@ The flight trail uses thick centered casing (NOT offset shadow) because it's a c
 | 2026-03-27 | Minimal-functional motion | Operators need clarity, not delight. Every animation serves spatial understanding |
 | 2026-03-27 | Fresh component design | v1-v3 components carried over without thought. All components designed from scratch for v4 |
 | 2026-03-30 | Unified map overlay system | One drone marker style, one shadow style (1px offset), one label base class, aligned palette, trail clears on screen change |
+| 2026-03-30 | Chat message hierarchy | 7-tier system: SARA primary, content blocks, actions, system notes, user, dispatch, radio. Status updates deemphasized as system notes. |
+| 2026-03-30 | Auto-sizing map labels | `.map-label` base class with `width: auto !important` replaces fixed `iconSize` labels. Pills fit their text content. |
+| 2026-03-30 | Unified 911 drone selection flow | All drone selections (Deploy button + map click) go through same flow: analysis → search area → preflight → mission. No more briefing screen detour. |

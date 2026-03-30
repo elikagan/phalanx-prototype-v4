@@ -561,6 +561,13 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
 }
 
+/* Dimmed variant for non-recommended drones */
+.fleet-drone-dot-dim {
+  width: 26px;
+  height: 26px;
+  opacity: 0.65;
+}
+
 /* Fleet base dot — home base with count badge */
 .fleet-base-dot {
   width: 36px;
@@ -608,12 +615,59 @@
   margin-top: 3px;
 }
 
-/* ── Route Labels — dark pill, light text (matches all map labels) ── */
+/* ── Map Label — THE ONE base class for all map overlay labels ── */
+/*
+ * Auto-sizes to content. Centers on anchor point.
+ * Use iconSize: [0, 0] and iconAnchor: [0, 0] in Leaflet divIcon.
+ * Override Leaflet's forced dimensions so the pill fits its text.
+ */
+.map-label {
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  font-family: 'Geist', var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(237, 239, 242, 0.9);
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+/* Brighter variant for recommended/primary labels */
+.map-label-primary {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+}
+
+/* Dimmed variant for non-recommended alternatives */
+.map-label-dim {
+  opacity: 0.5;
+}
+
+/* Status-colored variant (amber for target located) */
+.map-label-amber {
+  color: #D4A017;
+}
+
+.map-label-red {
+  color: #b85454;
+}
+
+.map-label-green {
+  color: #4a9a65;
+}
+
 /* Route line shadow — 1px offset drop shadow */
 .route-shadow {
   transform: translate(1px, 1px);
 }
 
+/* Legacy aliases — keep for any remaining references */
 .route-label {
   font-family: 'Geist', var(--font-ui);
   font-size: 10px;
@@ -626,30 +680,6 @@
   pointer-events: none;
   text-align: center;
   width: fit-content;
-}
-
-/* ── Target Located Label ── */
-.target-located-label {
-  font-family: 'Geist', var(--font-ui);
-  font-size: 10px;
-  font-weight: 500;
-  color: #D4A017;
-  background: rgba(0, 0, 0, 0.45);
-  padding: 1px 6px;
-  border-radius: 3px;
-  white-space: nowrap;
-  pointer-events: none;
-  width: fit-content;
-}
-
-/* Route label emphasis: recommended vs alternative */
-.route-label-primary {
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-}
-
-.route-label-dim {
-  opacity: 0.5;
 }
 
 /* ── Map icon modifiers ── */

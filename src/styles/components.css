@@ -480,6 +480,23 @@ details.card > summary { padding: 4px 0; }
   letter-spacing: 0.5px;
 }
 
+/* === System Notes (deemphasized status updates in chat) === */
+.chat-msg-system {
+  margin-right: auto;
+  max-width: 88%;
+  margin-bottom: 8px;
+  opacity: 0;
+  transform: translateY(4px);
+  animation: msg-appear var(--dur-micro) var(--ease-out) forwards;
+}
+
+.chat-msg-system .chat-msg-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.2px;
+}
+
 /* === Chat Content Blocks (rich cards inside chat) === */
 .chat-content-block {
   margin-bottom: 12px;
