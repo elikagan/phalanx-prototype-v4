@@ -1109,11 +1109,13 @@ function setupMissionScreen() {
   // Hide state-driven drone marker (teal SVG) — we use fleet drone marker instead
   mapComponent.hideDroneMarker();
 
-  // Map overlays — same visual language as briefing screen
-  if (inc) mapComponent.showIncidents([inc], () => {});
-  if (inc?.coordinates) {
-    mapComponent.showSearchZonePreview(incCoords, SEARCH_ZONE.radius, 0.15);
+  // Ensure search zone state is set so the state-driven circle renders
+  if (!state.get('searchZone') && inc?.coordinates) {
+    state.set({ searchZone: { center: incCoords, radius: SEARCH_ZONE.radius } });
   }
+
+  // Map overlays
+  if (inc) mapComponent.showIncidents([inc], () => {});
   // Drone marker only (blue, no fleet route lines — we draw our own route below)
   if (drone) {
     mapComponent.showFleetDrones([drone], incCoords, () => {}, { skipRouteLines: true, recommendedDroneId: drone.id });
@@ -1137,6 +1139,17 @@ function setupMissionScreen() {
   } else if (inc?.coordinates) {
     mapComponent.focusIncident(incCoords, 15);
   }
+
+  // Editable search zone — operator can adjust during mission
+  let searchAreaModified = false;
+  setTimeout(() => {
+    mapComponent.makeSearchZoneEditable(() => {
+      if (!searchAreaModified) {
+        searchAreaModified = true;
+        chat.appendSystem('Search area modified by operator.');
+      }
+    });
+  }, 500);
 
   // Resize map since we started in map view
   requestAnimationFrame(() => mapComponent.resize());

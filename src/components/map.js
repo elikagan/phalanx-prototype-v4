@@ -826,6 +826,7 @@ export function clearOverlays() {
   clearFleetMarkers();
   clearRouteLines();
   clearTrail();
+  clearEditHandles();
 }
 
 // ── Route Lines with Labels ──────────────────────────────

@@ -491,10 +491,8 @@ details.card > summary { padding: 4px 0; }
 }
 
 .chat-msg-system .chat-msg-text {
-  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
-  letter-spacing: 0.2px;
 }
 
 /* === Chat Content Blocks (rich cards inside chat) === */
