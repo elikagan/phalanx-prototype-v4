@@ -770,14 +770,23 @@ function setupAnalysisScreen() {
 
   // Show surveillance drones on map (can be rerouted to incident)
   const availableDrones = DRONES.filter(d => d.status === 'surveillance');
-  const closestDrone = [...availableDrones].sort((a, b) =>
-    (a.distanceFromIncident ?? Infinity) - (b.distanceFromIncident ?? Infinity)
-  )[0];
+  const closestDrone = [...availableDrones].sort((a, b) => {
+    // Calculate distance dynamically
+    if (!inc?.coordinates) return 0;
+    const haversine = (coords) => {
+      const R = 6371;
+      const dLat = (inc.coordinates[0] - coords[0]) * Math.PI / 180;
+      const dLng = (inc.coordinates[1] - coords[1]) * Math.PI / 180;
+      const a2 = Math.sin(dLat/2)**2 + Math.cos(coords[0]*Math.PI/180)*Math.cos(inc.coordinates[0]*Math.PI/180)*Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1-a2));
+    };
+    return haversine(a.coordinates) - haversine(b.coordinates);
+  })[0];
 
   mapComponent.showFleetDrones(availableDrones, inc?.coordinates, (drone) => {
     state.set({ selectedDrone: drone });
     state.goToScreen(6);
-  }, { skipFitBounds: true });
+  }, { skipFitBounds: true, recommendedDroneId: closestDrone?.id });
 
   // Show search zone preview circle centered on incident
   if (inc?.coordinates) {
@@ -795,7 +804,20 @@ function setupAnalysisScreen() {
   }
 
   const t = SARA_ANALYSIS.target;
-  const etaMin = closestDrone ? Math.ceil(closestDrone.distanceFromIncident * 1.3) : null;
+
+  // Calculate ETA for the recommended drone
+  let distKm = closestDrone?.distanceFromIncident;
+  if (!distKm && closestDrone && inc?.coordinates) {
+    const R = 6371;
+    const dLat2 = (inc.coordinates[0] - closestDrone.coordinates[0]) * Math.PI / 180;
+    const dLng2 = (inc.coordinates[1] - closestDrone.coordinates[1]) * Math.PI / 180;
+    const a2 = Math.sin(dLat2/2)**2 + Math.cos(closestDrone.coordinates[0]*Math.PI/180)*Math.cos(inc.coordinates[0]*Math.PI/180)*Math.sin(dLng2/2)**2;
+    distKm = R * 2 * Math.atan2(Math.sqrt(a2), Math.sqrt(1-a2));
+  }
+  const etaSec = distKm ? Math.round(distKm / 60 * 3600) : null;
+  const etaStr = etaSec ? (etaSec >= 60 ? `${Math.floor(etaSec/60)}m ${etaSec%60}s` : `${etaSec}s`) : null;
+  const shortName = closestDrone?.name?.replace(/^Delta\s+/i, '') || 'Unknown';
+
   const profileHtml = `
     <div class="card mb-8">
       <div class="section-label">Extracted Target Profile</div>
@@ -807,19 +829,25 @@ function setupAnalysisScreen() {
         <span class="data-label">Suspect</span><span class="data-value">${t.suspect}</span>
         <span class="data-label">Units</span><span class="data-value">${t.respondingUnits} responding</span>
       </div>
-    </div>`;
-
-  const droneNote = closestDrone
-    ? `${closestDrone.name} is ${closestDrone.distanceFromIncident} km away — approximately ${etaMin} minutes to intercept.`
-    : 'No drones currently available.';
+    </div>
+    ${closestDrone ? `
+    <div class="card mb-8" style="border-left:3px solid var(--accent)">
+      <div class="section-label">Recommended Drone</div>
+      <div class="data-grid">
+        <span class="data-label">Drone</span><span class="data-value">${closestDrone.name}</span>
+        <span class="data-label">Distance</span><span class="data-value">${distKm?.toFixed(1)} km</span>
+        <span class="data-label">ETA</span><span class="data-value">${etaStr}</span>
+        <span class="data-label">Battery</span><span class="data-value">${closestDrone.battery}%</span>
+        <span class="data-label">Status</span><span class="data-value">Surveillance — ${closestDrone.patrol || 'patrol'}</span>
+      </div>
+    </div>` : ''}`;
 
   chat.appendSaraWithContent(
-    `I've analyzed ${SARA_ANALYSIS.transcriptsAnalyzed} dispatch recordings for this incident. ${droneNote}`,
+    `I've analyzed ${SARA_ANALYSIS.transcriptsAnalyzed} dispatch recordings for this incident. ${closestDrone ? `${closestDrone.name} is the closest drone at ${distKm?.toFixed(1)} km, ETA ${etaStr}.` : 'No drones currently available.'}`,
     profileHtml,
     {
       choices: [
-        { label: 'Launch', primary: true, action: () => {
-          // Auto-configure search zone centered on incident
+        { label: closestDrone ? `Deploy ${shortName}` : 'Launch', primary: true, action: () => {
           state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
           state.goToScreen(8);
         }},

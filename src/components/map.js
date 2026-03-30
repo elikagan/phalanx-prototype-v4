@@ -563,7 +563,7 @@ export function focusIncident(coordinates, zoom = 16) {
 // ── Fleet Drone Markers ───────────────────────────────────
 // Three types: surveillance (airborne), in-mission (assigned), standby (ground/home base)
 
-export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false, incidents = [], onIncidentSelect = null } = {}) {
+export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false, incidents = [], onIncidentSelect = null, recommendedDroneId = null } = {}) {
   clearFleetMarkers();
   if (!map) return;
 
@@ -598,9 +598,10 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     const isMission = drone.status === 'in-mission';
     const isAssigned = isMission && drone.assignedIncident;
     const isReroutable = isSurveillance; // surveillance drones can be sent to incidents
+    const isRecommended = recommendedDroneId && drone.id === recommendedDroneId;
 
-    // Color: blue if assigned, black otherwise
-    const dotColor = isAssigned ? '#407CF5' : '#1c1c1f';
+    // Color: blue if assigned/recommended, black otherwise
+    const dotColor = (isAssigned || isRecommended) ? '#407CF5' : '#1c1c1f';
 
     const shortName = drone.name.replace(/^Delta\s+/i, '');
     const marker = L.marker(drone.coordinates, {
@@ -679,23 +680,28 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       distanceLines.push(line);
     }
 
-    // Route line — dashed white on solid dark casing (for reroutable surveillance drones)
+    // Route line from drone to incident
     if (incidentCoords && isReroutable) {
-      const casing = L.polyline([drone.coordinates, incidentCoords], {
-        color: '#000',
-        weight: 7,
-        opacity: 0.4,
-        lineCap: 'round',
-      }).addTo(map);
-      distanceLines.push(casing);
-      const line = L.polyline([drone.coordinates, incidentCoords], {
-        color: '#fff',
-        weight: 3,
-        opacity: 0.9,
-        dashArray: '10, 8',
-        lineCap: 'round',
-      }).addTo(map);
-      distanceLines.push(line);
+      // Recommended drone: bold blue solid line. Alternatives: thin dim dashed.
+      if (isRecommended) {
+        const casing = L.polyline([drone.coordinates, incidentCoords], {
+          color: '#000', weight: 8, opacity: 0.4, lineCap: 'round',
+        }).addTo(map);
+        distanceLines.push(casing);
+        const line = L.polyline([drone.coordinates, incidentCoords], {
+          color: '#407CF5', weight: 4, opacity: 0.9, lineCap: 'round',
+        }).addTo(map);
+        distanceLines.push(line);
+      } else {
+        const casing = L.polyline([drone.coordinates, incidentCoords], {
+          color: '#000', weight: 5, opacity: 0.2, lineCap: 'round',
+        }).addTo(map);
+        distanceLines.push(casing);
+        const line = L.polyline([drone.coordinates, incidentCoords], {
+          color: '#fff', weight: 2, opacity: 0.4, dashArray: '6, 8', lineCap: 'round',
+        }).addTo(map);
+        distanceLines.push(line);
+      }
 
       // Calculate distance dynamically
       const R = 6371;
@@ -713,15 +719,17 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         drone.coordinates[0] + (incidentCoords[0] - drone.coordinates[0]) * t,
         drone.coordinates[1] + (incidentCoords[1] - drone.coordinates[1]) * t,
       ];
+      // Recommended label is brighter, alternatives are dimmer
+      const labelClass = isRecommended ? 'route-label route-label-primary' : 'route-label route-label-dim';
       const labelMarker = L.marker(mid, {
         icon: L.divIcon({
-          className: 'route-label',
+          className: labelClass,
           html: `${distKm.toFixed(1)} km · ${etaStr}`,
           iconSize: [120, 22],
           iconAnchor: [60, 11],
         }),
         interactive: false,
-        zIndexOffset: 860,
+        zIndexOffset: isRecommended ? 865 : 860,
       }).addTo(map);
       distanceLines.push(labelMarker);
       labelIndex++;

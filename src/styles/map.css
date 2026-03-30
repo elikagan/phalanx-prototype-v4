@@ -653,6 +653,16 @@
   transform: translateX(-50%);
 }
 
+/* Route label emphasis: recommended vs alternative */
+.route-label-primary {
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+}
+
+.route-label-dim {
+  opacity: 0.5;
+}
+
 /* ── Edit Handles (draggable search zone) ── */
 .edit-handle {
   width: 12px;
