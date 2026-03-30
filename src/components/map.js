@@ -189,20 +189,32 @@ function onSearchZone(zone) {
 
 // ── Editable Search Zone (using leaflet-ellipse) ──────────────────
 //
-// Two states:
-//   UNSELECTED: amber stroke, pointer cursor on hover, no handles, map pans normally
-//   SELECTED:   white fat stroke, grab cursor on hover, handles visible, drag fill to move
+// Uses native DOM events (not Leaflet events) for select/dismiss to avoid
+// Leaflet's unreliable event propagation (dragend→click, double-fire, etc).
 //
-// Click zone → select (show handles). Click map background → deselect (hide handles).
+// UNSELECTED: amber stroke, pointer cursor, no handles, map pans normally
+// SELECTED:   white fat stroke, grab cursor, handles visible, drag fill to move
+//
+// Click zone → select. Pointerdown outside zone/handles → deselect.
 // clearEditHandles() tears down everything (screen transition).
 
 let editHandles = [];
 let _onChange = null;
 let _selected = false;
 let _editState = null;
-let _onZoneClick = null;
-let _onMapClick = null;
-let _skipDismissUntil = 0;
+let _dismissListener = null; // native pointerdown on document
+let _zoneClickListener = null; // native click on SVG element
+
+function _isInsideEditUI(target) {
+  // Check if a DOM event target is part of the search zone or any edit handle
+  const zoneEl = searchCircle?.getElement();
+  if (zoneEl && zoneEl.contains(target)) return true;
+  for (const h of editHandles) {
+    const hEl = h.getElement?.() || h._path;
+    if (hEl && hEl.contains(target)) return true;
+  }
+  return false;
+}
 
 export function makeSearchZoneEditable(onChange) {
   if (!map || !searchCircle) return;
@@ -212,34 +224,41 @@ export function makeSearchZoneEditable(onChange) {
   // Start unselected: amber stroke, clickable, pointer cursor
   searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: true });
   const el = searchCircle.getElement();
-  if (el) el.style.cursor = 'pointer';
+  if (el) {
+    el.style.cursor = 'pointer';
+    // Native click on the SVG path — completely bypasses Leaflet event system
+    _zoneClickListener = (evt) => {
+      evt.stopPropagation();
+      if (!_selected) {
+        _selectZone();
+      }
+    };
+    el.addEventListener('click', _zoneClickListener);
+  }
 
-  // Click zone → select
-  _onZoneClick = (e) => {
-    L.DomEvent.stop(e);
-    if (!_selected) _selectZone();
+  // Native pointerdown on document to detect clicks outside zone/handles
+  _dismissListener = (evt) => {
+    if (!_selected) return;
+    // If clicking inside the edit UI, do nothing
+    if (_isInsideEditUI(evt.target)) return;
+    // If clicking in the chat panel (not the map), do nothing
+    const mapContainer = map.getContainer();
+    if (!mapContainer.contains(evt.target)) return;
+    _deselectZone();
   };
-  searchCircle.on('click', _onZoneClick);
-
-  // Click map background → deselect
-  _onMapClick = () => {
-    if (Date.now() < _skipDismissUntil) return;
-    if (_selected) _deselectZone();
-  };
-  map.on('click', _onMapClick);
+  // Use setTimeout so the current click that triggered makeSearchZoneEditable doesn't immediately fire
+  setTimeout(() => document.addEventListener('pointerdown', _dismissListener), 0);
 }
 
 function _selectZone() {
-  if (!map || !searchCircle) return;
+  if (!map || !searchCircle || _selected) return;
   _selected = true;
-  _skipDismissUntil = Date.now() + 250;
 
   // Highlight: white fat stroke, brighter fill, grab cursor
   searchCircle.setStyle({ weight: 3, color: '#fff', fillOpacity: 0.25 });
   const el = searchCircle.getElement();
   if (el) el.style.cursor = 'grab';
 
-  // Read current ellipse params into mutable state
   const s = {
     rx: searchCircle._mRadiusX,
     ry: searchCircle._mRadiusY,
@@ -260,8 +279,16 @@ function _selectZone() {
     searchCircle.setLatLng(s.centerLL);
     searchCircle.setRadius([s.rx, s.ry]);
     searchCircle.setTilt(s.tilt);
-    const el2 = searchCircle.getElement();
-    if (el2) el2.style.cursor = 'grab';
+    // Leaflet re-renders SVG — re-attach native click listener + cursor
+    const newEl = searchCircle.getElement();
+    if (newEl) {
+      newEl.style.cursor = _selected ? 'grab' : 'pointer';
+      // Re-attach native click if the element was recreated
+      if (_zoneClickListener) {
+        newEl.removeEventListener('click', _zoneClickListener);
+        newEl.addEventListener('click', _zoneClickListener);
+      }
+    }
   }
 
   function fireChange() {
@@ -331,7 +358,6 @@ function _selectZone() {
     if (el2) el2.style.cursor = 'grab';
     map.off('mousemove', onFillMove);
     map.off('mouseup', onFillUp);
-    _skipDismissUntil = Date.now() + 250;
     fireChange();
   }
 
@@ -384,7 +410,7 @@ function _selectZone() {
   s.handleW.on('drag', onAxisXDrag);
 
   [s.handleN, s.handleS, s.handleE, s.handleW].forEach(h => {
-    h.on('dragend', () => { _skipDismissUntil = Date.now() + 250; fireChange(); });
+    h.on('dragend', fireChange);
   });
 
   // ── Rotation handle ──
@@ -414,12 +440,13 @@ function _selectZone() {
     s.tilt = Math.atan2(dx, dy) * 180 / Math.PI;
     rebuild();
   });
-  s.rotHandle.on('dragend', () => { _skipDismissUntil = Date.now() + 250; fireChange(); });
+  s.rotHandle.on('dragend', fireChange);
 
   repositionHandles();
 }
 
 function _deselectZone() {
+  if (!_selected) return;
   _selected = false;
   if (_editState?._cleanupDrag) _editState._cleanupDrag();
   for (const h of editHandles) map?.removeLayer(h);
@@ -449,17 +476,21 @@ export function clearEditHandles() {
   editHandles = [];
   _editState = null;
   _selected = false;
+  // Remove native listeners
+  if (_dismissListener) {
+    document.removeEventListener('pointerdown', _dismissListener);
+    _dismissListener = null;
+  }
+  if (_zoneClickListener && searchCircle) {
+    const el = searchCircle.getElement();
+    if (el) el.removeEventListener('click', _zoneClickListener);
+    _zoneClickListener = null;
+  }
   if (searchCircle) {
-    searchCircle.off('click', _onZoneClick);
     searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: false });
     const el = searchCircle.getElement();
     if (el) el.style.cursor = '';
   }
-  if (map && _onMapClick) {
-    map.off('click', _onMapClick);
-    _onMapClick = null;
-  }
-  _onZoneClick = null;
   _onChange = null;
 }
 
