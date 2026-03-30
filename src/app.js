@@ -1091,7 +1091,11 @@ async function setupPreflightScreen() {
       label: `${dist} km · ${etaLabel}`,
     });
   }
-  if (zone) state.set({ searchZone: zone }); // triggers map overlay
+  // Force re-render: null first so state detects a change (same ref won't trigger)
+  if (zone) {
+    state.set({ searchZone: null });
+    state.set({ searchZone: zone });
+  }
   if (inc?.coordinates && drone?.coordinates) {
     mapComponent.fitAllMarkers([60, 60], 13);
   } else if (inc?.coordinates) {
@@ -1144,8 +1148,12 @@ function setupMissionScreen() {
   // Hide state-driven drone marker (teal SVG) — we use fleet drone marker instead
   mapComponent.hideDroneMarker();
 
-  // Ensure search zone state is set so the state-driven circle renders
-  if (!state.get('searchZone') && inc?.coordinates) {
+  // Force search zone re-render (null first so same-ref triggers listener)
+  const zone = state.get('searchZone');
+  if (zone) {
+    state.set({ searchZone: null });
+    state.set({ searchZone: zone });
+  } else if (inc?.coordinates) {
     state.set({ searchZone: { center: incCoords, radius: SEARCH_ZONE.radius } });
   }
 
