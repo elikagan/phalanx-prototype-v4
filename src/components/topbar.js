@@ -16,6 +16,7 @@ export function init() {
   state.on('currentScreen', updateStatus);
   state.on('selectedDrone', updatePills);
   state.on('targetStatus', updatePills);
+  state.on('selectedIncident', updateIncidentBadge);
   state.on('radioCount', updateRadioBadge);
   state.on('currentScreen', updateRadioVisibility);
 }
@@ -53,6 +54,32 @@ function updateStatus(screen) {
   };
 
   el.textContent = labels[screen] || '';
+
+  // Show/hide incident badge based on screen
+  updateIncidentBadge(state.get('selectedIncident'));
+}
+
+function updateIncidentBadge(inc) {
+  let badge = document.getElementById('topbar-incident-badge');
+  const screen = state.get('currentScreen');
+
+  // Only show on screens 4+ when an incident is selected
+  if (!inc || !screen || screen < 4) {
+    if (badge) badge.remove();
+    return;
+  }
+
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.id = 'topbar-incident-badge';
+    const leftSection = document.querySelector('.topbar-left');
+    if (leftSection) leftSection.appendChild(badge);
+  }
+
+  const incNumber = inc.id.replace(/\D/g, '');
+  const priorityColor = inc.priority === 1 ? 'var(--red)' : 'var(--amber)';
+  badge.className = 'topbar-incident-badge';
+  badge.innerHTML = `<span class="incident-priority" style="color:${priorityColor}">P${inc.priority}</span><span class="incident-type">${inc.type} #${incNumber}</span>`;
 }
 
 function updatePills() {
