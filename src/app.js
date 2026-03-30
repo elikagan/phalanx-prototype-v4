@@ -700,7 +700,7 @@ async function setupIncidentMapScreen() {
     }
   }, { skipFitBounds: true, assignedIncidentIds });
 
-  mapComponent.showFleetDrones(DRONES, null, () => {}, { skipFitBounds: true });
+  mapComponent.showFleetDrones(DRONES, null, () => {}, { skipFitBounds: true, incidents: INCIDENTS });
 
   // Fit all markers with max zoom 12 so the full metro spread is visible
   mapComponent.fitAllMarkers([60, 60], 12);

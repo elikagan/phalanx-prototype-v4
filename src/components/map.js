@@ -563,9 +563,15 @@ export function focusIncident(coordinates, zoom = 16) {
 // ── Fleet Drone Markers ───────────────────────────────────
 // Three types: surveillance (airborne), in-mission (assigned), standby (ground/home base)
 
-export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false } = {}) {
+export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false, incidents = [] } = {}) {
   clearFleetMarkers();
   if (!map) return;
+
+  // Build incident lookup for in-mission drone connections
+  const incidentLookup = new Map();
+  for (const inc of incidents) {
+    if (inc.id && inc.coordinates) incidentLookup.set(inc.id, inc);
+  }
 
   const bounds = [];
   if (incidentCoords) bounds.push(incidentCoords);
@@ -626,7 +632,35 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     tooltip.setContent(`<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`);
     marker.bindTooltip(tooltip);
 
-    // Route line — dashed white on solid dark casing
+    // In-mission drone: draw solid route line + orbit zone to its assigned incident
+    if (isAssigned && incidentLookup.has(drone.assignedIncident)) {
+      const assignedInc = incidentLookup.get(drone.assignedIncident);
+      const targetCoords = assignedInc.coordinates;
+
+      // Orbit/surveillance zone around incident (blue tint, shows active coverage)
+      const orbitZone = L.circle(targetCoords, {
+        radius: 200,
+        color: '#407CF5',
+        weight: 1.5,
+        opacity: 0.5,
+        dashArray: '6 4',
+        fillColor: '#407CF5',
+        fillOpacity: 0.12,
+      }).addTo(map);
+      distanceLines.push(orbitZone);
+
+      // Solid route line (not dashed — this is an active assignment, not proposed)
+      const casing = L.polyline([drone.coordinates, targetCoords], {
+        color: '#000', weight: 7, opacity: 0.3, lineCap: 'round',
+      }).addTo(map);
+      distanceLines.push(casing);
+      const line = L.polyline([drone.coordinates, targetCoords], {
+        color: '#407CF5', weight: 3, opacity: 0.8, lineCap: 'round',
+      }).addTo(map);
+      distanceLines.push(line);
+    }
+
+    // Route line — dashed white on solid dark casing (for reroutable surveillance drones)
     if (incidentCoords && isReroutable) {
       const casing = L.polyline([drone.coordinates, incidentCoords], {
         color: '#000',
@@ -681,6 +715,9 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
   // Render grouped standby (home base) markers
   for (const [, group] of baseGroups) {
     const count = group.drones.length;
+    const ready = group.drones.filter(d => d.readyState === 'ready');
+    const charging = group.drones.filter(d => d.readyState === 'charging');
+
     const marker = L.marker(group.coords, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
@@ -696,13 +733,23 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       interactive: false,
     }).addTo(map);
 
-    const droneNames = group.drones.map(d => d.name).join(', ');
+    // Tooltip with ready vs charging breakdown
+    let tooltipContent = `<strong>${group.base || 'Home Base'}</strong>`;
+    if (ready.length > 0) {
+      const readyNames = ready.map(d => `${d.name.replace(/^Delta\s+/i, '')} (${d.battery}%)`).join(', ');
+      tooltipContent += `<br>✓ ${ready.length} ready for launch<br><span style="opacity:0.7;font-size:11px">${readyNames}</span>`;
+    }
+    if (charging.length > 0) {
+      const chargingNames = charging.map(d => `${d.name.replace(/^Delta\s+/i, '')} (${d.battery}%)`).join(', ');
+      tooltipContent += `<br>⚡ ${charging.length} charging<br><span style="opacity:0.7;font-size:11px">${chargingNames}</span>`;
+    }
+
     const tooltip = L.tooltip({
       direction: 'top',
       offset: [0, -20],
       className: 'map-tooltip',
     });
-    tooltip.setContent(`<strong>${group.base || 'Home Base'}</strong><br>${count} drone${count > 1 ? 's' : ''} ready for launch<br>${droneNames}`);
+    tooltip.setContent(tooltipContent);
     marker.bindTooltip(tooltip);
 
     fleetMarkers.push(marker);

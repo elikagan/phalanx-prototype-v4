@@ -590,8 +590,8 @@
   position: absolute;
   top: -4px;
   right: -4px;
-  background: #D4A017;
-  color: #000;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
   font-family: 'Geist', var(--font-ui);
   font-size: 10px;
   font-weight: 600;
@@ -601,7 +601,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 /* Fleet drone label — small dark pill for legibility on satellite */
