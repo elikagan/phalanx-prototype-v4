@@ -844,32 +844,55 @@ export function showReturnRoute(dronePos, basePos) {
   });
 }
 
-// ── Live Orbit Zone (drone actively on scene) ──────────
-// Big, bold, unmistakable — thick white dashed border, strong blue fill
-export function showLiveOrbitZone(center, radius = 350) {
+// ── Live Orbit Scene (drone actively on scene) ─────────
+// One orbit zone, drone placed on perimeter pointing tangentially, TARGET LOCATED label
+export function showLiveOrbitScene(center, drone, radius = 300) {
   if (!map) return;
 
-  // Large blue fill zone
+  // Orbit zone — thick white dashed border, blue fill
   const zone = L.circle(center, {
     radius,
     color: '#fff',
-    weight: 4,
-    opacity: 0.85,
+    weight: 3.5,
+    opacity: 0.8,
     dashArray: '14, 10',
     fillColor: '#407CF5',
     fillOpacity: 0.18,
   }).addTo(map);
   routeLineOverlays.push(zone);
 
-  // "TARGET LOCATED" label below the incident
-  const labelOffset = radius / 111320 * 0.6; // offset south
-  const labelPos = [center[0] - labelOffset, center[1]];
-  const label = L.marker(labelPos, {
+  // Place drone on the orbit perimeter (NNE position, ~30 degrees)
+  const orbitAngle = 30; // degrees from north, clockwise
+  const dronePos = offsetLatLng(L.latLng(center[0], center[1]), radius, orbitAngle);
+  // Heading tangent to orbit = orbitAngle + 90 (clockwise orbit)
+  const droneHeading = (orbitAngle + 90) % 360;
+
+  const shortName = drone.name.replace(/^Delta\s+/i, '');
+  const droneMarkerEl = L.marker([dronePos.lat, dronePos.lng], {
     icon: L.divIcon({
-      className: 'target-located-label',
+      className: 'fleet-drone-marker',
+      html: `<div class="fleet-drone-dot" style="--dot-color:#407CF5">
+        <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${droneHeading}deg)">
+          <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
+        </svg>
+      </div>
+      <div class="fleet-drone-label">${shortName}</div>`,
+      iconSize: [120, 48],
+      iconAnchor: [20, 20],
+    }),
+    zIndexOffset: 950,
+    interactive: false,
+  }).addTo(map);
+  routeLineOverlays.push(droneMarkerEl);
+
+  // "TARGET LOCATED" label — positioned just below the incident, inside the zone
+  const labelPos = offsetLatLng(L.latLng(center[0], center[1]), radius * 0.45, 180);
+  const label = L.marker([labelPos.lat, labelPos.lng], {
+    icon: L.divIcon({
+      className: 'route-label target-located-label',
       html: 'TARGET LOCATED',
-      iconSize: [140, 24],
-      iconAnchor: [70, 12],
+      iconSize: [130, 22],
+      iconAnchor: [65, 11],
     }),
     interactive: false,
     zIndexOffset: 870,

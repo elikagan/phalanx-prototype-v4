@@ -1056,13 +1056,11 @@ async function setupLiveSceneScreen() {
     status: 'confirmed',
   }, handleTargetAction);
 
-  // Show incident + drone on the underlying map (visible via toggle)
-  // Pass incidents so the in-mission drone gets its orbit zone + connection line
+  // Show incident marker on the map
   if (inc) mapComponent.showIncidents([inc], () => {});
-  if (drone) mapComponent.showFleetDrones([drone], null, () => {}, { skipFitBounds: true, incidents: [inc] });
-  // Show large orbit zone around target on map (drone is actively on scene)
-  if (inc?.coordinates) {
-    mapComponent.showLiveOrbitZone(inc.coordinates, 350);
+  // Show drone orbiting the incident — one clean orbit zone, drone on the perimeter
+  if (inc?.coordinates && drone) {
+    mapComponent.showLiveOrbitScene(inc.coordinates, drone, 300);
     mapComponent.focusIncident(inc.coordinates, 16);
   }
 
