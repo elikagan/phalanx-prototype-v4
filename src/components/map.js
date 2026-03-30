@@ -442,6 +442,13 @@ function _deselectZone() {
   _editState = null;
   if (searchCircle) {
     searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18 });
+    // Force Leaflet to rebuild SVG path + hit detection for new geometry.
+    // Leaflet preserves on() handlers through remove/add cycles.
+    if (map) {
+      searchCircle.removeFrom(map);
+      searchCircle.addTo(map);
+    }
+    // Element is recreated — reset cursor
     const el = searchCircle.getElement();
     if (el) el.style.cursor = 'pointer';
   }
