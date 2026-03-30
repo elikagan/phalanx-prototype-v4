@@ -874,7 +874,7 @@ function setupAnalysisScreen() {
     profileHtml,
     {
       choices: closestDrone ? [
-        { label: `Deploy ${shortName}`, primary: true, action: () => {
+        { label: `Deploy ${shortName}`, className: 'btn-deploy', action: () => {
           state.set({ searchZone: { center: inc.coordinates, radius: SEARCH_ZONE.radius } });
           state.goToScreen(7);
         }},
@@ -1055,7 +1055,7 @@ function setupSearchAreaScreen() {
       `${drone?.name || 'Drone'} assigned. Search area configured based on dispatch data. Drag handles to adjust.`,
       {
         choices: [
-          { label: `Launch ${shortName}`, primary: true, action: () => { mapComponent.clearEditHandles(); state.goToScreen(8); } },
+          { label: `Launch ${shortName}`, className: 'btn-deploy', action: () => { mapComponent.clearEditHandles(); state.goToScreen(8); } },
         ],
       }
     );

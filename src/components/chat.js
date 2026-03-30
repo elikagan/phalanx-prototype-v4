@@ -30,7 +30,7 @@ export function appendSara(text, options = {}) {
     choices.className = 'chat-choices';
     for (const choice of options.choices) {
       const btn = document.createElement('button');
-      btn.className = choice.primary ? 'btn-primary' : 'btn-secondary';
+      btn.className = choice.className || (choice.primary ? 'btn-primary' : 'btn-secondary');
       btn.textContent = choice.label;
       btn.addEventListener('click', () => {
         choices.remove();
@@ -214,7 +214,7 @@ export function appendSaraWithContent(text, html, options = {}) {
     choices.style.padding = '0 0 8px 0';
     for (const choice of options.choices) {
       const btn = document.createElement('button');
-      btn.className = choice.primary ? 'btn-primary' : 'btn-secondary';
+      btn.className = choice.className || (choice.primary ? 'btn-primary' : 'btn-secondary');
       btn.textContent = choice.label;
       btn.addEventListener('click', () => {
         choices.remove();

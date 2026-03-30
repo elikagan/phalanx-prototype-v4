@@ -189,49 +189,25 @@ function onSearchZone(zone) {
 
 // ── Editable Search Zone (using leaflet-ellipse) ──────────────────
 //
-// Click zone → show handles + highlight.
-// Click map background → dismiss handles.
-// Handles: N/S stretch radiusY, E/W stretch radiusX, rotation handle, drag fill to move.
+// Handles show immediately when makeSearchZoneEditable() is called.
+// They stay visible until clearEditHandles() is called (screen transition).
+// Dragging the ellipse fill moves it (grab cursor). Map panning works outside the fill.
 
 let editHandles = [];
-let _editActive = false;
-let _onMapClickDismiss = null;
-let _skipNextMapClick = 0; // timestamp-based guard
 let _onChange = null;
-
-function _guardMapClick() {
-  _skipNextMapClick = Date.now() + 150;
-}
+let _dragCleanup = null; // cleanup function for fill-drag listeners
 
 export function makeSearchZoneEditable(onChange) {
   if (!map || !searchCircle) return;
   clearEditHandles();
   _onChange = onChange;
 
-  searchCircle.setStyle({ interactive: true });
-  const el = searchCircle.getElement();
-  if (el) el.style.cursor = 'pointer';
-
-  searchCircle.on('click', _onZoneClick);
-}
-
-function _onZoneClick(e) {
-  L.DomEvent.stop(e);
-  if (_editActive) return;
-  _guardMapClick();
-  _showHandles();
-}
-
-function _showHandles() {
-  if (!map || !searchCircle) return;
-  _editActive = true;
-
-  // Highlight: white stroke, brighter fill
-  searchCircle.setStyle({ weight: 3, color: '#fff', fillOpacity: 0.25 });
+  // Make ellipse interactive so it captures mouse events
+  searchCircle.setStyle({ weight: 3, color: '#fff', fillOpacity: 0.25, interactive: true });
   const el = searchCircle.getElement();
   if (el) el.style.cursor = 'grab';
 
-  // Read current ellipse params from L.ellipse internals
+  // Read current ellipse params
   let rx = searchCircle._mRadiusX;
   let ry = searchCircle._mRadiusY;
   let tilt = searchCircle._tiltDeg;
@@ -239,23 +215,11 @@ function _showHandles() {
 
   // ── Helpers ──
   function edgePoint(bearing) {
-    // Point on ellipse edge at given bearing (0=N, 90=E, 180=S, 270=W)
     const b = (bearing - tilt) * Math.PI / 180;
     const cosB = Math.cos(b);
     const sinB = Math.sin(b);
     const dist = 1 / Math.sqrt((sinB / rx) ** 2 + (cosB / ry) ** 2);
-    return offsetByMeters(centerLL, dist, bearing);
-  }
-
-  function offsetByMeters(ll, meters, bearingDeg) {
-    const R = 6371000;
-    const lat1 = ll.lat * Math.PI / 180;
-    const lng1 = ll.lng * Math.PI / 180;
-    const brng = bearingDeg * Math.PI / 180;
-    const d = meters / R;
-    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brng));
-    const lng2 = lng1 + Math.atan2(Math.sin(brng) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
-    return L.latLng(lat2 * 180 / Math.PI, lng2 * 180 / Math.PI);
+    return _offsetByMeters(centerLL, dist, bearing);
   }
 
   function updateEllipse() {
@@ -264,10 +228,12 @@ function _showHandles() {
     searchCircle.setTilt(tilt);
   }
 
-  let moveHandle = null;
+  function fireChange() {
+    if (_onChange) _onChange({ center: [centerLL.lat, centerLL.lng], radiusX: rx, radiusY: ry, rotation: tilt });
+  }
 
   function repositionHandles() {
-    const nPos = edgePoint(tilt);         // "top" in ellipse local frame
+    const nPos = edgePoint(tilt);
     const sPos = edgePoint(tilt + 180);
     const ePos = edgePoint(tilt + 90);
     const wPos = edgePoint(tilt + 270);
@@ -275,8 +241,8 @@ function _showHandles() {
     handleS.setLatLng(sPos);
     handleE.setLatLng(ePos);
     handleW.setLatLng(wPos);
-    // Rotation handle on stem past N
-    const stemEnd = offsetByMeters(centerLL, ry * 1.3, tilt);
+    // Rotation stem past N
+    const stemEnd = _offsetByMeters(centerLL, ry * 1.3, tilt);
     rotHandle.setLatLng(stemEnd);
     rotStem.setLatLngs([nPos, stemEnd]);
     // Size label at S edge
@@ -290,14 +256,58 @@ function _showHandles() {
       iconSize: [0, 0],
       iconAnchor: [0, 0],
     }));
-    // Move handle follows center
-    if (moveHandle) moveHandle.setLatLng(centerLL);
   }
 
   function rebuild() {
     updateEllipse();
     repositionHandles();
   }
+
+  // ── Drag-the-fill to move ──
+  // mousedown on ellipse → disable map drag → track mousemove → mouseup re-enables map drag
+  let _dragging = false;
+  let _dragStartLatLng = null;
+
+  function onFillMouseDown(e) {
+    // Don't start fill-drag if the event came from a handle marker
+    if (e.originalEvent && e.originalEvent._fromHandle) return;
+    L.DomEvent.stop(e);
+    _dragging = true;
+    _dragStartLatLng = e.latlng;
+    map.dragging.disable();
+    if (el) el.style.cursor = 'grabbing';
+    map.on('mousemove', onFillMouseMove);
+    map.on('mouseup', onFillMouseUp);
+  }
+
+  function onFillMouseMove(e) {
+    if (!_dragging) return;
+    const dlat = e.latlng.lat - _dragStartLatLng.lat;
+    const dlng = e.latlng.lng - _dragStartLatLng.lng;
+    centerLL = L.latLng(centerLL.lat + dlat, centerLL.lng + dlng);
+    _dragStartLatLng = e.latlng;
+    rebuild();
+  }
+
+  function onFillMouseUp() {
+    if (!_dragging) return;
+    _dragging = false;
+    map.dragging.enable();
+    if (el) el.style.cursor = 'grab';
+    map.off('mousemove', onFillMouseMove);
+    map.off('mouseup', onFillMouseUp);
+    fireChange();
+  }
+
+  searchCircle.on('mousedown', onFillMouseDown);
+
+  // Store cleanup so clearEditHandles can remove these listeners
+  _dragCleanup = () => {
+    searchCircle.off('mousedown', onFillMouseDown);
+    map.off('mousemove', onFillMouseMove);
+    map.off('mouseup', onFillMouseUp);
+    map.dragging.enable();
+  };
 
   // ── Size label ──
   const sizeLabel = L.marker(edgePoint(tilt + 180), {
@@ -327,7 +337,7 @@ function _showHandles() {
   const handleE = mkHandle(edgePoint(tilt + 90));
   const handleW = mkHandle(edgePoint(tilt + 270));
 
-  // N/S → stretch radiusY (the axis aligned with tilt direction)
+  // N/S → stretch radiusY
   function onAxisYDrag(e) {
     ry = Math.max(80, Math.min(2000, centerLL.distanceTo(e.target.getLatLng())));
     rebuild();
@@ -335,7 +345,7 @@ function _showHandles() {
   handleN.on('drag', onAxisYDrag);
   handleS.on('drag', onAxisYDrag);
 
-  // E/W → stretch radiusX (perpendicular axis)
+  // E/W → stretch radiusX
   function onAxisXDrag(e) {
     rx = Math.max(80, Math.min(2000, centerLL.distanceTo(e.target.getLatLng())));
     rebuild();
@@ -344,14 +354,11 @@ function _showHandles() {
   handleW.on('drag', onAxisXDrag);
 
   [handleN, handleS, handleE, handleW].forEach(h => {
-    h.on('dragend', () => {
-      _guardMapClick();
-      if (_onChange) _onChange({ center: [centerLL.lat, centerLL.lng], radiusX: rx, radiusY: ry, rotation: tilt });
-    });
+    h.on('dragend', fireChange);
   });
 
   // ── Rotation handle ──
-  const stemEnd = offsetByMeters(centerLL, ry * 1.3, tilt);
+  const stemEnd = _offsetByMeters(centerLL, ry * 1.3, tilt);
   const nEdge = edgePoint(tilt);
   const rotStem = L.polyline([nEdge, stemEnd], {
     color: '#fff', weight: 1, opacity: 0.5, dashArray: '4 4',
@@ -377,63 +384,32 @@ function _showHandles() {
     tilt = Math.atan2(dx, dy) * 180 / Math.PI;
     rebuild();
   });
-  rotHandle.on('dragend', () => {
-    _guardMapClick();
-    if (_onChange) _onChange({ center: [centerLL.lat, centerLL.lng], radiusX: rx, radiusY: ry, rotation: tilt });
-  });
+  rotHandle.on('dragend', fireChange);
 
-  // ── Move handle at center ──
-  moveHandle = L.marker(centerLL, {
-    icon: L.divIcon({
-      className: 'edit-handle edit-handle-move',
-      html: '<span class="material-symbols-outlined edit-handle-icon">open_with</span>',
-      iconSize: [20, 20], iconAnchor: [10, 10],
-    }),
-    draggable: true, zIndexOffset: 900,
-  }).addTo(map);
-  editHandles.push(moveHandle);
-
-  moveHandle.on('drag', (e) => {
-    centerLL = e.target.getLatLng();
-    rebuild();
-  });
-  moveHandle.on('dragend', () => {
-    _guardMapClick();
-    if (_onChange) _onChange({ center: [centerLL.lat, centerLL.lng], radiusX: rx, radiusY: ry, rotation: tilt });
-  });
-
-  // ── Click map background → dismiss ──
-  if (_onMapClickDismiss) map.off('click', _onMapClickDismiss);
-  _onMapClickDismiss = () => {
-    if (Date.now() < _skipNextMapClick) return;
-    _dismissHandles();
-  };
-  setTimeout(() => map.on('click', _onMapClickDismiss), 150);
-
-  // Initial position
+  // Show handles immediately
   repositionHandles();
 }
 
-function _dismissHandles() {
-  _editActive = false;
-  for (const h of editHandles) map?.removeLayer(h);
-  editHandles = [];
-  if (searchCircle) {
-    searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18 });
-    const el = searchCircle.getElement();
-    if (el) el.style.cursor = 'pointer';
-  }
-  if (_onMapClickDismiss) {
-    map?.off('click', _onMapClickDismiss);
-    _onMapClickDismiss = null;
-  }
+function _offsetByMeters(ll, meters, bearingDeg) {
+  const R = 6371000;
+  const lat1 = ll.lat * Math.PI / 180;
+  const lng1 = ll.lng * Math.PI / 180;
+  const brng = bearingDeg * Math.PI / 180;
+  const d = meters / R;
+  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brng));
+  const lng2 = lng1 + Math.atan2(Math.sin(brng) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
+  return L.latLng(lat2 * 180 / Math.PI, lng2 * 180 / Math.PI);
 }
 
 export function clearEditHandles() {
-  _dismissHandles();
+  // Remove fill-drag listeners
+  if (_dragCleanup) { _dragCleanup(); _dragCleanup = null; }
+  for (const h of editHandles) map?.removeLayer(h);
+  editHandles = [];
   if (searchCircle) {
-    searchCircle.off('click', _onZoneClick);
-    searchCircle.setStyle({ interactive: false });
+    searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: false });
+    const el = searchCircle.getElement();
+    if (el) el.style.cursor = '';
   }
 }
 

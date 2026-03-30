@@ -57,6 +57,9 @@
 | Token | Hex | Usage |
 |-------|-----|-------|
 | `--green` | `#4a9a65` | Success, systems go, check marks |
+| `--green-dim` | `#3a7a50` | Deploy button background |
+| `--green-pressed` | `#2f6642` | Deploy button active/pressed |
+| `--green-text` | `#d4e8dc` | Text on green backgrounds |
 | `--red` | `#b85454` | Error, critical alerts, targets |
 | `--amber` | `#a89540` | Warning, caution, pending |
 
@@ -186,7 +189,7 @@ Messages in the chat panel follow a strict visual hierarchy. Not everything dese
 - No gratuitous borders, glows, gradients, or shadows
 - Every visual element earns its place — if removing it doesn't hurt comprehension, remove it
 - **No inline styles.** All styling via CSS classes. Only dynamic values (CSS custom properties, transform:rotate) may be inline.
-- Buttons: `--accent-dim` bg + `--accent-text` text for primary; `--bg-card` bg + `--text-secondary` text for secondary
+- Buttons: `--accent-dim` bg + `--accent-text` text for primary; `--green-dim` bg + `--green-text` text for deploy/launch (commits drone to mission); `--bg-card` bg + `--text-secondary` text for secondary
 - Inputs: `--bg-card` bg, `--border` border, `--text-primary` text, `--border-strong` on focus
 - Cards: `--bg-card` bg, `--border` border, `--r-md` radius. `.card-recommended` for accent left border.
 - Chat bubbles: SARA uses `--text-primary` (not secondary — readability over hierarchy in chat)
@@ -208,3 +211,4 @@ Messages in the chat panel follow a strict visual hierarchy. Not everything dese
 | 2026-03-30 | Chat message hierarchy | 7-tier system: SARA primary, content blocks, actions, system notes, user, dispatch, radio. Status updates deemphasized as system notes. |
 | 2026-03-30 | Auto-sizing map labels | `.map-label` base class with `width: auto !important` replaces fixed `iconSize` labels. Pills fit their text content. |
 | 2026-03-30 | Unified 911 drone selection flow | All drone selections (Deploy button + map click) go through same flow: analysis → search area → preflight → mission. No more briefing screen detour. |
+| 2026-03-30 | Green deploy buttons | Deploy/Launch buttons use `--green-dim` to differentiate from blue accent (which matches drone markers). Green = "go, commit to mission." Blue = navigation/selection. |

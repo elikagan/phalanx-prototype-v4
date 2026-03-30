@@ -278,6 +278,28 @@ details.card > summary { padding: 4px 0; }
   background: var(--accent-pressed);
 }
 
+.btn-deploy {
+  background: var(--green-dim);
+  color: var(--green-text);
+  border: none;
+  border-radius: var(--r-md);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background var(--dur-micro) var(--ease-out);
+  white-space: nowrap;
+}
+
+.btn-deploy:hover {
+  background: var(--green);
+}
+
+.btn-deploy:active {
+  background: var(--green-pressed);
+}
+
 .btn-secondary {
   background: var(--bg-card);
   color: var(--text-secondary);
@@ -718,6 +740,7 @@ details.card > summary { padding: 4px 0; }
 }
 
 .chat-choices .btn-primary,
+.chat-choices .btn-deploy,
 .chat-choices .btn-secondary {
   font-size: 12px;
   padding: 8px 16px;

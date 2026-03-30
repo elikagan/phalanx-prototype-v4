@@ -30,6 +30,9 @@
 
   /* Status — muted, professional */
   --green: #4a9a65;
+  --green-dim: #3a7a50;
+  --green-pressed: #2f6642;
+  --green-text: #d4e8dc;
   --red: #b85454;
   --amber: #a89540;
 

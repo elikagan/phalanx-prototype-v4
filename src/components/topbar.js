@@ -40,7 +40,7 @@ function updateStatus(screen) {
     1: 'Authentication',
     2: 'Mission Type',
     3: 'Incidents',
-    4: 'Analysis',
+    4: '',
     5: 'Drone Selection',
     6: 'Mission Briefing',
     7: 'Search Area',
