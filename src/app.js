@@ -1075,18 +1075,17 @@ async function setupPreflightScreen() {
   chat.clear();
   const gen = chat.getGeneration();
 
-  // Build preflight checklist as one compact card
-  const checksHtml = `
-    <div class="card">
-      <div class="section-label">Pre-Flight Check</div>
-      <div class="data-grid">
-        ${PREFLIGHT_CHECKS.map(c => `<span class="data-label">${c.label}</span><span class="data-value">${c.value} ✓</span>`).join('')}
-      </div>
-    </div>`;
+  chat.appendSara("Running pre-flight checks...");
 
-  chat.appendSaraWithContent("Running pre-flight checks...", checksHtml);
+  // Animate each check appearing one by one
+  for (let i = 0; i < PREFLIGHT_CHECKS.length; i++) {
+    await wait(350);
+    if (chat.getGeneration() !== gen) return;
+    const c = PREFLIGHT_CHECKS[i];
+    chat.appendSystem(`${c.label} — ${c.value} ✓`);
+  }
 
-  await wait(1200);
+  await wait(600);
   if (chat.getGeneration() !== gen) return;
 
   chat.appendSystem('All checks passed. Launching...');
