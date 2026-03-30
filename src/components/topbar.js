@@ -53,16 +53,17 @@ function updateStatus(screen) {
     14: 'Live Scene',
   };
 
-  const text = labels[screen] || '';
-  el.textContent = text;
-  el.style.display = text ? '' : 'none';
-
   // Show/hide incident badge based on screen
   updateIncidentBadge(state.get('selectedIncident'));
 
+  // Hide status label when incident badge is visible — badge provides all context
+  const badge = document.getElementById('topbar-incident-badge');
+  const text = badge ? '' : (labels[screen] || '');
+  el.textContent = text;
+  el.style.display = text ? '' : 'none';
+
   // Show divider if status text OR incident badge is visible
   const divider = document.querySelector('.topbar-divider');
-  const badge = document.getElementById('topbar-incident-badge');
   if (divider) divider.style.display = (text || badge) ? '' : 'none';
 }
 
