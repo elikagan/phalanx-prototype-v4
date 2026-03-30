@@ -44,6 +44,17 @@ document.getElementById('gate-form')?.addEventListener('submit', (e) => {
 function boot() {
   state.init();
   state.set({ isMobile: window.innerWidth < 768 });
+
+  // If returning from a reload, skip auth screens and go to incidents map
+  if (localStorage.getItem('phalanx-auth') === 'true') {
+    state.set({
+      authenticated: true,
+      orgName: 'Riverside County SAR',
+      userName: 'J. Martinez',
+      missionPath: '911',
+      currentScreen: 3,
+    });
+  }
   topbar.init();
   mapComponent.init();
 
