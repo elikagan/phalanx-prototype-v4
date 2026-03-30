@@ -27,6 +27,14 @@
   filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
 }
 
+.search-zone-editable {
+  cursor: grab !important;
+}
+
+.search-zone-editable.search-zone-dragging {
+  cursor: grabbing !important;
+}
+
 /* ── Waypoint marker ── */
 .waypoint-marker {
   display: flex;
@@ -623,6 +631,7 @@
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  z-index: 650 !important;
 }
 
 .map-label span {

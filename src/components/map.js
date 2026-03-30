@@ -202,10 +202,10 @@ export function makeSearchZoneEditable(onChange) {
   clearEditHandles();
   _onChange = onChange;
 
-  // Make ellipse interactive so it captures mouse events
+  // Make ellipse interactive + add CSS class for grab cursor
   searchCircle.setStyle({ weight: 3, color: '#fff', fillOpacity: 0.25, interactive: true });
-  const el = searchCircle.getElement();
-  if (el) el.style.cursor = 'grab';
+  // className is applied via Leaflet's options, but we also need to add it after render
+  _applyEditableClass();
 
   // Read current ellipse params
   let rx = searchCircle._mRadiusX;
@@ -226,6 +226,8 @@ export function makeSearchZoneEditable(onChange) {
     searchCircle.setLatLng(centerLL);
     searchCircle.setRadius([rx, ry]);
     searchCircle.setTilt(tilt);
+    // Leaflet re-renders the SVG path, so re-apply the CSS class
+    _applyEditableClass();
   }
 
   function fireChange() {
@@ -245,11 +247,12 @@ export function makeSearchZoneEditable(onChange) {
     const stemEnd = _offsetByMeters(centerLL, ry * 1.3, tilt);
     rotHandle.setLatLng(stemEnd);
     rotStem.setLatLngs([nPos, stemEnd]);
-    // Size label at S edge
+    // Size label inside the circle, offset toward SW (not on any handle edge)
+    const labelPos = _offsetByMeters(centerLL, Math.min(rx, ry) * 0.45, tilt + 210);
     const labelText = Math.round(rx) === Math.round(ry)
       ? `${Math.round(rx)}m`
       : `${Math.round(rx)} × ${Math.round(ry)}m`;
-    sizeLabel.setLatLng(sPos);
+    sizeLabel.setLatLng(labelPos);
     sizeLabel.setIcon(L.divIcon({
       className: 'map-label',
       html: `<span>${labelText}</span>`,
@@ -264,18 +267,16 @@ export function makeSearchZoneEditable(onChange) {
   }
 
   // ── Drag-the-fill to move ──
-  // mousedown on ellipse → disable map drag → track mousemove → mouseup re-enables map drag
   let _dragging = false;
   let _dragStartLatLng = null;
 
   function onFillMouseDown(e) {
-    // Don't start fill-drag if the event came from a handle marker
     if (e.originalEvent && e.originalEvent._fromHandle) return;
     L.DomEvent.stop(e);
     _dragging = true;
     _dragStartLatLng = e.latlng;
     map.dragging.disable();
-    if (el) el.style.cursor = 'grabbing';
+    _setDraggingClass(true);
     map.on('mousemove', onFillMouseMove);
     map.on('mouseup', onFillMouseUp);
   }
@@ -293,7 +294,7 @@ export function makeSearchZoneEditable(onChange) {
     if (!_dragging) return;
     _dragging = false;
     map.dragging.enable();
-    if (el) el.style.cursor = 'grab';
+    _setDraggingClass(false);
     map.off('mousemove', onFillMouseMove);
     map.off('mouseup', onFillMouseUp);
     fireChange();
@@ -390,6 +391,19 @@ export function makeSearchZoneEditable(onChange) {
   repositionHandles();
 }
 
+// Apply/remove CSS classes on the ellipse SVG element (re-grab every time since Leaflet re-renders)
+function _applyEditableClass() {
+  const el = searchCircle?.getElement();
+  if (el) el.classList.add('search-zone-editable');
+}
+
+function _setDraggingClass(on) {
+  const el = searchCircle?.getElement();
+  if (!el) return;
+  if (on) el.classList.add('search-zone-dragging');
+  else el.classList.remove('search-zone-dragging');
+}
+
 function _offsetByMeters(ll, meters, bearingDeg) {
   const R = 6371000;
   const lat1 = ll.lat * Math.PI / 180;
@@ -409,7 +423,9 @@ export function clearEditHandles() {
   if (searchCircle) {
     searchCircle.setStyle({ weight: 2, color: '#D4A017', fillOpacity: 0.18, interactive: false });
     const el = searchCircle.getElement();
-    if (el) el.style.cursor = '';
+    if (el) {
+      el.classList.remove('search-zone-editable', 'search-zone-dragging');
+    }
   }
 }
 

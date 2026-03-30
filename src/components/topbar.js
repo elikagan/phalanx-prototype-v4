@@ -53,7 +53,13 @@ function updateStatus(screen) {
     14: 'Live Scene',
   };
 
-  el.textContent = labels[screen] || '';
+  const text = labels[screen] || '';
+  el.textContent = text;
+
+  // Hide divider when status text is empty
+  const divider = document.querySelector('.topbar-divider');
+  if (divider) divider.style.display = text ? '' : 'none';
+  el.style.display = text ? '' : 'none';
 
   // Show/hide incident badge based on screen
   updateIncidentBadge(state.get('selectedIncident'));
