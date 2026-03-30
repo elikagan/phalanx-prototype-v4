@@ -8,6 +8,27 @@
 const listeners = new Map();
 let state = {};
 
+// Keys to persist across page reloads
+const PERSIST_KEYS = ['currentScreen', 'missionPath', 'selectedIncident', 'selectedDrone', 'searchZone', 'authenticated', 'orgName'];
+const STORAGE_KEY = 'phalanx-state';
+
+function _saveState() {
+  try {
+    const snapshot = {};
+    for (const k of PERSIST_KEYS) {
+      if (state[k] !== undefined && state[k] !== null) snapshot[k] = state[k];
+    }
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+  } catch (_) { /* quota or private mode */ }
+}
+
+function _loadState() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) { return null; }
+}
+
 /** Subscribe to a state key. Returns unsubscribe function. */
 export function on(key, fn) {
   if (!listeners.has(key)) listeners.set(key, new Set());
@@ -37,18 +58,22 @@ export function set(updates) {
       }
     }
   }
+  // Persist to sessionStorage
+  if (changed.some(k => PERSIST_KEYS.includes(k))) _saveState();
 }
 
-/** Initialize with default state. */
+/** Initialize with default state, restoring persisted state from sessionStorage. */
 export function init() {
+  const saved = _loadState();
+
   state = {
     // Navigation
-    currentScreen: 1,
-    missionPath: null,        // '911' | 'manual'
+    currentScreen: saved?.currentScreen || 1,
+    missionPath: saved?.missionPath || null,
 
     // Mission data
-    selectedIncident: null,
-    selectedDrone: null,
+    selectedIncident: saved?.selectedIncident || null,
+    selectedDrone: saved?.selectedDrone || null,
     targetDescription: null,
 
     // Drone telemetry
@@ -60,10 +85,10 @@ export function init() {
 
     // Target
     targetPosition: null,
-    targetStatus: 'none',     // 'none' | 'detected' | 'confirmed' | 'tracking'
+    targetStatus: 'none',
 
     // Search
-    searchZone: null,         // { center: [lat, lng], radius, bias }
+    searchZone: saved?.searchZone || null,
 
     // Demo narrative
     narrativeIndex: 0,
@@ -76,14 +101,14 @@ export function init() {
     showChat: false,
     showInput: false,
     showFpv: false,
-    fpvActive: false,         // true = FPV is main view, false = map is main
+    fpvActive: false,
     drawerOpen: false,
     isMobile: window.innerWidth < 768,
     radioCount: 0,
 
     // Auth
-    authenticated: false,
-    orgName: '',
+    authenticated: saved?.authenticated || false,
+    orgName: saved?.orgName || '',
   };
 
   // Notify all listeners of initial state
@@ -103,8 +128,8 @@ export function goToScreen(screen, { pushHistory = true } = {}) {
   }
 }
 
-// Replace initial history entry with screen 1 so back button stays in-app
-history.replaceState({ screen: 1 }, '', '');
+// Replace initial history entry with current screen so back button stays in-app
+history.replaceState({ screen: _loadState()?.currentScreen || 1 }, '', '');
 
 // Browser back/forward button support
 window.addEventListener('popstate', (e) => {
