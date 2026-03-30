@@ -8,26 +8,27 @@
 
 /* Drone marker */
 .drone-marker {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   transition: transform var(--dur-normal) var(--ease-out);
 }
 
 .drone-marker svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 0 8px rgba(95, 143, 173, 0.5)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
 
 /* Search zone label */
 .search-zone-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 1px;
-  color: var(--text-muted);
-  background: rgba(var(--overlay), 0.8);
-  padding: 2px 8px;
+  color: var(--text-secondary);
+  background: rgba(var(--overlay), 0.85);
+  padding: 3px 10px;
   border-radius: 3px;
+  border: 1px solid var(--border);
   white-space: nowrap;
   pointer-events: none;
 }
@@ -73,32 +74,35 @@
 
 .waypoint-label {
   font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-muted);
-  background: rgba(var(--overlay), 0.8);
-  padding: 1px 6px;
-  border-radius: 2px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: rgba(var(--overlay), 0.85);
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
   margin-top: 4px;
   white-space: nowrap;
 }
 
 /* Target marker */
 .target-marker {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   background: var(--red);
   border-radius: 50%;
   border: 2px solid rgba(184, 84, 84, 0.4);
   animation: target-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(184, 84, 84, 0.4);
 }
 
 .target-marker.confirmed {
   background: var(--green);
   border-color: rgba(74, 154, 101, 0.4);
   animation: target-pulse-green 2s ease-in-out infinite;
+  box-shadow: 0 0 12px rgba(74, 154, 101, 0.4);
 }
 
-/* Target label */
+/* Target label (on FPV) */
 .target-label {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -113,6 +117,26 @@
 
 .target-label.confirmed {
   color: var(--green);
+}
+
+/* Target label (on map) */
+.target-map-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--red);
+  background: rgba(var(--overlay), 0.85);
+  padding: 2px 8px;
+  border-radius: 3px;
+  border: 1px solid rgba(184, 84, 84, 0.3);
+  white-space: nowrap;
+  pointer-events: none;
+  text-align: center;
+}
+
+.target-map-label.confirmed {
+  color: var(--green);
+  border-color: rgba(74, 154, 101, 0.3);
 }
 
 /* View toggle thumbnail (v3-style) */
@@ -484,14 +508,15 @@
 }
 
 .incident-dot {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--dot-color, var(--red));
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--dot-color, var(--red)) 30%, transparent);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--dot-color, var(--red)) 30%, transparent),
+    0 0 16px color-mix(in srgb, var(--dot-color, var(--red)) 25%, transparent);
   animation: incident-pulse 2.5s ease-in-out infinite;
 }
 
@@ -502,12 +527,13 @@
 
 .incident-map-label {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.5px;
   color: var(--text-primary);
-  background: rgba(var(--overlay), 0.85);
-  padding: 2px 8px;
+  background: rgba(var(--overlay), 0.88);
+  padding: 3px 10px;
   border-radius: 3px;
+  border: 1px solid var(--border);
   white-space: nowrap;
   margin-top: 4px;
   backdrop-filter: blur(4px);
@@ -520,14 +546,15 @@
 }
 
 .fleet-drone-dot {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: rgba(var(--overlay), 0.7);
-  border: 1.5px solid var(--drone-color, var(--accent));
+  background: rgba(var(--overlay), 0.75);
+  border: 2px solid var(--drone-color, var(--accent));
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Linked: drone assigned to incident */
@@ -548,6 +575,23 @@
   white-space: nowrap;
   margin-top: 4px;
   backdrop-filter: blur(4px);
+}
+
+/* === Route Line Labels === */
+.route-line-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+  background: rgba(var(--overlay), 0.88);
+  padding: 3px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+  pointer-events: none;
+  text-align: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 /* === Map Tooltips === */

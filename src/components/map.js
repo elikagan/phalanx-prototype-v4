@@ -25,18 +25,24 @@ let incidentMarkers = [];
 let fleetMarkers = [];
 let distanceLines = [];
 
-// Drone SVG icon
+// Drone SVG icon — stealth flying wing (top-down, nose points up)
 const DRONE_SVG = `<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <path d="M16 4 L20 12 L28 16 L20 20 L16 28 L12 20 L4 16 L12 12 Z"
-    fill="#5f8fad" stroke="#3d6b85" stroke-width="1.5" opacity="0.9"/>
-  <circle cx="16" cy="16" r="3" fill="#d0d0d6" opacity="0.8"/>
+  <path d="M16 6 L4 24 L8 22 L16 20 L24 22 L28 24 Z"
+    fill="#5f8fad" stroke="#3d6b85" stroke-width="1" opacity="0.95"/>
+  <path d="M16 6 L16 20" stroke="#d0d0d6" stroke-width="0.5" opacity="0.4"/>
+</svg>`;
+
+// Smaller stealth drone for fleet markers
+const FLEET_DRONE_SVG = (color) => `<svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z"
+    fill="${color}" stroke="rgba(255,255,255,0.3)" stroke-width="0.8"/>
 </svg>`;
 
 const droneIcon = L.divIcon({
   className: 'drone-marker',
   html: DRONE_SVG,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
 });
 
 export function init() {
@@ -63,9 +69,9 @@ export function init() {
   // Flight trail polyline
   flightTrail = L.polyline([], {
     color: '#5f8fad',
-    weight: 2,
-    opacity: 0.5,
-    dashArray: '4 6',
+    weight: 3,
+    opacity: 0.7,
+    dashArray: '8 4',
   }).addTo(map);
 
   // Subscribe to state
@@ -126,20 +132,20 @@ function onSearchZone(zone) {
     const pts = generateOblong(origin, zone.center, zone.radius, zone.bias);
     searchCircle = L.polygon(pts, {
       color: '#7ab0d0',
-      weight: 2.5,
+      weight: 3,
       dashArray: '10 6',
       fillColor: '#5f8fad',
-      fillOpacity: 0.18,
+      fillOpacity: 0.22,
       smoothFactor: 2,
     }).addTo(map);
   } else {
     searchCircle = L.circle(zone.center, {
       radius: zone.radius,
       color: '#5f8fad',
-      weight: 2,
+      weight: 3,
       dashArray: '8 6',
       fillColor: '#5f8fad',
-      fillOpacity: 0.12,
+      fillOpacity: 0.20,
     }).addTo(map);
   }
 
@@ -234,13 +240,25 @@ function onTargetPosition(pos) {
     targetMarker = L.marker(latlng, {
       icon: L.divIcon({
         className: 'target-marker',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
       }),
       zIndexOffset: 900,
     }).addTo(map);
+    // Target label
+    targetLabel = L.marker(latlng, {
+      icon: L.divIcon({
+        className: 'target-map-label',
+        html: 'TARGET DETECTED',
+        iconSize: [140, 20],
+        iconAnchor: [70, 36],
+      }),
+      interactive: false,
+      zIndexOffset: 899,
+    }).addTo(map);
   } else {
     targetMarker.setLatLng(latlng);
+    if (targetLabel) targetLabel.setLatLng(latlng);
   }
 }
 
@@ -251,15 +269,24 @@ function onTargetStatus(status) {
 
   if (status === 'confirmed' || status === 'tracking') {
     el.querySelector('.target-marker')?.classList.add('confirmed');
+    // Update label to confirmed
+    if (targetLabel) {
+      const labelEl = targetLabel.getElement();
+      if (labelEl) {
+        labelEl.querySelector('.target-map-label').textContent = 'TARGET CONFIRMED';
+        labelEl.querySelector('.target-map-label').classList.add('confirmed');
+      }
+    }
     // Add orbit circle
     const pos = state.get('targetPosition');
     if (pos && !orbitCircle) {
       orbitCircle = L.circle([pos.lat, pos.lng], {
         radius: 80,
         color: '#4a9a65',
-        weight: 1.5,
+        weight: 2.5,
         dashArray: '6 4',
-        fill: false,
+        fillColor: '#4a9a65',
+        fillOpacity: 0.06,
       }).addTo(map);
     }
   }
@@ -352,11 +379,11 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
       icon: L.divIcon({
         className: 'incident-map-marker',
         html: `<div class="incident-dot${hasLinkedDrone ? ' linked' : ''}" style="--dot-color:${color}">
-          <span class="material-symbols-outlined" style="font-size:16px;color:var(--icon-on-status)">${inc.icon || 'location_on'}</span>
+          <span class="material-symbols-outlined" style="font-size:20px;color:var(--icon-on-status)">${inc.icon || 'location_on'}</span>
         </div>
         <div class="incident-map-label">${inc.type} #${incNumber}</div>`,
-        iconSize: [160, 44],
-        iconAnchor: [18, 18],
+        iconSize: [160, 54],
+        iconAnchor: [22, 22],
       }),
       zIndexOffset: 800,
     }).addTo(map);
@@ -426,13 +453,11 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       icon: L.divIcon({
         className: 'fleet-drone-marker',
         html: `<div class="fleet-drone-dot${isAssigned ? ' linked' : ''}" style="--drone-color:${color}">
-          <svg viewBox="0 0 24 24" width="16" height="16">
-            <path d="M12 3L15 9L21 12L15 15L12 21L9 15L3 12L9 9Z" fill="${color}" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
-          </svg>
+          ${FLEET_DRONE_SVG(color)}
         </div>
         <div class="fleet-drone-label">${drone.name}${drone.distanceFromIncident != null ? ' · ' + drone.distanceFromIncident + ' km' : ''}</div>`,
-        iconSize: [140, 44],
-        iconAnchor: [18, 18],
+        iconSize: [140, 52],
+        iconAnchor: [20, 20],
       }),
       zIndexOffset: isAvailable ? 850 : 700,
       interactive: isAvailable,
@@ -454,15 +479,36 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     tooltip.setContent(`<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`);
     marker.bindTooltip(tooltip);
 
-    // Distance line from drone to incident
+    // Distance line from drone to incident with midpoint label
     if (incidentCoords && isAvailable) {
       const line = L.polyline([drone.coordinates, incidentCoords], {
         color,
-        weight: 1,
-        opacity: 0.4,
-        dashArray: '6 4',
+        weight: 3,
+        opacity: 0.7,
+        dashArray: '12 8',
       }).addTo(map);
       distanceLines.push(line);
+
+      // Midpoint label with distance + ETA
+      if (drone.distanceFromIncident != null) {
+        const mid = [
+          (drone.coordinates[0] + incidentCoords[0]) / 2,
+          (drone.coordinates[1] + incidentCoords[1]) / 2,
+        ];
+        const etaSec = Math.round(drone.distanceFromIncident / 60 * 3600);
+        const etaLabel = etaSec >= 60 ? `${Math.round(etaSec / 60)}m ${etaSec % 60}s` : `${etaSec}s`;
+        const labelMarker = L.marker(mid, {
+          icon: L.divIcon({
+            className: 'route-line-label',
+            html: `${drone.distanceFromIncident} km · ${etaLabel} ETA`,
+            iconSize: [120, 22],
+            iconAnchor: [60, 11],
+          }),
+          interactive: false,
+          zIndexOffset: 860,
+        }).addTo(map);
+        distanceLines.push(labelMarker);
+      }
     }
 
     fleetMarkers.push(marker);
@@ -500,8 +546,56 @@ export function clearFleetMarkers() {
   distanceLines = [];
 }
 
-/** Clear all overlay markers (incidents + fleet) */
+/** Clear all overlay markers (incidents + fleet + route lines) */
 export function clearOverlays() {
   clearIncidentMarkers();
   clearFleetMarkers();
+  clearRouteLines();
+}
+
+// ── Route Lines with Labels ──────────────────────────────
+
+let routeLineOverlays = [];
+
+/** Draw a route line from→to with a midpoint label. Returns cleanup ref. */
+export function addRouteLine(from, to, { color = '#5f8fad', weight = 3, dashArray = '12 8', opacity = 0.7, label = '' } = {}) {
+  if (!map) return;
+
+  const line = L.polyline([from, to], { color, weight, opacity, dashArray }).addTo(map);
+  routeLineOverlays.push(line);
+
+  if (label) {
+    const mid = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2];
+    const labelMarker = L.marker(mid, {
+      icon: L.divIcon({
+        className: 'route-line-label',
+        html: label,
+        iconSize: [140, 22],
+        iconAnchor: [70, 11],
+      }),
+      interactive: false,
+      zIndexOffset: 860,
+    }).addTo(map);
+    routeLineOverlays.push(labelMarker);
+  }
+}
+
+/** Clear all manually added route lines */
+export function clearRouteLines() {
+  for (const o of routeLineOverlays) map?.removeLayer(o);
+  routeLineOverlays = [];
+}
+
+/** Show a preview search zone circle (fainter, for briefing screens) */
+export function showSearchZonePreview(center, radius, fillOpacity = 0.08) {
+  if (!map) return;
+  const circle = L.circle(center, {
+    radius,
+    color: '#5f8fad',
+    weight: 2,
+    dashArray: '8 6',
+    fillColor: '#5f8fad',
+    fillOpacity,
+  }).addTo(map);
+  routeLineOverlays.push(circle);
 }
