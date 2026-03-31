@@ -530,12 +530,18 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--dot-color, #1c1c1f);
-  border: none;
+  background: var(--dot-color, rgba(30, 32, 38, 0.92));
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s ease-out, background 0.15s ease-out;
+}
+
+.fleet-drone-dot:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--dot-color, rgba(38, 40, 48, 0.95));
 }
 
 /* Dimmed variant for non-recommended drones */
@@ -545,7 +551,7 @@
   opacity: 0.65;
 }
 
-/* Fleet base dot — single square marker */
+/* Fleet base dot — single square marker (same base as drone dots) */
 .fleet-base-dot {
   width: 30px;
   height: 30px;
