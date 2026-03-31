@@ -13,6 +13,9 @@ export function init() {
   state.on('currentScreen', updateDroneBadge);
   state.on('targetStatus', updatePills);
   state.on('selectedIncident', updateIncidentBadge);
+
+  // Initial render — state may already be set before listeners registered
+  updateStatus(state.get('currentScreen'));
 }
 
 function updateStatus(screen) {
@@ -42,12 +45,19 @@ function updateStatus(screen) {
   // Hide status label when incident badge is visible — badge provides all context
   const badge = document.getElementById('topbar-incident-badge');
   const text = badge ? '' : (labels[screen] || '');
-  el.textContent = text;
-  el.style.display = text ? '' : 'none';
+
+  // Screen 3 "Incidents" gets styled as a pill like incident badges
+  if (Number(screen) === 3 && !badge) {
+    el.innerHTML = '<span class="topbar-incident-badge"><span class="incident-type">All Incidents</span></span>';
+    el.style.display = '';
+  } else {
+    el.textContent = text;
+    el.style.display = text ? '' : 'none';
+  }
 
   // Show divider if status text OR incident badge is visible
   const divider = document.querySelector('.topbar-divider');
-  if (divider) divider.style.display = (text || badge) ? '' : 'none';
+  if (divider) divider.style.display = (text || badge || Number(screen) === 3) ? '' : 'none';
 }
 
 function updateIncidentBadge(inc) {
