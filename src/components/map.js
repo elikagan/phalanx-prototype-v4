@@ -827,16 +827,19 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       distanceLines.push(orbitZone);
 
       // Solid route line (Level 4 — active assignment, not proposed)
-      // 1px offset shadow, not thick centered casing
-      const shadow = L.polyline([drone.coordinates, targetCoords], {
-        color: '#000', weight: 4, opacity: 0.3, lineCap: 'round', interactive: false,
-        className: 'route-shadow',
-      }).addTo(map);
-      distanceLines.push(shadow);
-      const line = L.polyline([drone.coordinates, targetCoords], {
-        color: '#407CF5', weight: 3, opacity: 0.8, lineCap: 'round', interactive: false,
-      }).addTo(map);
-      distanceLines.push(line);
+      // Skip if drone is co-located with incident (already orbiting)
+      const dist = map.distance(drone.coordinates, targetCoords);
+      if (dist > 50) {
+        const shadow = L.polyline([drone.coordinates, targetCoords], {
+          color: '#000', weight: 4, opacity: 0.3, lineCap: 'round', interactive: false,
+          className: 'route-shadow',
+        }).addTo(map);
+        distanceLines.push(shadow);
+        const line = L.polyline([drone.coordinates, targetCoords], {
+          color: '#407CF5', weight: 3, opacity: 0.8, lineCap: 'round', interactive: false,
+        }).addTo(map);
+        distanceLines.push(line);
+      }
     }
 
     // Route line from drone to incident (skipped when caller draws its own route)

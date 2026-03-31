@@ -92,7 +92,7 @@ export const DRONES = [
     signal: 'good',
     operator: 'J. Torres',
     assignedIncident: 'inc-4473',
-    coordinates: [32.6780, -117.1010],
+    coordinates: [32.6750, -117.0990],
     distanceFromIncident: null,
   },
   // ── Standby drones (on ground at home bases) ──
