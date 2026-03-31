@@ -705,7 +705,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
 
     // Permanent label below marker (replaces old embedded label)
     marker.bindTooltip(`<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber}`, {
-      permanent: true,
+      permanent: false,
       direction: 'bottom',
       offset: [0, 8],
       className: 'marker-permanent-label',
@@ -818,7 +818,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
 
     // Permanent label below marker
     marker.bindTooltip(shortName, {
-      permanent: true,
+      permanent: false,
       direction: 'bottom',
       offset: [0, 4],
       className: 'marker-permanent-label',
@@ -965,7 +965,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
 
     // Permanent label below marker
     marker.bindTooltip(group.base || 'Base', {
-      permanent: true,
+      permanent: false,
       direction: 'bottom',
       offset: [0, 4],
       className: 'marker-permanent-label',
@@ -1155,7 +1155,7 @@ export function showLiveOrbitScene(center, drone, radius = 300) {
     interactive: false,
   }).addTo(map);
   droneMarkerEl.bindTooltip(shortName, {
-    permanent: true,
+    permanent: false,
     direction: 'bottom',
     offset: [0, 4],
     className: 'marker-permanent-label',
