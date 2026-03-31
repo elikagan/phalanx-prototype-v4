@@ -62,6 +62,7 @@ export const DRONES = [
     coordinates: [32.7350, -117.1050],
     distanceFromIncident: 2.3,
     patrol: 'North Park grid',
+    patrolZone: { center: [32.7350, -117.1050], widthM: 600, heightM: 400, legs: 5, speedMps: 12 },
   },
   {
     id: 'dsa-064',
@@ -72,6 +73,7 @@ export const DRONES = [
     coordinates: [32.7680, -117.1820],
     distanceFromIncident: 4.8,
     patrol: 'Hillcrest grid',
+    patrolZone: { center: [32.7680, -117.1820], widthM: 500, heightM: 350, legs: 4, speedMps: 10 },
   },
   {
     id: 'dsa-091',
@@ -82,6 +84,7 @@ export const DRONES = [
     coordinates: [32.7150, -117.1650],
     distanceFromIncident: 5.1,
     patrol: 'Downtown grid',
+    patrolZone: { center: [32.7150, -117.1650], widthM: 550, heightM: 450, legs: 6, speedMps: 11 },
   },
   // ── In-mission drone (assigned to incident) ──
   {

@@ -64,6 +64,9 @@ let distanceLines = [];
 let incidentCluster = null;
 let droneCluster = null;
 
+// Patrol animation state
+let patrolAnimations = [];
+
 // Fleet drone SVG — white flying wing on colored circle
 // This is the ONE drone look used everywhere (see DESIGN.md "Drone Marker")
 const FLEET_DRONE_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
@@ -540,6 +543,104 @@ function offsetLatLng(center, distanceM, bearingDeg) {
   return L.latLng(lat2 * 180 / Math.PI, lng2 * 180 / Math.PI);
 }
 
+// ── Patrol Animation ─────────────────────────────────────
+// Generates lawnmower waypoints and animates drones along them
+
+function generateLawnmowerWaypoints(zone) {
+  const { center, widthM, heightM, legs } = zone;
+  const centerLL = L.latLng(center[0], center[1]);
+  const halfH = heightM / 2;
+  const halfW = widthM / 2;
+  const legSpacing = heightM / (legs - 1);
+  const waypoints = [];
+
+  for (let i = 0; i < legs; i++) {
+    const northOffset = halfH - (i * legSpacing);
+    const bearing = northOffset >= 0 ? 0 : 180;
+    const midPoint = offsetLatLng(centerLL, Math.abs(northOffset), bearing);
+    const westPoint = offsetLatLng(midPoint, halfW, 270);
+    const eastPoint = offsetLatLng(midPoint, halfW, 90);
+
+    if (i % 2 === 0) {
+      waypoints.push([westPoint.lat, westPoint.lng]);
+      waypoints.push([eastPoint.lat, eastPoint.lng]);
+    } else {
+      waypoints.push([eastPoint.lat, eastPoint.lng]);
+      waypoints.push([westPoint.lat, westPoint.lng]);
+    }
+  }
+  return waypoints;
+}
+
+function startPatrolAnimation(marker, drone) {
+  if (!drone.patrolZone) return null;
+
+  const fwd = generateLawnmowerWaypoints(drone.patrolZone);
+  if (fwd.length < 2) return null;
+
+  // Round-trip: forward + reverse for seamless loop
+  const waypoints = [...fwd, ...[...fwd].reverse().slice(1)];
+  const speedMps = drone.patrolZone.speedMps || 12;
+
+  // Pre-compute segments
+  const segments = [];
+  let totalDist = 0;
+  for (let i = 1; i < waypoints.length; i++) {
+    const from = L.latLng(waypoints[i - 1][0], waypoints[i - 1][1]);
+    const to = L.latLng(waypoints[i][0], waypoints[i][1]);
+    const dist = from.distanceTo(to);
+    segments.push({ from: waypoints[i - 1], to: waypoints[i], dist, cumDist: totalDist });
+    totalDist += dist;
+  }
+
+  const loopTime = totalDist / speedMps;
+  const timeOffset = Math.random() * loopTime; // desync drones
+  let startTime = null;
+  let rafId = null;
+
+  function animate(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const elapsed = (timestamp - startTime) / 1000 + timeOffset;
+    const t = (elapsed % loopTime) / loopTime;
+    const targetDist = t * totalDist;
+
+    // Find current segment
+    let seg = segments[segments.length - 1];
+    for (let i = 0; i < segments.length; i++) {
+      if (segments[i].cumDist + segments[i].dist >= targetDist) {
+        seg = segments[i];
+        break;
+      }
+    }
+
+    // Interpolate position
+    const p = seg.dist > 0 ? Math.max(0, Math.min(1, (targetDist - seg.cumDist) / seg.dist)) : 0;
+    const lat = seg.from[0] + (seg.to[0] - seg.from[0]) * p;
+    const lng = seg.from[1] + (seg.to[1] - seg.from[1]) * p;
+    marker.setLatLng([lat, lng]);
+
+    // Calculate heading from segment direction
+    const dLng = (seg.to[1] - seg.from[1]) * Math.PI / 180;
+    const lat1 = seg.from[0] * Math.PI / 180;
+    const lat2 = seg.to[0] * Math.PI / 180;
+    const y = Math.sin(dLng) * Math.cos(lat2);
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+    const heading = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+
+    // Update SVG rotation
+    const el = marker.getElement();
+    if (el) {
+      const svg = el.querySelector('svg');
+      if (svg) svg.style.transform = `rotate(${Math.round(heading)}deg)`;
+    }
+
+    rafId = requestAnimationFrame(animate);
+  }
+
+  rafId = requestAnimationFrame(animate);
+  return { cancel: () => { if (rafId) cancelAnimationFrame(rafId); } };
+}
+
 function onTargetPosition(pos) {
   if (!map) return;
 
@@ -961,6 +1062,12 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
 
     fleetMarkers.push(marker);
     bounds.push(drone.coordinates);
+
+    // Start patrol animation for surveillance drones on fleet overview
+    if (isSurveillance && drone.patrolZone && !incidentCoords) {
+      const anim = startPatrolAnimation(marker, drone);
+      if (anim) patrolAnimations.push(anim);
+    }
   }
 
   // Render grouped standby (home base) markers
@@ -1065,6 +1172,8 @@ export function fitAllMarkers(padding = [60, 60], maxZoom = 12) {
 }
 
 export function clearFleetMarkers() {
+  for (const anim of patrolAnimations) anim.cancel();
+  patrolAnimations = [];
   if (droneCluster) droneCluster.clearLayers();
   for (const m of fleetMarkers) map?.removeLayer(m);
   for (const l of distanceLines) map?.removeLayer(l);
