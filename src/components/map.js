@@ -17,6 +17,7 @@
 
 import L from 'leaflet';
 import 'leaflet-ellipse';
+import 'leaflet.markercluster';
 import * as state from '../state.js';
 import { MAP_CENTER, MAP_ZOOM } from '../scenarios/san-diego-pursuit.js';
 
@@ -59,6 +60,10 @@ let incidentMarkers = [];
 let fleetMarkers = [];
 let distanceLines = [];
 
+// Cluster groups — markers aggregate at low zoom like a real map app
+let incidentCluster = null;
+let droneCluster = null;
+
 // Fleet drone SVG — white flying wing on colored circle
 // This is the ONE drone look used everywhere (see DESIGN.md "Drone Marker")
 const FLEET_DRONE_SVG = `<svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
@@ -74,7 +79,40 @@ export function init() {
     zoom: MAP_ZOOM,
     zoomControl: false,
     attributionControl: false,
+    minZoom: 10,
+    maxZoom: 19,
+    maxBounds: L.latLngBounds([32.4, -117.6], [33.3, -116.8]),
+    maxBoundsViscosity: 1.0,
   });
+
+  // Cluster groups — incidents and drones aggregate at low zoom
+  incidentCluster = L.markerClusterGroup({
+    maxClusterRadius: 50,
+    disableClusteringAtZoom: 14,
+    showCoverageOnHover: false,
+    animate: true,
+    iconCreateFunction: (cluster) => L.divIcon({
+      html: `<div class="cluster-icon cluster-incident">${cluster.getChildCount()}</div>`,
+      className: '',
+      iconSize: [36, 36],
+      iconAnchor: [18, 18],
+    }),
+  });
+  incidentCluster.addTo(map);
+
+  droneCluster = L.markerClusterGroup({
+    maxClusterRadius: 40,
+    disableClusteringAtZoom: 13,
+    showCoverageOnHover: false,
+    animate: true,
+    iconCreateFunction: (cluster) => L.divIcon({
+      html: `<div class="cluster-icon cluster-drone">${cluster.getChildCount()}</div>`,
+      className: '',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+    }),
+  });
+  droneCluster.addTo(map);
 
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
@@ -655,23 +693,23 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
         className: 'incident-map-marker',
         html: `<div class="incident-dot${activeClass}" style="--dot-color:${dotColor}">
           <span class="material-symbols-outlined">${inc.icon || 'location_on'}</span>
-        </div>
-        <div class="incident-map-label"><span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber}</div>`,
-        iconSize: [200, 56],
+        </div>`,
+        iconSize: [40, 40],
         iconAnchor: [20, 20],
       }),
       zIndexOffset: 800,
-    }).addTo(map);
+    });
+    incidentCluster.addLayer(marker);
 
     marker.on('click', () => onSelect?.(inc));
 
-    const tooltip = L.tooltip({
-      direction: 'top',
-      offset: [0, -20],
-      className: 'map-tooltip',
+    // Permanent label below marker (replaces old embedded label)
+    marker.bindTooltip(`<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber}`, {
+      permanent: true,
+      direction: 'bottom',
+      offset: [0, 8],
+      className: 'marker-permanent-label',
     });
-    tooltip.setContent(`<strong>I${inc.priority} · ${inc.type} #${incNumber}</strong><br>${inc.location} · ${inc.elapsed}<br>${inc.units} unit${inc.units !== 1 ? 's' : ''} responding`);
-    marker.bindTooltip(tooltip);
 
     incidentMarkers.push(marker);
     bounds.push(inc.coordinates);
@@ -687,6 +725,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
 }
 
 export function clearIncidentMarkers() {
+  if (incidentCluster) incidentCluster.clearLayers();
   for (const m of incidentMarkers) map?.removeLayer(m);
   incidentMarkers = [];
 }
@@ -760,6 +799,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     const isDimmed = isReroutable && !isRecommended && !isAssigned;
     const dotDimClass = isDimmed ? ' fleet-drone-dot-dim' : '';
     const svgSize = isDimmed ? 13 : 16;
+    const dotSize = isDimmed ? 26 : 32;
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
@@ -767,14 +807,22 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
           <svg viewBox="0 0 24 24" width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${Math.round(headingDeg)}deg)">
             <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
           </svg>
-        </div>
-        <div class="fleet-drone-label">${shortName}</div>`,
-        iconSize: [120, 48],
-        iconAnchor: [20, 20],
+        </div>`,
+        iconSize: [dotSize, dotSize],
+        iconAnchor: [dotSize / 2, dotSize / 2],
       }),
       zIndexOffset: isAssigned ? 900 : isReroutable ? 850 : 700,
       interactive: isReroutable || isAssigned,
-    }).addTo(map);
+    });
+    droneCluster.addLayer(marker);
+
+    // Permanent label below marker
+    marker.bindTooltip(shortName, {
+      permanent: true,
+      direction: 'bottom',
+      offset: [0, 4],
+      className: 'marker-permanent-label',
+    });
 
     if (isReroutable) {
       marker.on('click', () => onSelect?.(drone));
@@ -906,14 +954,22 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         html: `<div class="fleet-base-dot">
           <svg class="base-marker-icon" viewBox="0 0 24 24" width="14" height="14"><path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/></svg>
           <span class="base-count">${count}</span>
-        </div>
-        <div class="fleet-drone-label">${group.base || 'Base'}</div>`,
-        iconSize: [120, 48],
-        iconAnchor: [20, 20],
+        </div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
       }),
       zIndexOffset: 600,
       interactive: true,
-    }).addTo(map);
+    });
+    droneCluster.addLayer(marker);
+
+    // Permanent label below marker
+    marker.bindTooltip(group.base || 'Base', {
+      permanent: true,
+      direction: 'bottom',
+      offset: [0, 4],
+      className: 'marker-permanent-label',
+    });
 
     // Build popup content with drone status rows
     const baseName = group.base || 'Home Base';
@@ -968,10 +1024,17 @@ export function fitAllMarkers(padding = [60, 60], maxZoom = 12) {
   if (!map) return;
   requestAnimationFrame(() => {
     map.invalidateSize();
-    const allCoords = [
-      ...incidentMarkers.map(m => [m.getLatLng().lat, m.getLatLng().lng]),
-      ...fleetMarkers.map(m => [m.getLatLng().lat, m.getLatLng().lng]),
-    ];
+    const allCoords = [];
+    if (incidentCluster) {
+      incidentCluster.eachLayer(m => allCoords.push([m.getLatLng().lat, m.getLatLng().lng]));
+    }
+    if (droneCluster) {
+      droneCluster.eachLayer(m => allCoords.push([m.getLatLng().lat, m.getLatLng().lng]));
+    }
+    // Also include any non-clustered markers
+    for (const m of [...incidentMarkers, ...fleetMarkers]) {
+      if (m.getLatLng) allCoords.push([m.getLatLng().lat, m.getLatLng().lng]);
+    }
     if (allCoords.length > 1) {
       map.fitBounds(allCoords, { padding, maxZoom });
     } else if (allCoords.length === 1) {
@@ -981,6 +1044,7 @@ export function fitAllMarkers(padding = [60, 60], maxZoom = 12) {
 }
 
 export function clearFleetMarkers() {
+  if (droneCluster) droneCluster.clearLayers();
   for (const m of fleetMarkers) map?.removeLayer(m);
   for (const l of distanceLines) map?.removeLayer(l);
   fleetMarkers = [];
@@ -1083,14 +1147,19 @@ export function showLiveOrbitScene(center, drone, radius = 300) {
         <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${droneHeading}deg)">
           <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
         </svg>
-      </div>
-      <div class="fleet-drone-label">${shortName}</div>`,
-      iconSize: [120, 48],
-      iconAnchor: [20, 20],
+      </div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
     }),
     zIndexOffset: 950,
     interactive: false,
   }).addTo(map);
+  droneMarkerEl.bindTooltip(shortName, {
+    permanent: true,
+    direction: 'bottom',
+    offset: [0, 4],
+    className: 'marker-permanent-label',
+  });
   routeLineOverlays.push(droneMarkerEl);
 
   // "TARGET LOCATED" label — positioned just below the incident, inside the zone

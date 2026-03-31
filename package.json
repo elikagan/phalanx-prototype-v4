@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "leaflet": "^1.9.4",
-    "leaflet-ellipse": "^0.9.1"
+    "leaflet-ellipse": "^0.9.1",
+    "leaflet.markercluster": "^1.5.3"
   },
   "devDependencies": {
     "vite": "^8.0.3"
