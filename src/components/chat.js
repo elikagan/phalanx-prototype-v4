@@ -264,8 +264,6 @@ export function appendRadio(unit, text, time) {
   scrollToBottom();
   lastMsgType = 'radio';
 
-  // Increment radio count
-  state.set({ radioCount: (state.get('radioCount') || 0) + 1 });
   return msg;
 }
 

@@ -104,7 +104,6 @@ export function init() {
     fpvActive: false,
     drawerOpen: false,
     isMobile: window.innerWidth < 768,
-    radioCount: 0,
 
     // Auth
     authenticated: saved?.authenticated || false,

@@ -46,8 +46,28 @@
   gap: 6px;
 }
 
-.topbar-logo-img {
-  height: 16px;
+.topbar-menu-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  transition: color var(--dur-micro) var(--ease-out);
+}
+
+.topbar-menu-btn:hover {
+  color: var(--text-secondary);
+}
+
+.topbar-menu-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.topbar-logo-wordmark {
+  height: 14px;
+  opacity: 0.9;
 }
 
 .topbar-logo-badge {
@@ -119,6 +139,18 @@
   animation: badge-in 250ms var(--ease-out) both;
 }
 
+/* Link incident + drone badges into one compound pill */
+.topbar-incident-badge:has(+ .topbar-drone-badge) {
+  border-right: none;
+  border-radius: var(--r-sm) 0 0 var(--r-sm);
+}
+
+.topbar-incident-badge + .topbar-drone-badge {
+  border-left: 1px solid var(--border-subtle);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  margin-left: -12px;
+}
+
 .topbar-drone-badge .topbar-drone-icon {
   flex-shrink: 0;
   color: var(--accent);
@@ -145,42 +177,34 @@
   gap: 12px;
 }
 
-.topbar-clock {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.topbar-radio-btn {
-  position: relative;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 4px;
+/* View toggle in topbar */
+.topbar-view-toggle {
   display: flex;
   align-items: center;
 }
 
-.topbar-radio-btn .material-symbols-outlined {
-  font-size: 20px;
+.topbar-view-toggle .view-seg {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
 }
 
-.badge {
-  position: absolute;
-  top: -2px;
-  right: -4px;
-  background: var(--amber);
-  color: var(--bg-base);
+.topbar-view-toggle .view-seg-btn {
+  color: var(--text-muted);
   font-size: 10px;
-  font-weight: 600;
-  min-width: 16px;
-  height: 16px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 4px;
+  padding: 3px 8px;
+}
+
+.topbar-view-toggle .view-seg-btn .material-symbols-outlined {
+  font-size: 13px;
+}
+
+.topbar-view-toggle .view-seg-btn:hover {
+  color: var(--text-secondary);
+}
+
+.topbar-view-toggle .view-seg-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
 }
 
 /* === Screen Container === */

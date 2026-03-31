@@ -1,36 +1,18 @@
 /**
  * Topbar Component
  *
- * Status text, pills (drone/target/boundary), radio badge, clock.
- * Subscribes to: currentScreen, selectedDrone, targetStatus, radioCount
+ * Status text, pills (drone/target/boundary), incident/drone badges.
+ * Subscribes to: currentScreen, selectedDrone, targetStatus
  */
 
 import * as state from '../state.js';
 
-let clockInterval = null;
-
 export function init() {
-  updateClock();
-  clockInterval = setInterval(updateClock, 1000);
-
   state.on('currentScreen', updateStatus);
   state.on('selectedDrone', updateDroneBadge);
   state.on('currentScreen', updateDroneBadge);
   state.on('targetStatus', updatePills);
   state.on('selectedIncident', updateIncidentBadge);
-  state.on('radioCount', updateRadioBadge);
-  state.on('currentScreen', updateRadioVisibility);
-}
-
-function updateClock() {
-  const el = document.getElementById('topbar-clock');
-  if (!el) return;
-  const now = new Date();
-  const h = now.getHours();
-  const m = String(now.getMinutes()).padStart(2, '0');
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
-  el.textContent = `${h12}:${m} ${ampm}`;
 }
 
 function updateStatus(screen) {
@@ -133,28 +115,4 @@ function updatePills() {
   }
 
   el.innerHTML = pills.join('');
-}
-
-function updateRadioBadge(count) {
-  const badge = document.getElementById('radio-badge');
-  if (!badge) return;
-
-  if (count > 0) {
-    badge.textContent = count;
-    badge.classList.remove('hidden');
-  } else {
-    badge.classList.add('hidden');
-  }
-}
-
-function updateRadioVisibility(screen) {
-  const btn = document.getElementById('topbar-radio');
-  if (!btn) return;
-
-  // Show radio button on mission screens (7+)
-  if (screen >= 7) {
-    btn.classList.remove('hidden');
-  } else {
-    btn.classList.add('hidden');
-  }
 }

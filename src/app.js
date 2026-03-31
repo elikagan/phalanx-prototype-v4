@@ -440,18 +440,14 @@ function manageFpvLayer(show) {
   manageViewToggle(show);
 }
 
-/** Show/hide view toggle (FPV ↔ Map) — segmented control */
+/** Show/hide view toggle (FPV ↔ Map) — segmented control in topbar */
 function manageViewToggle(fpvActive) {
-  const mapContainer = document.getElementById('map-container');
-  let wrapper = document.getElementById('view-toggle-wrapper');
+  const topbarToggle = document.getElementById('topbar-view-toggle');
+  if (!topbarToggle) return;
 
-  if (!mapContainer) return;
-
-  if (!wrapper) {
-    wrapper = document.createElement('div');
-    wrapper.id = 'view-toggle-wrapper';
-    wrapper.className = 'view-toggle-wrapper';
-    wrapper.innerHTML = `
+  // Create segmented control if not yet populated
+  if (!topbarToggle.querySelector('.view-seg')) {
+    topbarToggle.innerHTML = `
       <div class="view-seg">
         <button class="view-seg-btn active" id="view-seg-cam" data-view="cam">
           <span class="material-symbols-outlined">videocam</span>CAM
@@ -461,9 +457,8 @@ function manageViewToggle(fpvActive) {
         </button>
       </div>
     `;
-    mapContainer.appendChild(wrapper);
 
-    wrapper.addEventListener('click', (e) => {
+    topbarToggle.addEventListener('click', (e) => {
       const btn = e.target.closest('.view-seg-btn');
       if (!btn) return;
       const fpvLayer = document.getElementById('fpv-layer');
@@ -484,11 +479,15 @@ function manageViewToggle(fpvActive) {
         fpv.resize();
       }
     });
-  } else {
-    mapContainer.appendChild(wrapper);
   }
 
-  wrapper.style.display = fpvActive ? 'block' : 'none';
+  // Show/hide based on FPV availability
+  if (fpvActive) {
+    topbarToggle.classList.remove('hidden');
+  } else {
+    topbarToggle.classList.add('hidden');
+  }
+
   // Reset to CAM active
   const camBtn = document.getElementById('view-seg-cam');
   const mapBtn = document.getElementById('view-seg-map');

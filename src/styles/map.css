@@ -412,13 +412,6 @@
   font-size: 16px;
 }
 
-/* === FPV/Map Toggle === */
-.view-toggle-wrapper {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 30;
-}
 
 /* === Telemetry Bar (Map Overlay) === */
 .telemetry-bar-map {
