@@ -789,7 +789,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
     const incNumber = inc.id.replace(/\D/g, '');
     const hasLinkedDrone = assignedIncidentIds.has(inc.id);
     const linkedDrone = assignedDrones.get(inc.id);
-    const dotColor = hasLinkedDrone ? '#407CF5' : '#D4A017';
+    const dotColor = '#D4A017';
     const activeClass = isActive(inc.id) ? ' incident-dot-active' : '';
 
     // Drone badge HTML — small circle with drone chevron, docked top-right
