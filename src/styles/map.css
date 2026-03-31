@@ -492,6 +492,24 @@
   50% { box-shadow: 0 0 0 10px rgba(212, 160, 23, 0), 0 2px 6px rgba(0, 0, 0, 0.35); }
 }
 
+/* Zoom toggle: badge visible zoomed out, orbit drone visible zoomed in */
+.orbit-drone-perimeter {
+  display: none;
+}
+.zoom-detail .orbit-drone-perimeter {
+  display: block;
+}
+.zoom-detail .incident-drone-badge {
+  display: none;
+}
+
+/* Hover highlight — synced between map marker and chat card */
+.incident-dot-highlight {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.25), 0 2px 6px rgba(0, 0, 0, 0.35);
+  transform: scale(1.1);
+  transition: box-shadow 0.15s ease-out, transform 0.15s ease-out;
+}
+
 /* Incident label — dark pill below dot */
 .incident-map-label {
   font-family: 'Geist', var(--font-ui);

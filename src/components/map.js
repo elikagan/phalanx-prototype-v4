@@ -57,6 +57,7 @@ const waypointMarkers = new Map();
 
 // Overlay marker layers (incidents, fleet drones)
 let incidentMarkers = [];
+const incidentMarkerMap = new Map(); // id → { marker, tooltipEl }
 let fleetMarkers = [];
 let distanceLines = [];
 
@@ -815,6 +816,19 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
     incidentCluster.addLayer(marker);
 
     marker.on('click', () => onSelect?.(inc));
+    marker._incidentId = inc.id;
+
+    // Hover sync: map marker → chat card
+    marker.on('mouseover', () => {
+      document.querySelector(`.incident-card-compact[data-id="${inc.id}"]`)?.classList.add('incident-card-hover');
+      const el = marker.getElement();
+      if (el) el.querySelector('.incident-dot')?.classList.add('incident-dot-highlight');
+    });
+    marker.on('mouseout', () => {
+      document.querySelector(`.incident-card-compact[data-id="${inc.id}"]`)?.classList.remove('incident-card-hover');
+      const el = marker.getElement();
+      if (el) el.querySelector('.incident-dot')?.classList.remove('incident-dot-highlight');
+    });
 
     // Permanent label below marker
     const droneShort = linkedDrone ? linkedDrone.name.replace(/^Delta\s+/i, '') : '';
@@ -823,12 +837,13 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
       : `<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber}`;
     marker.bindTooltip(labelText, {
       permanent: true,
-      direction: 'right',
-      offset: [8, 0],
+      direction: 'bottom',
+      offset: [0, 4],
       className: 'marker-permanent-label',
     });
 
     incidentMarkers.push(marker);
+    incidentMarkerMap.set(inc.id, marker);
     bounds.push(inc.coordinates);
   }
 
@@ -845,6 +860,22 @@ export function clearIncidentMarkers() {
   if (incidentCluster) incidentCluster.clearLayers();
   for (const m of incidentMarkers) map?.removeLayer(m);
   incidentMarkers = [];
+  incidentMarkerMap.clear();
+}
+
+// Hover sync: chat card → map marker
+export function highlightIncident(id) {
+  const marker = incidentMarkerMap.get(id);
+  if (!marker) return;
+  const el = marker.getElement();
+  if (el) el.querySelector('.incident-dot')?.classList.add('incident-dot-highlight');
+}
+
+export function unhighlightIncident(id) {
+  const marker = incidentMarkerMap.get(id);
+  if (!marker) return;
+  const el = marker.getElement();
+  if (el) el.querySelector('.incident-dot')?.classList.remove('incident-dot-highlight');
 }
 
 export function focusIncident(coordinates, zoom = 16) {
@@ -922,10 +953,10 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       });
       distanceLines.push(orbitZone);
 
-      // Show drone on orbit perimeter — visible at all zoom levels
-      const orbitAngle = 30; // NNE position on orbit circle
+      // Show drone on orbit perimeter — toggles with badge based on zoom
+      const orbitAngle = 30;
       const dronePos = offsetLatLng(L.latLng(targetCoords[0], targetCoords[1]), 300, orbitAngle);
-      const droneHeading = (orbitAngle + 90) % 360; // tangent to orbit
+      const droneHeading = (orbitAngle + 90) % 360;
 
       const shortName = drone.name.replace(/^Delta\s+/i, '');
       const orbitDroneMarker = L.marker([dronePos.lat, dronePos.lng], {
@@ -949,6 +980,24 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         className: 'marker-permanent-label',
       });
       distanceLines.push(orbitDroneMarker);
+
+      // Mark orbit drone for CSS-based zoom toggle
+      orbitDroneMarker.getElement()?.classList.add('orbit-drone-perimeter');
+      orbitDroneMarker.on('add', () => {
+        orbitDroneMarker.getElement()?.classList.add('orbit-drone-perimeter');
+      });
+
+      // Set zoom class on map container for CSS toggle
+      if (!map._hasZoomClassHandler) {
+        function updateZoomClass() {
+          const z = map.getZoom();
+          map.getContainer().classList.toggle('zoom-detail', z >= 14);
+        }
+        updateZoomClass();
+        map.on('zoomend', updateZoomClass);
+        map._hasZoomClassHandler = true;
+        map._zoomClassHandler = updateZoomClass;
+      }
 
       continue; // no separate fleet-style marker for this drone
     }
@@ -1171,6 +1220,13 @@ export function fitAllMarkers(padding = [60, 60], maxZoom = 12) {
 export function clearFleetMarkers() {
   for (const anim of patrolAnimations) anim.cancel();
   patrolAnimations = [];
+  // Remove zoom class handler
+  if (map?._zoomClassHandler) {
+    map.off('zoomend', map._zoomClassHandler);
+    map._hasZoomClassHandler = false;
+    map._zoomClassHandler = null;
+    map.getContainer().classList.remove('zoom-detail');
+  }
   if (droneCluster) droneCluster.clearLayers();
   for (const m of fleetMarkers) map?.removeLayer(m);
   for (const l of distanceLines) map?.removeLayer(l);

@@ -88,6 +88,17 @@ function boot() {
     handleAction(action.dataset.action, action.dataset);
   });
 
+  // Hover sync: chat card ↔ map marker
+  const chatHistory = document.getElementById('chat-history');
+  chatHistory?.addEventListener('mouseover', (e) => {
+    const card = e.target.closest('.incident-card-compact[data-id]');
+    if (card) mapComponent.highlightIncident(card.dataset.id);
+  });
+  chatHistory?.addEventListener('mouseout', (e) => {
+    const card = e.target.closest('.incident-card-compact[data-id]');
+    if (card) mapComponent.unhighlightIncident(card.dataset.id);
+  });
+
   // Single delegated submit handler on screen-content (for forms)
   document.getElementById('screen-content')?.addEventListener('submit', (e) => {
     e.preventDefault();

@@ -601,6 +601,13 @@ details.card > summary { padding: 4px 0; }
 .incident-card-compact {
   padding: 10px 14px;
   cursor: pointer;
+  transition: border-color 0.15s ease-out, background 0.15s ease-out;
+}
+
+/* Hover highlight — synced with map marker hover */
+.incident-card-compact.incident-card-hover {
+  border-color: var(--border-strong);
+  background: var(--bg-elevated);
 }
 
 .incident-compact-header {
