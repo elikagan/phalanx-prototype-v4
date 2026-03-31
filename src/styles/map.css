@@ -106,23 +106,6 @@
   50% { box-shadow: 0 0 0 8px rgba(52, 168, 83, 0), 0 1px 4px rgba(0, 0, 0, 0.4); }
 }
 
-/* Target label on FPV (stays dark-themed) */
-.target-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 1px;
-  color: var(--red);
-  background: rgba(var(--overlay), 0.85);
-  padding: 2px 8px;
-  border-radius: 3px;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-.target-label.confirmed {
-  color: var(--green);
-}
-
 /* Target label on map — same base bg, status color text */
 .target-map-label {
   font-family: 'Geist', var(--font-ui);
@@ -565,13 +548,6 @@
   background: var(--dot-color, rgba(38, 40, 48, 0.95));
 }
 
-/* Dimmed variant for non-recommended drones */
-.fleet-drone-dot-dim {
-  width: 26px;
-  height: 26px;
-  opacity: 0.65;
-}
-
 /* Fleet base dot — single square marker (same base as drone dots) */
 .fleet-base-dot {
   width: 30px;
@@ -669,14 +645,6 @@
 /* Status-colored variant (amber for target located) */
 .map-label-amber {
   color: #D4A017;
-}
-
-.map-label-red {
-  color: #b85454;
-}
-
-.map-label-green {
-  color: #4a9a65;
 }
 
 /* Route line shadow — 1px offset drop shadow */

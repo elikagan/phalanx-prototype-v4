@@ -1182,6 +1182,8 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
 
 export function fitAllMarkers(padding = [60, 60], maxZoom = 12) {
   if (!map) return;
+  // Stop any in-flight flyTo/setView animations so fitBounds isn't ignored
+  map.stop();
   requestAnimationFrame(() => {
     map.invalidateSize();
     const allCoords = [];
@@ -1196,9 +1198,9 @@ export function fitAllMarkers(padding = [60, 60], maxZoom = 12) {
       if (m.getLatLng) allCoords.push([m.getLatLng().lat, m.getLatLng().lng]);
     }
     if (allCoords.length > 1) {
-      map.fitBounds(allCoords, { padding, maxZoom });
+      map.fitBounds(allCoords, { padding, maxZoom, animate: false });
     } else if (allCoords.length === 1) {
-      map.setView(allCoords[0], maxZoom);
+      map.setView(allCoords[0], maxZoom, { animate: false });
     }
   });
 }
