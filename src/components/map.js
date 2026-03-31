@@ -971,14 +971,11 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
           iconAnchor: [16, 16],
         }),
         zIndexOffset: 950,
-        interactive: false,
       }).addTo(map);
-      orbitDroneMarker.bindTooltip(shortName, {
-        permanent: false,
-        direction: 'bottom',
-        offset: [0, 4],
-        className: 'marker-permanent-label',
-      });
+      orbitDroneMarker.bindTooltip(
+        `<span style="color:#8ab4f8">${shortName}</span> · On scene · ${drone.battery}%`,
+        { permanent: false, direction: 'right', offset: [8, 0], className: 'marker-permanent-label' },
+      );
       distanceLines.push(orbitDroneMarker);
 
       // Mark orbit drone for CSS-based zoom toggle
