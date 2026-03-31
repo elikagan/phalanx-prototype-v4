@@ -440,7 +440,7 @@ function manageFpvLayer(show) {
   manageViewToggle(show);
 }
 
-/** Show/hide view toggle thumbnail (FPV ↔ Map) — v3 thumbnail style */
+/** Show/hide view toggle (FPV ↔ Map) — segmented control */
 function manageViewToggle(fpvActive) {
   const mapContainer = document.getElementById('map-container');
   let wrapper = document.getElementById('view-toggle-wrapper');
@@ -451,36 +451,36 @@ function manageViewToggle(fpvActive) {
     wrapper = document.createElement('div');
     wrapper.id = 'view-toggle-wrapper';
     wrapper.className = 'view-toggle-wrapper';
-    const basePath = import.meta.env.BASE_URL;
     wrapper.innerHTML = `
-      <div class="view-thumb" id="view-thumb">
-        <img class="view-thumb-img view-thumb-cam" src="${basePath}aerial_view_red_car.png" alt="Camera feed" />
-        <div class="view-thumb-map-tile"></div>
-        <span class="material-symbols-outlined view-thumb-icon" id="view-thumb-icon">map</span>
-        <div class="view-thumb-label" id="view-thumb-label">MAP</div>
+      <div class="view-seg">
+        <button class="view-seg-btn active" id="view-seg-cam" data-view="cam">
+          <span class="material-symbols-outlined">videocam</span>CAM
+        </button>
+        <button class="view-seg-btn" id="view-seg-map" data-view="map">
+          <span class="material-symbols-outlined">map</span>MAP
+        </button>
       </div>
     `;
     mapContainer.appendChild(wrapper);
 
-    wrapper.addEventListener('click', () => {
+    wrapper.addEventListener('click', (e) => {
+      const btn = e.target.closest('.view-seg-btn');
+      if (!btn) return;
       const fpvLayer = document.getElementById('fpv-layer');
-      const thumb = document.getElementById('view-thumb');
-      const thumbLabel = document.getElementById('view-thumb-label');
       if (!fpvLayer) return;
-      const isShowingFpv = fpvLayer.style.display !== 'none';
 
-      const thumbIcon = document.getElementById('view-thumb-icon');
-      if (isShowingFpv) {
+      const camBtn = document.getElementById('view-seg-cam');
+      const mapBtn = document.getElementById('view-seg-map');
+
+      if (btn.dataset.view === 'map') {
         fpvLayer.style.display = 'none';
-        thumb.classList.add('showing-map');
-        thumbLabel.textContent = 'CAM';
-        if (thumbIcon) thumbIcon.textContent = 'videocam';
+        camBtn.classList.remove('active');
+        mapBtn.classList.add('active');
         mapComponent.resize();
       } else {
         fpvLayer.style.display = 'block';
-        thumb.classList.remove('showing-map');
-        thumbLabel.textContent = 'MAP';
-        if (thumbIcon) thumbIcon.textContent = 'map';
+        camBtn.classList.add('active');
+        mapBtn.classList.remove('active');
         fpv.resize();
       }
     });
@@ -489,12 +489,11 @@ function manageViewToggle(fpvActive) {
   }
 
   wrapper.style.display = fpvActive ? 'block' : 'none';
-  const thumb = document.getElementById('view-thumb');
-  const thumbLabel = document.getElementById('view-thumb-label');
-  if (thumb) thumb.classList.remove('showing-map');
-  if (thumbLabel) thumbLabel.textContent = 'MAP';
-  const thumbIcon = document.getElementById('view-thumb-icon');
-  if (thumbIcon) thumbIcon.textContent = 'map';
+  // Reset to CAM active
+  const camBtn = document.getElementById('view-seg-cam');
+  const mapBtn = document.getElementById('view-seg-map');
+  if (camBtn) camBtn.classList.add('active');
+  if (mapBtn) mapBtn.classList.remove('active');
 }
 
 /** Show/hide telemetry bar */
@@ -1158,11 +1157,11 @@ function setupMissionScreen() {
 
   // Start in map view (not FPV) so the operator sees the tactical picture
   const fpvLayer = document.getElementById('fpv-layer');
-  const thumb = document.getElementById('view-thumb');
-  const thumbLabel = document.getElementById('view-thumb-label');
   if (fpvLayer) fpvLayer.style.display = 'none';
-  if (thumb) thumb.classList.add('showing-map');
-  if (thumbLabel) thumbLabel.textContent = 'CAM';
+  const camBtn = document.getElementById('view-seg-cam');
+  const mapBtn = document.getElementById('view-seg-map');
+  if (camBtn) camBtn.classList.remove('active');
+  if (mapBtn) mapBtn.classList.add('active');
 
   // Hide state-driven drone marker (teal SVG) — we use fleet drone marker instead
   mapComponent.hideDroneMarker();

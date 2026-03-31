@@ -142,104 +142,43 @@
   color: #4a9a65;
 }
 
-/* ── View toggle thumbnail ── */
-.view-thumb {
-  position: relative;
-  width: 100px;
-  height: 64px;
+/* ── View toggle segmented control ── */
+.view-seg {
+  display: flex;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--r-md);
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
   overflow: hidden;
-  cursor: pointer;
-  background: var(--bg-void);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  transition: border-color var(--dur-micro) var(--ease-out),
-              box-shadow var(--dur-micro) var(--ease-out);
+  backdrop-filter: blur(8px);
 }
 
-.view-thumb:hover {
-  border-color: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-}
-
-/* Camera feed image (shown when FPV is active, thumbnail previews map) */
-.view-thumb-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  pointer-events: none;
-}
-
-/* Camera image: hidden by default (shows when .showing-map = viewing map, thumb shows cam) */
-.view-thumb-cam {
-  opacity: 0;
-  transition: opacity 200ms ease;
-}
-.view-thumb.showing-map .view-thumb-cam {
-  opacity: 1;
-}
-
-/* Satellite map pattern (shown when viewing FPV, thumb previews map) */
-.view-thumb-map-tile {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 35% 45%, rgba(42, 72, 56, 0.7) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 60%, rgba(58, 78, 62, 0.5) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 30%, rgba(68, 88, 72, 0.3) 0%, transparent 60%),
-    linear-gradient(160deg, #2a3a2e 0%, #1e2e24 40%, #243428 70%, #1a2a20 100%);
-  opacity: 1;
-  transition: opacity 200ms ease;
-  pointer-events: none;
-}
-/* Hide map tile when showing map (thumb shows cam instead) */
-.view-thumb.showing-map .view-thumb-map-tile {
-  opacity: 0;
-}
-
-/* Subtle scanline overlay */
-.view-thumb::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 3px,
-    rgba(0, 0, 0, 0.06) 3px,
-    rgba(0, 0, 0, 0.06) 4px
-  );
-  z-index: 3;
-  pointer-events: none;
-}
-
-/* Icon badge — top-left */
-.view-thumb-icon {
-  position: absolute;
-  top: 5px;
-  left: 6px;
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.8);
-  z-index: 4;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
-  pointer-events: none;
-}
-
-/* Label — bottom-left */
-.view-thumb-label {
-  position: absolute;
-  bottom: 4px;
-  right: 5px;
+.view-seg-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: none;
+  background: none;
+  color: rgba(255, 255, 255, 0.45);
   font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  color: rgba(255, 255, 255, 0.7);
-  text-transform: uppercase;
-  z-index: 4;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--dur-micro) var(--ease-out);
+}
+
+.view-seg-btn .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.view-seg-btn:hover {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.view-seg-btn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* ── HUD overlay on FPV ── */
@@ -919,14 +858,6 @@
   font-size: 10px;
   width: 52px;
   text-align: right;
-}
-
-/* Mobile overrides */
-@media (max-width: 767px) {
-  .view-thumb {
-    width: 100px;
-    height: 66px;
-  }
 }
 
 @media (max-width: 767px) {
