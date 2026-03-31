@@ -715,6 +715,7 @@ function setupScreen(screen) {
 
 async function setupIncidentMapScreen() {
   chat.clear();
+  state.set({ searchZone: null, selectedIncident: null, selectedDrone: null });
   mapComponent.clearOverlays();
 
   // Which incidents have drones assigned?

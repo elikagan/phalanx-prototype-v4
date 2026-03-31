@@ -1231,6 +1231,9 @@ export function clearOverlays() {
   clearRouteLines();
   clearTrail();
   clearEditHandles();
+  // Clear state-driven search zone
+  if (searchCircle) { map?.removeLayer(searchCircle); searchCircle = null; }
+  if (searchLabel) { map?.removeLayer(searchLabel); searchLabel = null; }
 }
 
 // ── Route Lines with Labels ──────────────────────────────
