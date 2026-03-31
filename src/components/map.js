@@ -705,7 +705,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
 
     // Permanent label below marker (replaces old embedded label)
     marker.bindTooltip(`<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber}`, {
-      permanent: false,
+      permanent: true,
       direction: 'bottom',
       offset: [0, 8],
       className: 'marker-permanent-label',
