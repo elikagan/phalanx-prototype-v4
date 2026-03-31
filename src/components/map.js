@@ -901,7 +901,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       icon: L.divIcon({
         className: 'fleet-drone-marker',
         html: `<div class="fleet-base-dot">
-          <svg class="base-marker-icon" viewBox="0 0 24 24" width="16" height="16"><path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/></svg>
+          <svg class="base-marker-icon" viewBox="0 0 24 24" width="14" height="14"><path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/></svg>
           <span class="base-count">${count}</span>
         </div>
         <div class="fleet-drone-label">${group.base || 'Base'}</div>`,
