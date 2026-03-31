@@ -710,6 +710,9 @@ async function setupIncidentMapScreen() {
   const assignedIncidentIds = new Set(
     DRONES.filter(d => d.assignedIncident).map(d => d.assignedIncident)
   );
+  const assignedDrones = new Map(
+    DRONES.filter(d => d.assignedIncident).map(d => [d.assignedIncident, d])
+  );
 
   // Show incidents + drones on map, then fit to show everything at metro scale
   mapComponent.showIncidents(INCIDENTS, (inc) => {
@@ -721,7 +724,7 @@ async function setupIncidentMapScreen() {
       state.set({ selectedIncident: inc });
       state.goToScreen(4);
     }
-  }, { skipFitBounds: true, assignedIncidentIds });
+  }, { skipFitBounds: true, assignedIncidentIds, assignedDrones });
 
   const handleIncidentClick = (inc) => {
     const assignedDrone = DRONES.find(d => d.assignedIncident === inc.id);

@@ -88,7 +88,7 @@ export function init() {
   // Cluster groups — incidents and drones aggregate at low zoom
   incidentCluster = L.markerClusterGroup({
     maxClusterRadius: 50,
-    disableClusteringAtZoom: 14,
+    disableClusteringAtZoom: 10,
     showCoverageOnHover: false,
     animate: true,
     iconCreateFunction: (cluster) => L.divIcon({
@@ -102,7 +102,7 @@ export function init() {
 
   droneCluster = L.markerClusterGroup({
     maxClusterRadius: 40,
-    disableClusteringAtZoom: 13,
+    disableClusteringAtZoom: 10,
     showCoverageOnHover: false,
     animate: true,
     iconCreateFunction: (cluster) => L.divIcon({
@@ -673,7 +673,7 @@ const INCIDENT_ICONS = {
   3: { color: '#9AA0A6' },
 };
 
-export function showIncidents(incidents, onSelect, { skipFitBounds = false, assignedIncidentIds = new Set(), activeIncidentId = null } = {}) {
+export function showIncidents(incidents, onSelect, { skipFitBounds = false, assignedIncidentIds = new Set(), assignedDrones = new Map(), activeIncidentId = null } = {}) {
   clearIncidentMarkers();
   if (!map) return;
 
@@ -686,13 +686,25 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
     if (!inc.coordinates) continue;
     const incNumber = inc.id.replace(/\D/g, '');
     const hasLinkedDrone = assignedIncidentIds.has(inc.id);
+    const linkedDrone = assignedDrones.get(inc.id);
     const dotColor = hasLinkedDrone ? '#407CF5' : '#D4A017';
     const activeClass = isActive(inc.id) ? ' incident-dot-active' : '';
+
+    // Drone badge HTML — small circle with drone chevron, docked top-right
+    const droneBadge = linkedDrone
+      ? `<div class="incident-drone-badge">
+          <svg viewBox="0 0 24 24" width="10" height="10" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
+          </svg>
+        </div>`
+      : '';
+
     const marker = L.marker(inc.coordinates, {
       icon: L.divIcon({
         className: 'incident-map-marker',
         html: `<div class="incident-dot${activeClass}" style="--dot-color:${dotColor}">
           <span class="material-symbols-outlined">${inc.icon || 'location_on'}</span>
+          ${droneBadge}
         </div>`,
         iconSize: [40, 40],
         iconAnchor: [20, 20],
@@ -703,8 +715,12 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
 
     marker.on('click', () => onSelect?.(inc));
 
-    // Permanent label below marker (replaces old embedded label)
-    marker.bindTooltip(`<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber}`, {
+    // Permanent label below marker
+    const droneShort = linkedDrone ? linkedDrone.name.replace(/^Delta\s+/i, '') : '';
+    const labelText = linkedDrone
+      ? `<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber} · <span style="color:#8ab4f8">${droneShort}</span>`
+      : `<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber}`;
+    marker.bindTooltip(labelText, {
       permanent: true,
       direction: 'bottom',
       offset: [0, 8],
@@ -778,78 +794,13 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     const isReroutable = isSurveillance; // surveillance drones can be sent to incidents
     const isRecommended = recommendedDroneId && drone.id === recommendedDroneId;
 
-    // Color: blue if assigned/recommended, black otherwise
-    const dotColor = (isAssigned || isRecommended) ? '#407CF5' : '#1c1c1f';
-
-    // Calculate heading toward incident (if we have one)
-    let headingDeg = 0;
-    const targetCoords = isAssigned && incidentLookup.has(drone.assignedIncident)
-      ? incidentLookup.get(drone.assignedIncident).coordinates
-      : incidentCoords;
-    if (targetCoords) {
-      const dLng = (targetCoords[1] - drone.coordinates[1]) * Math.PI / 180;
-      const lat1 = drone.coordinates[0] * Math.PI / 180;
-      const lat2 = targetCoords[0] * Math.PI / 180;
-      const y = Math.sin(dLng) * Math.cos(lat2);
-      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-      headingDeg = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
-    }
-
-    const shortName = drone.name.replace(/^Delta\s+/i, '');
-    const isDimmed = isReroutable && !isRecommended && !isAssigned;
-    const dotDimClass = isDimmed ? ' fleet-drone-dot-dim' : '';
-    const svgSize = isDimmed ? 13 : 16;
-    const dotSize = isDimmed ? 26 : 32;
-    const marker = L.marker(drone.coordinates, {
-      icon: L.divIcon({
-        className: 'fleet-drone-marker',
-        html: `<div class="fleet-drone-dot${dotDimClass}" style="--dot-color:${dotColor}">
-          <svg viewBox="0 0 24 24" width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${Math.round(headingDeg)}deg)">
-            <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
-          </svg>
-        </div>`,
-        iconSize: [dotSize, dotSize],
-        iconAnchor: [dotSize / 2, dotSize / 2],
-      }),
-      zIndexOffset: isAssigned ? 900 : isReroutable ? 850 : 700,
-      interactive: isReroutable || isAssigned,
-    });
-    droneCluster.addLayer(marker);
-
-    // Permanent label below marker
-    marker.bindTooltip(shortName, {
-      permanent: false,
-      direction: 'bottom',
-      offset: [0, 4],
-      className: 'marker-permanent-label',
-    });
-
-    if (isReroutable) {
-      marker.on('click', () => onSelect?.(drone));
-    }
-    // In-mission drone click → open its assigned incident
-    if (isAssigned && onIncidentSelect && incidentLookup.has(drone.assignedIncident)) {
-      marker.on('click', () => onIncidentSelect(incidentLookup.get(drone.assignedIncident)));
-    }
-
-    const statusLabel = isSurveillance ? `Surveillance — ${drone.patrol || 'patrol'}`
-      : isMission ? 'In Mission'
-      : 'Offline';
-    const tooltip = L.tooltip({
-      direction: 'top',
-      offset: [0, -20],
-      className: 'map-tooltip',
-    });
-    tooltip.setContent(`<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`);
-    marker.bindTooltip(tooltip);
-
-    // In-mission drone: draw solid route line + orbit zone to its assigned incident
+    // Assigned drones are represented by the drone badge on the incident marker.
+    // Still draw the orbit zone, but skip the separate drone marker.
     if (isAssigned && incidentLookup.has(drone.assignedIncident)) {
       const assignedInc = incidentLookup.get(drone.assignedIncident);
       const targetCoords = assignedInc.coordinates;
 
       // Orbit/surveillance zone around incident (blue tint, shows active coverage)
-      // Clickable — clicking anywhere in the zone opens the incident
       const orbitZone = L.circle(targetCoords, {
         radius: 300,
         color: '#fff',
@@ -864,31 +815,69 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       if (onIncidentSelect) {
         orbitZone.on('click', () => onIncidentSelect(assignedInc));
       }
-      // Set pointer cursor on the SVG path
-      const pathEl = orbitZone._path || orbitZone.getElement?.();
-      if (pathEl) pathEl.style.cursor = 'pointer';
-      // Also set it after it's added to the map (in case _path isn't ready yet)
       orbitZone.on('add', () => {
         const p = orbitZone._path;
         if (p) p.style.cursor = 'pointer';
       });
       distanceLines.push(orbitZone);
-
-      // Solid route line (Level 4 — active assignment, not proposed)
-      // Skip if drone is co-located with incident (already orbiting)
-      const dist = map.distance(drone.coordinates, targetCoords);
-      if (dist > 50) {
-        const shadow = L.polyline([drone.coordinates, targetCoords], {
-          color: '#000', weight: 4, opacity: 0.3, lineCap: 'round', interactive: false,
-          className: 'route-shadow',
-        }).addTo(map);
-        distanceLines.push(shadow);
-        const line = L.polyline([drone.coordinates, targetCoords], {
-          color: '#407CF5', weight: 3, opacity: 0.8, lineCap: 'round', interactive: false,
-        }).addTo(map);
-        distanceLines.push(line);
-      }
+      continue; // no separate marker for this drone
     }
+
+    // Color: blue if recommended, black otherwise
+    const dotColor = isRecommended ? '#407CF5' : '#1c1c1f';
+
+    // Calculate heading toward incident (if we have one)
+    let headingDeg = 0;
+    if (incidentCoords) {
+      const dLng = (incidentCoords[1] - drone.coordinates[1]) * Math.PI / 180;
+      const lat1 = drone.coordinates[0] * Math.PI / 180;
+      const lat2 = incidentCoords[0] * Math.PI / 180;
+      const y = Math.sin(dLng) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+      headingDeg = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+    }
+
+    const shortName = drone.name.replace(/^Delta\s+/i, '');
+    const isDimmed = isReroutable && !isRecommended;
+    const dotDimClass = isDimmed ? ' fleet-drone-dot-dim' : '';
+    const svgSize = isDimmed ? 13 : 16;
+    const dotSize = isDimmed ? 26 : 32;
+    const marker = L.marker(drone.coordinates, {
+      icon: L.divIcon({
+        className: 'fleet-drone-marker',
+        html: `<div class="fleet-drone-dot${dotDimClass}" style="--dot-color:${dotColor}">
+          <svg viewBox="0 0 24 24" width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${Math.round(headingDeg)}deg)">
+            <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
+          </svg>
+        </div>`,
+        iconSize: [dotSize, dotSize],
+        iconAnchor: [dotSize / 2, dotSize / 2],
+      }),
+      zIndexOffset: isReroutable ? 850 : 700,
+      interactive: isReroutable,
+    });
+    droneCluster.addLayer(marker);
+
+    marker.bindTooltip(shortName, {
+      permanent: false,
+      direction: 'bottom',
+      offset: [0, 4],
+      className: 'marker-permanent-label',
+    });
+
+    if (isReroutable) {
+      marker.on('click', () => onSelect?.(drone));
+    }
+
+    const statusLabel = isSurveillance ? `Surveillance — ${drone.patrol || 'patrol'}`
+      : 'Offline';
+    const tooltip = L.tooltip({
+      direction: 'top',
+      offset: [0, -20],
+      className: 'map-tooltip',
+    });
+    tooltip.setContent(`<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`);
+    marker.bindTooltip(tooltip);
 
     // Route line from drone to incident (skipped when caller draws its own route)
     if (incidentCoords && isReroutable && !skipRouteLines) {
