@@ -84,6 +84,30 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+.topbar-drone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px 2px 6px;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(95, 143, 173, 0.08);
+  color: var(--accent);
+  animation: badge-in 250ms var(--ease-out) both;
+}
+
+.topbar-drone-badge .topbar-drone-icon {
+  flex-shrink: 0;
+}
+
+.topbar-drone-badge .drone-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+
 .topbar-center {
   display: flex;
   align-items: center;
