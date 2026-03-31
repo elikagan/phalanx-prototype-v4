@@ -881,6 +881,104 @@ export function focusIncident(coordinates, zoom = 16) {
   });
 }
 
+// ── Drone Popup Builder ──────────────────────────────────
+
+function buildDronePopup(drone, incidentLookup = new Map()) {
+  const shortName = drone.name.replace(/^Delta\s+/i, '');
+  const bat = drone.battery;
+  const batColor = bat > 60 ? '#4a9a65' : bat > 30 ? '#a89540' : '#b85454';
+
+  // Status row — adapts per drone type
+  let statusIcon, statusText, statusColor;
+  if (drone.status === 'surveillance') {
+    statusIcon = 'radar';
+    statusText = drone.patrol || 'Patrol';
+    statusColor = '#5f8fad';
+  } else if (drone.status === 'in-mission') {
+    statusIcon = 'radio_button_checked';
+    statusText = 'On Scene';
+    statusColor = '#4a9a65';
+  } else if (drone.status === 'standby') {
+    statusIcon = drone.readyState === 'charging' ? 'battery_charging_full' : 'check_circle';
+    statusText = drone.readyState === 'charging' ? 'Charging' : 'Ready';
+    statusColor = drone.readyState === 'charging' ? '#a89540' : '#4a9a65';
+  } else {
+    statusIcon = 'circle';
+    statusText = drone.status || 'Unknown';
+    statusColor = '#5c5c66';
+  }
+
+  // Detail rows — context-dependent
+  const rows = [];
+
+  // Battery
+  rows.push(`<div class="drone-popup-row">
+    <span class="drone-popup-label">Battery</span>
+    <span class="drone-popup-value" style="color:${batColor}">${bat}%</span>
+  </div>`);
+
+  // Signal
+  if (drone.signal) {
+    const sigColor = drone.signal === 'strong' ? '#4a9a65' : drone.signal === 'good' ? '#a89540' : '#b85454';
+    rows.push(`<div class="drone-popup-row">
+      <span class="drone-popup-label">Signal</span>
+      <span class="drone-popup-value" style="color:${sigColor}">${drone.signal}</span>
+    </div>`);
+  }
+
+  // Mission / assignment
+  if (drone.status === 'in-mission' && drone.assignedIncident) {
+    const inc = incidentLookup.get(drone.assignedIncident);
+    const incLabel = inc ? `I${inc.priority} ${inc.type}` : drone.assignedIncident;
+    rows.push(`<div class="drone-popup-row">
+      <span class="drone-popup-label">Mission</span>
+      <span class="drone-popup-value">${incLabel}</span>
+    </div>`);
+    if (drone.operator) {
+      rows.push(`<div class="drone-popup-row">
+        <span class="drone-popup-label">Operator</span>
+        <span class="drone-popup-value">${drone.operator}</span>
+      </div>`);
+    }
+  }
+
+  // Patrol zone (surveillance)
+  if (drone.status === 'surveillance' && drone.patrol) {
+    rows.push(`<div class="drone-popup-row">
+      <span class="drone-popup-label">Zone</span>
+      <span class="drone-popup-value">${drone.patrol}</span>
+    </div>`);
+  }
+
+  // Base (standby)
+  if (drone.status === 'standby' && drone.base) {
+    rows.push(`<div class="drone-popup-row">
+      <span class="drone-popup-label">Base</span>
+      <span class="drone-popup-value">${drone.base}</span>
+    </div>`);
+  }
+
+  // Distance from incident (when on drone selection screen)
+  if (drone.distanceFromIncident != null) {
+    rows.push(`<div class="drone-popup-row">
+      <span class="drone-popup-label">Distance</span>
+      <span class="drone-popup-value">${drone.distanceFromIncident} km</span>
+    </div>`);
+  }
+
+  return `<div class="drone-popup">
+    <div class="drone-popup-header">
+      <span class="drone-popup-name">${shortName}</span>
+      <span class="drone-popup-status" style="color:${statusColor}">
+        <span class="material-symbols-outlined" style="font-size:12px;vertical-align:-2px">${statusIcon}</span>
+        ${statusText}
+      </span>
+    </div>
+    <div class="drone-popup-divider"></div>
+    ${rows.join('')}
+  </div>`;
+}
+
 // ── Fleet Drone Markers ───────────────────────────────────
 // Three types: surveillance (airborne), in-mission (assigned), standby (ground/home base)
 
@@ -1038,15 +1136,14 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       marker.on('click', () => onSelect?.(drone));
     }
 
-    // Hover popup with detail (can't use tooltip — already bound as permanent label)
-    const statusLabel = isSurveillance ? `Surveillance — ${drone.patrol || 'patrol'}`
-      : 'Offline';
-    const popupContent = `<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`;
+    // Hover popup with structured detail
+    const popupContent = buildDronePopup(drone, incidentLookup);
     marker.bindPopup(popupContent, {
-      className: 'map-tooltip-popup',
+      className: 'drone-popup-container',
       closeButton: false,
       offset: [0, -16],
       autoPan: false,
+      maxWidth: 220,
     });
     marker.on('mouseover', function() { this.openPopup(); });
     marker.on('mouseout', function() { this.closePopup(); });

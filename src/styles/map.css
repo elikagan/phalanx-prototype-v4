@@ -778,6 +778,81 @@
   border-left: none;
 }
 
+/* ── Drone Popup — hover card for fleet drones ── */
+.drone-popup-container .leaflet-popup-content-wrapper {
+  background: rgba(20, 22, 28, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  padding: 0;
+  color: #e0e0e4;
+}
+
+.drone-popup-container .leaflet-popup-content {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.drone-popup-container .leaflet-popup-tip {
+  background: rgba(20, 22, 28, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-top: none;
+  border-left: none;
+}
+
+.drone-popup {
+  padding: 10px 12px;
+  min-width: 160px;
+}
+
+.drone-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.drone-popup-name {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0e4;
+}
+
+.drone-popup-status {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.drone-popup-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 8px 0;
+}
+
+.drone-popup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.drone-popup-label {
+  color: #5c5c66;
+}
+
+.drone-popup-value {
+  color: #9898a0;
+  text-align: right;
+}
+
 /* ── Base Popup — click-to-open drone base card ── */
 .base-popup-container .leaflet-popup-content-wrapper {
   background: rgba(20, 22, 28, 0.95);
