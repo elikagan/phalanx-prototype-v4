@@ -932,15 +932,14 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       const assignedInc = incidentLookup.get(drone.assignedIncident);
       const targetCoords = assignedInc.coordinates;
 
-      // Orbit/surveillance zone around incident (blue tint, shows active coverage)
+      // Orbit/surveillance zone around incident (amber, matches other search zones)
       const orbitZone = L.circle(targetCoords, {
         radius: 300,
-        color: '#fff',
-        weight: 3,
-        opacity: 0.7,
-        dashArray: '2, 10',
-        fillColor: '#407CF5',
-        fillOpacity: 0.15,
+        color: '#D4A017',
+        weight: 2,
+        fillColor: '#D4A017',
+        fillOpacity: 0.18,
+        className: 'search-zone-shape',
         interactive: true,
         bubblingMouseEvents: false,
       }).addTo(map);
@@ -1014,13 +1013,12 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     }
 
     const shortName = drone.name.replace(/^Delta\s+/i, '');
-    const dotDimClass = '';
-    const svgSize = 16;
-    const dotSize = 32;
+    const svgSize = isRecommended ? 16 : 13;
+    const dotSize = isRecommended ? 32 : 26;
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
-        html: `<div class="fleet-drone-dot${dotDimClass}"${dotColor ? ` style="--dot-color:${dotColor}"` : ''}>
+        html: `<div class="fleet-drone-dot"${dotColor ? ` style="--dot-color:${dotColor}"` : ''}>
           <svg viewBox="0 0 24 24" width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${Math.round(headingDeg)}deg)">
             <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
           </svg>
