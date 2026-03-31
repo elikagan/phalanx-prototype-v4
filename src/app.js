@@ -1293,10 +1293,19 @@ async function setupLiveSceneScreen() {
 
   // Show incident marker on the map
   if (inc) mapComponent.showIncidents([inc], () => {});
-  // Show drone orbiting the incident — one clean orbit zone, drone on the perimeter
+  // Show editable search zone + drone on perimeter
   if (inc?.coordinates && drone) {
-    mapComponent.showLiveOrbitScene(inc.coordinates, drone, 300);
+    const zoneRadius = state.get('searchZone')?.radius || SEARCH_ZONE.radius;
+    state.set({ searchZone: { center: inc.coordinates, radius: zoneRadius } });
+    mapComponent.showLiveOrbitScene(inc.coordinates, drone, zoneRadius);
     mapComponent.focusIncident(inc.coordinates, 16);
+    setTimeout(() => {
+      mapComponent.makeSearchZoneEditable((zone) => {
+        state.set({ searchZone: zone });
+        const r = zone.radiusX || zone.radius || zoneRadius;
+        mapComponent.repositionOrbitDrone(zone.center, drone, r);
+      });
+    }, 300);
   }
 
   const incNumber = inc?.id?.replace(/\D/g, '') || '—';

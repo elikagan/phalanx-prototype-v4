@@ -1292,29 +1292,43 @@ export function showReturnRoute(dronePos, basePos) {
 
 // ── Live Orbit Scene (drone actively on scene) ─────────
 // One orbit zone, drone placed on perimeter pointing tangentially, TARGET LOCATED label
+// Orbit drone marker for live scene — placed on perimeter, repositioned when zone changes
+let _orbitDroneMarker = null;
+let _orbitLabel = null;
+
 export function showLiveOrbitScene(center, drone, radius = 300) {
   if (!map) return;
 
-  // Orbit zone — thick white dashed border, blue fill
-  const zone = L.circle(center, {
-    radius,
-    color: '#fff',
-    weight: 3.5,
-    opacity: 0.8,
-    dashArray: '2, 10',
-    fillColor: '#407CF5',
-    fillOpacity: 0.18,
-  }).addTo(map);
-  routeLineOverlays.push(zone);
+  _placeOrbitDrone(center, drone, radius);
 
-  // Place drone on the orbit perimeter (NNE position, ~30 degrees)
-  const orbitAngle = 30; // degrees from north, clockwise
+  // "TARGET LOCATED" label — positioned just below the incident, inside the zone
+  const labelPos = offsetLatLng(L.latLng(center[0], center[1]), radius * 0.45, 180);
+  _orbitLabel = L.marker([labelPos.lat, labelPos.lng], {
+    icon: L.divIcon({
+      className: 'map-label map-label-amber',
+      html: '<span>TARGET LOCATED</span>',
+      iconSize: [0, 0],
+      iconAnchor: [0, 0],
+    }),
+    interactive: false,
+    zIndexOffset: 870,
+  }).addTo(map);
+  routeLineOverlays.push(_orbitLabel);
+}
+
+function _placeOrbitDrone(center, drone, radius) {
+  // Remove existing orbit drone marker
+  if (_orbitDroneMarker) {
+    map.removeLayer(_orbitDroneMarker);
+    routeLineOverlays = routeLineOverlays.filter(l => l !== _orbitDroneMarker);
+  }
+
+  const orbitAngle = 30;
   const dronePos = offsetLatLng(L.latLng(center[0], center[1]), radius, orbitAngle);
-  // Heading tangent to orbit = orbitAngle + 90 (clockwise orbit)
   const droneHeading = (orbitAngle + 90) % 360;
 
   const shortName = drone.name.replace(/^Delta\s+/i, '');
-  const droneMarkerEl = L.marker([dronePos.lat, dronePos.lng], {
+  _orbitDroneMarker = L.marker([dronePos.lat, dronePos.lng], {
     icon: L.divIcon({
       className: 'fleet-drone-marker',
       html: `<div class="fleet-drone-dot" style="--dot-color:#407CF5">
@@ -1326,29 +1340,25 @@ export function showLiveOrbitScene(center, drone, radius = 300) {
       iconAnchor: [16, 16],
     }),
     zIndexOffset: 950,
-    interactive: false,
   }).addTo(map);
-  droneMarkerEl.bindTooltip(shortName, {
-    permanent: false,
+  _orbitDroneMarker.bindTooltip(shortName, {
+    permanent: true,
     direction: 'bottom',
     offset: [0, 4],
     className: 'marker-permanent-label',
   });
-  routeLineOverlays.push(droneMarkerEl);
+  routeLineOverlays.push(_orbitDroneMarker);
+}
 
-  // "TARGET LOCATED" label — positioned just below the incident, inside the zone
-  const labelPos = offsetLatLng(L.latLng(center[0], center[1]), radius * 0.45, 180);
-  const label = L.marker([labelPos.lat, labelPos.lng], {
-    icon: L.divIcon({
-      className: 'map-label map-label-amber',
-      html: '<span>TARGET LOCATED</span>',
-      iconSize: [0, 0],
-      iconAnchor: [0, 0],
-    }),
-    interactive: false,
-    zIndexOffset: 870,
-  }).addTo(map);
-  routeLineOverlays.push(label);
+// Reposition orbit drone when search zone is edited
+export function repositionOrbitDrone(center, drone, radius) {
+  if (!map || !_orbitDroneMarker) return;
+  _placeOrbitDrone(center, drone, radius);
+  // Move label too
+  if (_orbitLabel) {
+    const labelPos = offsetLatLng(L.latLng(center[0], center[1]), radius * 0.45, 180);
+    _orbitLabel.setLatLng([labelPos.lat, labelPos.lng]);
+  }
 }
 
 export function showSearchZonePreview(center, radius, fillOpacity = 0.18) {
