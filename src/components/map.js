@@ -1018,7 +1018,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
-        html: `<div class="fleet-drone-dot"${dotColor ? ` style="--dot-color:${dotColor}"` : ''}>
+        html: `<div class="fleet-drone-dot" style="width:${dotSize}px;height:${dotSize}px${dotColor ? `;--dot-color:${dotColor}` : ''}">
           <svg viewBox="0 0 24 24" width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${Math.round(headingDeg)}deg)">
             <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
           </svg>
@@ -1135,6 +1135,9 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     });
     droneCluster.addLayer(marker);
 
+    // Build popup content with drone status rows
+    const baseName = group.base || 'Home Base';
+
     // Permanent label below marker
     marker.bindTooltip(`${baseName} · ${count}`, {
       permanent: true,
@@ -1142,9 +1145,6 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       offset: [0, 4],
       className: 'marker-permanent-label',
     });
-
-    // Build popup content with drone status rows
-    const baseName = group.base || 'Home Base';
     let popupRows = '';
     for (const d of ready) {
       const shortName = d.name.replace(/^Delta\s+/i, '');
