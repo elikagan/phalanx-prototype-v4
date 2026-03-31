@@ -820,7 +820,39 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         if (p) p.style.cursor = 'pointer';
       });
       distanceLines.push(orbitZone);
-      continue; // no separate marker for this drone
+
+      // On detail screens (incidentCoords provided), show drone on orbit perimeter
+      // On fleet overview (incidentCoords null), just the badge is enough
+      if (incidentCoords) {
+        const orbitAngle = 30; // NNE position on orbit circle
+        const dronePos = offsetLatLng(L.latLng(targetCoords[0], targetCoords[1]), 300, orbitAngle);
+        const droneHeading = (orbitAngle + 90) % 360; // tangent to orbit
+
+        const shortName = drone.name.replace(/^Delta\s+/i, '');
+        const orbitDroneMarker = L.marker([dronePos.lat, dronePos.lng], {
+          icon: L.divIcon({
+            className: 'fleet-drone-marker',
+            html: `<div class="fleet-drone-dot" style="--dot-color:#407CF5">
+              <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${droneHeading}deg)">
+                <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
+              </svg>
+            </div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16],
+          }),
+          zIndexOffset: 950,
+          interactive: false,
+        }).addTo(map);
+        orbitDroneMarker.bindTooltip(shortName, {
+          permanent: false,
+          direction: 'bottom',
+          offset: [0, 4],
+          className: 'marker-permanent-label',
+        });
+        distanceLines.push(orbitDroneMarker);
+      }
+
+      continue; // no separate fleet-style marker for this drone
     }
 
     // Color: blue if recommended, black otherwise
