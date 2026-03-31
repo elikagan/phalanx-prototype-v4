@@ -779,6 +779,12 @@
 }
 
 /* ── Drone Popup — hover card for fleet drones ── */
+.drone-popup-container.leaflet-popup {
+  pointer-events: none;
+  opacity: 1 !important;
+  transition: none;
+}
+
 .drone-popup-container .leaflet-popup-content-wrapper {
   background: rgba(20, 22, 28, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.10);
