@@ -253,7 +253,6 @@ export function appendRadio(unit, text, time) {
   lbl.className = 'chat-msg-label';
   lbl.textContent = `DISPATCH · ${time}`;
   header.appendChild(lbl);
-  header.appendChild(createTimestamp());
   msg.appendChild(header);
 
   const textEl = document.createElement('div');

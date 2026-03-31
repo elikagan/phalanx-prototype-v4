@@ -175,7 +175,7 @@ Messages in the chat panel follow a strict visual hierarchy. Not everything dese
 | **Content block** | `.chat-content-block` | inherits | inherits | none | Rich cards, data grids, checklists embedded after SARA messages |
 | **Action buttons** | `.chat-choices` | 12px | button styles | none | Primary/secondary buttons for operator decisions |
 | **System note** | `.chat-msg-system` | 11px mono | `--text-muted` | none | Deemphasized status: "Search area modified", "All checks passed", availability notes |
-| **User message** | `.chat-msg-user` | 13px body | `--text-muted` | 2px border right | Operator's spoken/typed input |
+| **User message** | `.chat-msg-user` | 13px body | `--text-secondary` | 2px border-strong right | Operator's spoken/typed input |
 | **Dispatch** | `.chat-msg-dispatch` | 13px body | `--text-secondary` | 2px amber left | Incoming dispatch updates |
 | **Radio chatter** | `.chat-msg-radio` | 10px mono | `--text-muted` | 2px border left | Background radio traffic, lowest priority |
 
