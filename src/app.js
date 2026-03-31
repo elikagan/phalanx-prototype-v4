@@ -743,23 +743,27 @@ async function setupIncidentMapScreen() {
   // Bail if user navigated away during the word-by-word typing
   if (chat.getGeneration() !== gen) return;
 
-  // Compact incident cards — numbered, structured rows, expandable on hover
+  // Compact incident cards — clear hierarchy: priority+type → location+time → details
   const cardsHtml = INCIDENTS.map((inc, idx) => {
     const priorityClass = `priority-p${inc.priority}`;
     const droneOnScene = DRONES.find(d => d.status === 'in-mission' && d.assignedIncident === inc.id);
     const droneTag = droneOnScene
-      ? `<span class="incident-drone-tag">${droneOnScene.name}</span>`
+      ? `<span class="incident-drone-tag"><svg viewBox="0 0 24 24" width="11" height="11" xmlns="http://www.w3.org/2000/svg"><path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="currentColor" stroke="none"/></svg>${droneOnScene.name.replace(/^Delta\s+/, '')}</span>`
       : '';
+    const incNumber = inc.id.replace(/\D/g, '');
     return `
       <div class="card card-interactive incident-card-compact" data-action="select-incident" data-id="${inc.id}">
-        <div class="incident-compact-row">
-          <span class="incident-number">#${inc.id.replace(/\D/g, '')}</span>
+        <div class="incident-compact-header">
           <span class="${priorityClass}">P${inc.priority}</span>
           <span class="incident-compact-type">${inc.type}</span>
-          <span class="incident-compact-meta">${inc.elapsed}</span>
+          <span class="incident-number">#${incNumber}</span>
           ${droneTag}
         </div>
-        <div class="incident-compact-location">${inc.location}</div>
+        <div class="incident-compact-secondary">
+          <span class="incident-compact-location">${inc.location}</span>
+          <span class="incident-compact-dot">·</span>
+          <span class="incident-compact-meta">${inc.elapsed}</span>
+        </div>
         <div class="incident-expand">
           <div class="incident-narrative-text">${inc.narrative}</div>
           <div class="incident-meta-text">${inc.units} unit${inc.units !== 1 ? 's' : ''} responding · ${inc.time}</div>

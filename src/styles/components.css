@@ -554,34 +554,58 @@ details.card > summary { padding: 4px 0; }
   margin-bottom: 24px;
 }
 
-/* === Incident Cards (compact — hover to expand) === */
+/* === Incident Cards (compact — clear hierarchy) === */
 .incident-card-compact {
   padding: 10px 14px;
   cursor: pointer;
 }
 
-.incident-compact-row {
+.incident-compact-header {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.incident-number {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-  min-width: 16px;
 }
 
 .incident-compact-type {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.incident-number {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: -2px;
+}
+
+.incident-drone-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--accent);
+  margin-left: auto;
   white-space: nowrap;
+}
+
+.incident-compact-secondary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  padding-left: 1px;
+}
+
+.incident-compact-location {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.incident-compact-dot {
+  color: var(--text-ghost);
+  font-size: 10px;
 }
 
 .incident-compact-meta {
@@ -591,31 +615,18 @@ details.card > summary { padding: 4px 0; }
   white-space: nowrap;
 }
 
-.incident-compact-location {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-top: 2px;
-  padding-left: 24px;
-}
-
-.incident-drone-tag {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--amber);
-  white-space: nowrap;
-}
-
 .incident-card-compact .incident-expand {
   max-height: 0;
   overflow: hidden;
   opacity: 0;
-  padding-left: 24px;
-  transition: max-height var(--dur-state) var(--ease-out), opacity var(--dur-state) var(--ease-out);
+  margin-top: 0;
+  transition: max-height var(--dur-state) var(--ease-out), opacity var(--dur-state) var(--ease-out), margin-top var(--dur-state) var(--ease-out);
 }
 
 .incident-card-compact:hover .incident-expand {
   max-height: 80px;
   opacity: 1;
+  margin-top: 6px;
 }
 
 /* === Incident Cards (full — used on analysis screen) === */
