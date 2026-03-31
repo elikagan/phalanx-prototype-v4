@@ -197,18 +197,18 @@
 
 .chat-input-area {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 8px;
   padding: 12px;
-  border-top: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
+  border-top: 1px solid var(--border-strong);
+  background: var(--bg-card);
 }
 
 .chat-input-area textarea {
   flex: 1;
-  background: var(--bg-card);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   color: var(--text-primary);
   font-family: var(--font-ui);
   font-size: 13px;
@@ -216,29 +216,31 @@
   resize: none;
   outline: none;
   line-height: 1.4;
-  max-height: 100px;
+  min-height: 40px;
+  max-height: 120px;
+  overflow-y: auto;
+  transition: border-color var(--dur-micro) var(--ease-out);
 }
 
 .chat-input-area textarea:focus {
-  border-color: var(--border-strong);
+  border-color: var(--accent-dim);
 }
 
 .chat-input-area textarea::placeholder {
-  color: var(--text-ghost);
+  color: var(--text-muted);
 }
 
 .btn-mic {
-  background: none;
-  border: 1.5px solid var(--border);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   color: var(--text-muted);
   cursor: pointer;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--r-md);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   flex-shrink: 0;
   transition: all var(--dur-micro) var(--ease-out);
 }
@@ -264,13 +266,12 @@
   border: none;
   color: var(--accent-text);
   cursor: pointer;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--r-md);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   flex-shrink: 0;
   transition: background var(--dur-micro) var(--ease-out);
 }

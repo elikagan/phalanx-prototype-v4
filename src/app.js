@@ -123,6 +123,7 @@ function setupChatInput() {
     const text = textarea.value.trim();
     if (!text) return;
     textarea.value = '';
+    textarea.style.height = 'auto';
 
     const screen = state.get('currentScreen');
 
@@ -138,6 +139,15 @@ function setupChatInput() {
   };
 
   sendBtn?.addEventListener('click', sendMessage);
+
+  // Auto-expand textarea as user types (up to max-height)
+  if (textarea) {
+    const autoResize = () => {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    };
+    textarea.addEventListener('input', autoResize);
+  }
 
   textarea?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
