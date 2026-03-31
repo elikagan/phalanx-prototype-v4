@@ -432,7 +432,7 @@ details.card > summary { padding: 4px 0; }
 .chat-msg-time {
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--text-ghost);
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
