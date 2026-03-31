@@ -57,8 +57,8 @@ export function screen2() {
 // Screen 3: Incident Map (911 path) — panel content for chat-history
 export function screen3() {
   const cards = INCIDENTS.map(inc => {
-    const priorityClass = `priority-p${inc.priority}`;
-    const priorityLabel = `P${inc.priority}`;
+    const priorityClass = `priority-i${inc.priority}`;
+    const priorityLabel = `I${inc.priority}`;
     return `
       <div class="card card-interactive incident-card" data-action="select-incident" data-id="${inc.id}">
         <div class="incident-info">

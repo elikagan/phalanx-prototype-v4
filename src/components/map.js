@@ -656,7 +656,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
         html: `<div class="incident-dot${activeClass}" style="--dot-color:${dotColor}">
           <span class="material-symbols-outlined">${inc.icon || 'location_on'}</span>
         </div>
-        <div class="incident-map-label">${inc.type} #${incNumber}</div>`,
+        <div class="incident-map-label"><span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber}</div>`,
         iconSize: [200, 56],
         iconAnchor: [20, 20],
       }),
@@ -670,7 +670,7 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
       offset: [0, -20],
       className: 'map-tooltip',
     });
-    tooltip.setContent(`<strong>P${inc.priority} · ${inc.type} #${incNumber}</strong><br>${inc.location} · ${inc.elapsed}<br>${inc.units} unit${inc.units !== 1 ? 's' : ''} responding`);
+    tooltip.setContent(`<strong>I${inc.priority} · ${inc.type} #${incNumber}</strong><br>${inc.location} · ${inc.elapsed}<br>${inc.units} unit${inc.units !== 1 ? 's' : ''} responding`);
     marker.bindTooltip(tooltip);
 
     incidentMarkers.push(marker);

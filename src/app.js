@@ -451,12 +451,13 @@ function manageViewToggle(fpvActive) {
     wrapper = document.createElement('div');
     wrapper.id = 'view-toggle-wrapper';
     wrapper.className = 'view-toggle-wrapper';
+    const basePath = import.meta.env.BASE_URL;
     wrapper.innerHTML = `
       <div class="view-thumb" id="view-thumb">
+        <img class="view-thumb-img view-thumb-cam" src="${basePath}aerial_view_red_car.png" alt="Camera feed" />
+        <div class="view-thumb-map-tile"></div>
+        <span class="material-symbols-outlined view-thumb-icon" id="view-thumb-icon">map</span>
         <div class="view-thumb-label" id="view-thumb-label">MAP</div>
-        <button class="view-toggle" title="Toggle map/video">
-          <span class="material-symbols-outlined icon-sm">swap_horiz</span>
-        </button>
       </div>
     `;
     mapContainer.appendChild(wrapper);
@@ -468,15 +469,18 @@ function manageViewToggle(fpvActive) {
       if (!fpvLayer) return;
       const isShowingFpv = fpvLayer.style.display !== 'none';
 
+      const thumbIcon = document.getElementById('view-thumb-icon');
       if (isShowingFpv) {
         fpvLayer.style.display = 'none';
         thumb.classList.add('showing-map');
         thumbLabel.textContent = 'CAM';
+        if (thumbIcon) thumbIcon.textContent = 'videocam';
         mapComponent.resize();
       } else {
         fpvLayer.style.display = 'block';
         thumb.classList.remove('showing-map');
         thumbLabel.textContent = 'MAP';
+        if (thumbIcon) thumbIcon.textContent = 'map';
         fpv.resize();
       }
     });
@@ -489,6 +493,8 @@ function manageViewToggle(fpvActive) {
   const thumbLabel = document.getElementById('view-thumb-label');
   if (thumb) thumb.classList.remove('showing-map');
   if (thumbLabel) thumbLabel.textContent = 'MAP';
+  const thumbIcon = document.getElementById('view-thumb-icon');
+  if (thumbIcon) thumbIcon.textContent = 'map';
 }
 
 /** Show/hide telemetry bar */
@@ -755,7 +761,7 @@ async function setupIncidentMapScreen() {
 
   // Compact incident cards — clear hierarchy: priority+type → location+time → details
   const cardsHtml = INCIDENTS.map((inc, idx) => {
-    const priorityClass = `priority-p${inc.priority}`;
+    const priorityClass = `priority-i${inc.priority}`;
     const droneOnScene = DRONES.find(d => d.status === 'in-mission' && d.assignedIncident === inc.id);
     const droneTag = droneOnScene
       ? `<span class="incident-drone-tag"><svg viewBox="0 0 24 24" width="11" height="11" xmlns="http://www.w3.org/2000/svg"><path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="currentColor" stroke="none"/></svg>${droneOnScene.name.replace(/^Delta\s+/, '')}</span>`
@@ -764,7 +770,7 @@ async function setupIncidentMapScreen() {
     return `
       <div class="card card-interactive incident-card-compact" data-action="select-incident" data-id="${inc.id}">
         <div class="incident-compact-header">
-          <span class="${priorityClass}">P${inc.priority}</span>
+          <span class="${priorityClass}">I${inc.priority}</span>
           <span class="incident-compact-type">${inc.type}</span>
           <span class="incident-number">#${incNumber}</span>
           ${droneTag}
@@ -863,26 +869,22 @@ function setupAnalysisScreen() {
   const shortName = closestDrone?.name?.replace(/^Delta\s+/i, '') || 'Unknown';
 
   const profileHtml = `
-    <div class="card mb-8">
-      <div class="section-label">Extracted Target Profile</div>
+    <div class="card card-compact mb-8">
+      <div class="section-label">Target Profile</div>
       <div class="data-grid">
-        <span class="data-label">Vehicle</span><span class="data-value">${t.vehicle}</span>
-        <span class="data-label">Plate</span><span class="data-value mono">${t.plate}</span>
-        <span class="data-label">Last seen</span><span class="data-value">${t.lastSeen} — ${t.lastSeenTime}</span>
+        <span class="data-label">Vehicle</span><span class="data-value">${t.vehicle} · <span class="mono">${t.plate}</span></span>
+        <span class="data-label">Last seen</span><span class="data-value">${t.lastSeen} · ${t.lastSeenTime}</span>
         <span class="data-label">Speed</span><span class="data-value">${t.speed}</span>
         <span class="data-label">Suspect</span><span class="data-value">${t.suspect}</span>
-        <span class="data-label">Units</span><span class="data-value">${t.respondingUnits} responding</span>
       </div>
     </div>
     ${closestDrone ? `
-    <div class="card mb-8 card-recommended">
+    <div class="card card-compact mb-8 card-recommended">
       <div class="section-label">Recommended Drone</div>
       <div class="data-grid">
         <span class="data-label">Drone</span><span class="data-value">${closestDrone.name}</span>
-        <span class="data-label">Distance</span><span class="data-value">${distKm?.toFixed(1)} km</span>
-        <span class="data-label">ETA</span><span class="data-value">${etaStr}</span>
-        <span class="data-label">Battery</span><span class="data-value">${closestDrone.battery}%</span>
-        <span class="data-label">Status</span><span class="data-value">Surveillance — ${closestDrone.patrol || 'patrol'}</span>
+        <span class="data-label">ETA</span><span class="data-value">${distKm?.toFixed(1)} km · ${etaStr}</span>
+        <span class="data-label">Battery</span><span class="data-value">${closestDrone.battery}% · ${closestDrone.patrol || 'patrol'}</span>
       </div>
     </div>` : ''}`;
 
@@ -987,12 +989,11 @@ function setupBriefingScreen() {
 
   const b = MISSION_BRIEFING;
   const briefingHtml = `
-    <div class="card">
+    <div class="card card-compact">
       <div class="section-label">Mission Plan</div>
       <div class="data-grid">
         <span class="data-label">Target</span><span class="data-value">${b.target}</span>
-        <span class="data-label">Last known</span><span class="data-value">${b.lastKnown}</span>
-        <span class="data-label">Direction</span><span class="data-value">${b.direction}</span>
+        <span class="data-label">Last known</span><span class="data-value">${b.lastKnown} · ${b.direction}</span>
         <span class="data-label">Search area</span><span class="data-value">${b.searchArea}</span>
         <span class="data-label">Drone</span><span class="data-value">${b.drone}</span>
         <span class="data-label">Units</span><span class="data-value">${b.respondingUnits.join(', ')}</span>
@@ -1291,15 +1292,12 @@ async function setupLiveSceneScreen() {
   // Status header
   chat.appendSaraWithContent(
     `Live feed from ${drone?.name || 'Unknown Drone'} on scene at ${inc?.type || 'Incident'} #${incNumber}.`,
-    `<div class="card mb-8">
+    `<div class="card card-compact mb-8">
       <div class="section-label">Scene Status</div>
       <div class="data-grid">
-        <span class="data-label">Incident</span><span class="data-value">${inc?.type} #${incNumber}</span>
-        <span class="data-label">Location</span><span class="data-value">${inc?.location}</span>
-        <span class="data-label">Priority</span><span class="data-value">${inc?.priority || 'P1'}</span>
-        <span class="data-label">Drone</span><span class="data-value">${drone?.name} · ${drone?.battery}% battery</span>
+        <span class="data-label">Incident</span><span class="data-value">I${inc?.priority || '1'} ${inc?.type} #${incNumber} · ${inc?.location}</span>
+        <span class="data-label">Drone</span><span class="data-value">${drone?.name} · ${drone?.battery}% · 85m AGL</span>
         <span class="data-label">On scene</span><span class="data-value">${inc?.elapsed}</span>
-        <span class="data-label">Altitude</span><span class="data-value">85m AGL</span>
         <span class="data-label">Target</span><span class="data-value text-green">CONFIRMED · Tracking</span>
       </div>
     </div>`

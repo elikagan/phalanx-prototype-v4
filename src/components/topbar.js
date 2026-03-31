@@ -88,7 +88,7 @@ function updateIncidentBadge(inc) {
   const incNumber = inc.id.replace(/\D/g, '');
   const priorityColor = inc.priority === 1 ? 'var(--red)' : 'var(--amber)';
   badge.className = 'topbar-incident-badge';
-  badge.innerHTML = `<span class="incident-priority" style="color:${priorityColor}">P${inc.priority}</span><span class="incident-type">${inc.type} #${incNumber}</span>`;
+  badge.innerHTML = `<span class="incident-priority" style="color:${priorityColor}">I${inc.priority}</span><span class="incident-type">${inc.type} #${incNumber}</span>`;
 }
 
 function updateDroneBadge() {

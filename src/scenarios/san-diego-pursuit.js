@@ -135,7 +135,7 @@ export const DRONES = [
     battery: 95,
     signal: 'strong',
     base: 'National City Station',
-    coordinates: [32.6820, -117.1100],
+    coordinates: [32.7100, -117.1350],
   },
   {
     id: 'dsa-015',
@@ -145,7 +145,7 @@ export const DRONES = [
     battery: 23,
     signal: 'strong',
     base: 'National City Station',
-    coordinates: [32.6820, -117.1100],
+    coordinates: [32.7100, -117.1350],
   },
 ];
 

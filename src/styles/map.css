@@ -142,18 +142,64 @@
   color: #4a9a65;
 }
 
-/* ── View toggle thumbnail (v3-style) ── */
+/* ── View toggle thumbnail ── */
 .view-thumb {
   position: relative;
-  width: 120px;
-  height: 80px;
+  width: 100px;
+  height: 64px;
   border-radius: var(--r-md);
-  border: 1px solid var(--border);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
   overflow: hidden;
   cursor: pointer;
   background: var(--bg-void);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: border-color var(--dur-micro) var(--ease-out),
+              box-shadow var(--dur-micro) var(--ease-out);
 }
 
+.view-thumb:hover {
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Camera feed image (shown when FPV is active, thumbnail previews map) */
+.view-thumb-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Camera image: hidden by default (shows when .showing-map = viewing map, thumb shows cam) */
+.view-thumb-cam {
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.view-thumb.showing-map .view-thumb-cam {
+  opacity: 1;
+}
+
+/* Satellite map pattern (shown when viewing FPV, thumb previews map) */
+.view-thumb-map-tile {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 35% 45%, rgba(42, 72, 56, 0.7) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 60%, rgba(58, 78, 62, 0.5) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 30%, rgba(68, 88, 72, 0.3) 0%, transparent 60%),
+    linear-gradient(160deg, #2a3a2e 0%, #1e2e24 40%, #243428 70%, #1a2a20 100%);
+  opacity: 1;
+  transition: opacity 200ms ease;
+  pointer-events: none;
+}
+/* Hide map tile when showing map (thumb shows cam instead) */
+.view-thumb.showing-map .view-thumb-map-tile {
+  opacity: 0;
+}
+
+/* Subtle scanline overlay */
 .view-thumb::before {
   content: '';
   position: absolute;
@@ -161,67 +207,39 @@
   background: repeating-linear-gradient(
     0deg,
     transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.08) 2px,
-    rgba(0, 0, 0, 0.08) 4px
+    transparent 3px,
+    rgba(0, 0, 0, 0.06) 3px,
+    rgba(0, 0, 0, 0.06) 4px
   );
-  z-index: 1;
+  z-index: 3;
   pointer-events: none;
 }
 
-.view-thumb:not(.showing-map)::after {
-  content: '';
+/* Icon badge — top-left */
+.view-thumb-icon {
   position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(rgba(var(--overlay), 0.3), rgba(var(--overlay), 0.3)),
-    repeating-linear-gradient(0deg, transparent 0px, transparent 19px, rgba(255,255,255,0.04) 19px, rgba(255,255,255,0.04) 20px),
-    repeating-linear-gradient(90deg, transparent 0px, transparent 19px, rgba(255,255,255,0.04) 19px, rgba(255,255,255,0.04) 20px);
+  top: 5px;
+  left: 6px;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  z-index: 4;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
   pointer-events: none;
 }
 
-.view-thumb.showing-map::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(var(--overlay), 0.2);
-  pointer-events: none;
-}
-
+/* Label — bottom-left */
 .view-thumb-label {
   position: absolute;
-  bottom: 6px;
-  left: 8px;
+  bottom: 4px;
+  right: 5px;
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: 0.5px;
-  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.7);
   text-transform: uppercase;
-  z-index: 2;
-}
-
-.view-toggle {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 24px;
-  height: 24px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2;
-  transition: all var(--dur-micro) var(--ease-out);
-}
-
-.view-toggle:hover {
-  background: var(--bg-elevated);
-  border-color: var(--border-strong);
-  color: var(--text-primary);
+  z-index: 4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 
 /* ── HUD overlay on FPV ── */
@@ -501,6 +519,7 @@
 .incident-map-marker {
   pointer-events: auto;
   cursor: pointer;
+  position: relative;
 }
 
 .incident-dot {
@@ -524,7 +543,7 @@
   50% { box-shadow: 0 0 0 10px rgba(212, 160, 23, 0), 0 2px 6px rgba(0, 0, 0, 0.35); }
 }
 
-/* Incident label — same base style as all map labels */
+/* Incident label — dark pill below dot */
 .incident-map-label {
   font-family: 'Geist', var(--font-ui);
   font-size: 10px;
@@ -538,6 +557,19 @@
   width: fit-content;
   margin-top: 4px;
 }
+
+/* Incident ID prefix in label */
+.incident-label-id {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  margin-right: 2px;
+}
+
+.incident-label-i1 { color: #d46a6a; }
+.incident-label-i2 { color: #c9b84a; }
+.incident-label-i3 { color: #c88232; }
 
 /* ── Fleet Drone Markers — quiet, supporting ── */
 .fleet-drone-marker {
@@ -611,8 +643,8 @@
 
 .base-count {
   position: absolute;
-  top: -4px;
-  right: -4px;
+  top: -6px;
+  right: -6px;
   background: rgba(0, 0, 0, 0.7);
   color: #fff;
   font-family: 'Geist', var(--font-ui);

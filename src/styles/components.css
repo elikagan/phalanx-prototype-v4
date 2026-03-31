@@ -1,22 +1,27 @@
 /* === Design System Utilities === */
 .section-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   font-weight: 500;
 }
 
 .data-grid {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 6px 16px;
-  font-size: 13px;
+  gap: 4px 12px;
+  font-size: 12px;
 }
 
 .data-label { color: var(--text-muted); }
 .data-value { color: var(--text-primary); }
+
+/* Compact card variant — tighter padding for inline data cards */
+.card.card-compact {
+  padding: 10px 12px;
+}
 
 .card-header-row {
   display: flex;
@@ -484,8 +489,8 @@ details.card > summary { padding: 4px 0; }
   font-size: 14px;
 }
 
-/* === Priority Badges === */
-.priority-p1 {
+/* === Incident Badges === */
+.priority-i1 {
   background: rgba(184, 84, 84, 0.15);
   color: var(--red);
   font-size: 10px;
@@ -495,7 +500,7 @@ details.card > summary { padding: 4px 0; }
   letter-spacing: 0.5px;
 }
 
-.priority-p2 {
+.priority-i2 {
   background: rgba(168, 149, 64, 0.15);
   color: var(--amber);
   font-size: 10px;
@@ -505,7 +510,7 @@ details.card > summary { padding: 4px 0; }
   letter-spacing: 0.5px;
 }
 
-.priority-p3 {
+.priority-i3 {
   background: rgba(200, 130, 50, 0.15);
   color: #c88232;
   font-size: 10px;
