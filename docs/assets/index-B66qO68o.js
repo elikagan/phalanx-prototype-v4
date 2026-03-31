@@ -249,7 +249,7 @@ var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=
         </div>
       </div>`}).join(``);yt()===r&&Ot(`I'm tracking ${y.length} active incidents in San Diego County.`,`<div class="stack-4">${i}</div>`)}function kn(){K(),it();let e=g(`selectedIncident`);e?.coordinates&&I([e],()=>{});let t=b.filter(e=>e.status===`surveillance`),n=[...t].sort((t,n)=>{if(!e?.coordinates)return 0;let r=t=>{let n=(e.coordinates[0]-t[0])*Math.PI/180,r=(e.coordinates[1]-t[1])*Math.PI/180,i=Math.sin(n/2)**2+Math.cos(t[0]*Math.PI/180)*Math.cos(e.coordinates[0]*Math.PI/180)*Math.sin(r/2)**2;return 6371*2*Math.atan2(Math.sqrt(i),Math.sqrt(1-i))};return r(t.coordinates)-r(n.coordinates)})[0];if(tt(t,e?.coordinates,t=>{_({selectedDrone:t}),g(`searchZone`)||_({searchZone:{center:e.coordinates,radius:x.radius}}),v(8)},{skipFitBounds:!0,recommendedDroneId:n?.id}),e?.coordinates){_({searchZone:{center:e.coordinates,radius:x.radius}});let t=!1;setTimeout(()=>{Le(e=>{_({searchZone:e}),t||(t=!0,U(`Search area modified — ${e.radiusX===e.radiusY?`${Math.round(e.radiusX)}m radius`:`${Math.round(e.radiusX)} × ${Math.round(e.radiusY)}m`}`))})},300)}e?.coordinates&&nt([60,60],14),n&&_({selectedDrone:n});let r=ne.target,i=n?.distanceFromIncident;if(!i&&n&&e?.coordinates){let t=(e.coordinates[0]-n.coordinates[0])*Math.PI/180,r=(e.coordinates[1]-n.coordinates[1])*Math.PI/180,a=Math.sin(t/2)**2+Math.cos(n.coordinates[0]*Math.PI/180)*Math.cos(e.coordinates[0]*Math.PI/180)*Math.sin(r/2)**2;i=6371*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}let a=i?Math.round(i/60*3600):null,o=a?a>=60?`${Math.floor(a/60)}m ${a%60}s`:`${a}s`:null,s=n?.name?.replace(/^Delta\s+/i,``)||`Unknown`,c=`
     <div class="card card-compact mb-8">
-      <div class="section-label"><span class="material-symbols-outlined section-label-icon">target</span>Target Profile</div>
+      <div class="section-label"><span class="material-symbols-outlined section-label-icon">${e?.icon||`target`}</span>Target Profile</div>
       <div class="data-grid">
         <span class="data-label">Vehicle</span><span class="data-value">${r.vehicle} · <span class="mono">${r.plate}</span></span>
         <span class="data-label">Last seen</span><span class="data-value">${r.lastSeen} · ${r.lastSeenTime}</span>
@@ -259,7 +259,7 @@ var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=
     </div>
     ${n?`
     <div class="card card-compact mb-8 card-recommended">
-      <div class="section-label"><span class="material-symbols-outlined section-label-icon">flight</span>Recommended Drone</div>
+      <div class="section-label"><svg class="section-label-icon" viewBox="0 0 24 24" width="13" height="13"><path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="currentColor"/></svg>Recommended Drone</div>
       <div class="data-grid">
         <span class="data-label">Drone</span><span class="data-value">${n.name}</span>
         <span class="data-label">ETA</span><span class="data-value">${i?.toFixed(1)} km · ${o}</span>

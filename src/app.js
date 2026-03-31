@@ -870,7 +870,7 @@ function setupAnalysisScreen() {
 
   const profileHtml = `
     <div class="card card-compact mb-8">
-      <div class="section-label"><span class="material-symbols-outlined section-label-icon">target</span>Target Profile</div>
+      <div class="section-label"><span class="material-symbols-outlined section-label-icon">${inc?.icon || 'target'}</span>Target Profile</div>
       <div class="data-grid">
         <span class="data-label">Vehicle</span><span class="data-value">${t.vehicle} · <span class="mono">${t.plate}</span></span>
         <span class="data-label">Last seen</span><span class="data-value">${t.lastSeen} · ${t.lastSeenTime}</span>
@@ -880,7 +880,7 @@ function setupAnalysisScreen() {
     </div>
     ${closestDrone ? `
     <div class="card card-compact mb-8 card-recommended">
-      <div class="section-label"><span class="material-symbols-outlined section-label-icon">flight</span>Recommended Drone</div>
+      <div class="section-label"><svg class="section-label-icon" viewBox="0 0 24 24" width="13" height="13"><path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="currentColor"/></svg>Recommended Drone</div>
       <div class="data-grid">
         <span class="data-label">Drone</span><span class="data-value">${closestDrone.name}</span>
         <span class="data-label">ETA</span><span class="data-value">${distKm?.toFixed(1)} km · ${etaStr}</span>
