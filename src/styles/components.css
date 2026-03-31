@@ -414,13 +414,26 @@ details.card > summary { padding: 4px 0; }
   color: var(--text-secondary);
 }
 
+.chat-msg-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
 .chat-msg-label {
   font-size: 11px;
   color: var(--text-muted);
-  margin-bottom: 4px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.chat-msg-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-ghost);
+  white-space: nowrap;
 }
 
 .chat-msg-text {
@@ -493,8 +506,8 @@ details.card > summary { padding: 4px 0; }
 }
 
 .priority-p3 {
-  background: rgba(92, 92, 102, 0.15);
-  color: var(--text-muted);
+  background: rgba(200, 130, 50, 0.15);
+  color: #c88232;
   font-size: 10px;
   font-weight: 600;
   padding: 2px 8px;

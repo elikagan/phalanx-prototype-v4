@@ -13,6 +13,43 @@ const chatEl = () => document.getElementById('chat-history');
 let chatGeneration = 0;
 export function getGeneration() { return chatGeneration; }
 
+// Track last message type to suppress repeated labels
+let lastMsgType = null;
+
+// Relative timestamp tracking
+const timestampEls = [];
+let tsInterval = null;
+
+function startTimestampUpdater() {
+  if (tsInterval) return;
+  tsInterval = setInterval(() => {
+    const now = Date.now();
+    for (const { el, time } of timestampEls) {
+      el.textContent = relativeTime(now - time);
+    }
+  }, 10000);
+}
+
+function relativeTime(ms) {
+  const s = Math.floor(ms / 1000);
+  if (s < 10) return 'just now';
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  return `${h}h ago`;
+}
+
+function createTimestamp() {
+  const el = document.createElement('span');
+  el.className = 'chat-msg-time';
+  el.textContent = 'just now';
+  const entry = { el, time: Date.now() };
+  timestampEls.push(entry);
+  startTimestampUpdater();
+  return el;
+}
+
 /** Append a SARA message */
 export function appendSara(text, options = {}) {
   const el = chatEl();
@@ -20,10 +57,22 @@ export function appendSara(text, options = {}) {
 
   const msg = document.createElement('div');
   msg.className = 'chat-msg chat-msg-sara';
-  msg.innerHTML = `
-    <div class="chat-msg-label">SARA</div>
-    <div class="chat-msg-text">${escapeHtml(text)}</div>
-  `;
+
+  const header = document.createElement('div');
+  header.className = 'chat-msg-header';
+  if (lastMsgType !== 'sara') {
+    const label = document.createElement('span');
+    label.className = 'chat-msg-label';
+    label.textContent = 'SARA';
+    header.appendChild(label);
+  }
+  header.appendChild(createTimestamp());
+  msg.appendChild(header);
+
+  const textEl = document.createElement('div');
+  textEl.className = 'chat-msg-text';
+  textEl.innerHTML = escapeHtml(text);
+  msg.appendChild(textEl);
 
   if (options.choices) {
     const choices = document.createElement('div');
@@ -43,6 +92,7 @@ export function appendSara(text, options = {}) {
 
   el.appendChild(msg);
   scrollToBottom();
+  lastMsgType = 'sara';
   state.set({ lastSaraMessage: text });
   return msg;
 }
@@ -54,12 +104,20 @@ export async function appendSaraWordByWord(text, interval = 120) {
 
   const msg = document.createElement('div');
   msg.className = 'chat-msg chat-msg-sara';
-  const label = document.createElement('div');
-  label.className = 'chat-msg-label';
-  label.textContent = 'SARA';
+
+  const header = document.createElement('div');
+  header.className = 'chat-msg-header';
+  if (lastMsgType !== 'sara') {
+    const lbl = document.createElement('span');
+    lbl.className = 'chat-msg-label';
+    lbl.textContent = 'SARA';
+    header.appendChild(lbl);
+  }
+  header.appendChild(createTimestamp());
+  msg.appendChild(header);
+
   const textEl = document.createElement('div');
   textEl.className = 'chat-msg-text';
-  msg.appendChild(label);
   msg.appendChild(textEl);
   el.appendChild(msg);
   scrollToBottom();
@@ -71,6 +129,7 @@ export async function appendSaraWordByWord(text, interval = 120) {
     await wait(interval);
   }
   scrollToBottom();
+  lastMsgType = 'sara';
   state.set({ lastSaraMessage: text });
   return msg;
 }
@@ -86,6 +145,7 @@ export function appendSystem(text) {
 
   el.appendChild(msg);
   scrollToBottom();
+  // System notes don't reset the label suppression
   return msg;
 }
 
@@ -96,13 +156,24 @@ export function appendMessage(type, label, text) {
 
   const msg = document.createElement('div');
   msg.className = `chat-msg chat-msg-${type}`;
-  msg.innerHTML = `
-    <div class="chat-msg-label">${escapeHtml(label)}</div>
-    <div class="chat-msg-text">${escapeHtml(text)}</div>
-  `;
+
+  const header = document.createElement('div');
+  header.className = 'chat-msg-header';
+  const lbl = document.createElement('span');
+  lbl.className = 'chat-msg-label';
+  lbl.textContent = label;
+  header.appendChild(lbl);
+  header.appendChild(createTimestamp());
+  msg.appendChild(header);
+
+  const textEl = document.createElement('div');
+  textEl.className = 'chat-msg-text';
+  textEl.innerHTML = escapeHtml(text);
+  msg.appendChild(textEl);
 
   el.appendChild(msg);
   scrollToBottom();
+  lastMsgType = type;
   return msg;
 }
 
@@ -113,13 +184,24 @@ export function appendUser(text) {
 
   const msg = document.createElement('div');
   msg.className = 'chat-msg chat-msg-user';
-  msg.innerHTML = `
-    <div class="chat-msg-label">YOU</div>
-    <div class="chat-msg-text">${escapeHtml(text)}</div>
-  `;
+
+  const header = document.createElement('div');
+  header.className = 'chat-msg-header';
+  const lbl = document.createElement('span');
+  lbl.className = 'chat-msg-label';
+  lbl.textContent = 'YOU';
+  header.appendChild(lbl);
+  header.appendChild(createTimestamp());
+  msg.appendChild(header);
+
+  const textEl = document.createElement('div');
+  textEl.className = 'chat-msg-text';
+  textEl.innerHTML = escapeHtml(text);
+  msg.appendChild(textEl);
 
   el.appendChild(msg);
   scrollToBottom();
+  lastMsgType = 'user';
   return msg;
 }
 
@@ -130,12 +212,18 @@ export async function appendUserWordByWord(text, interval = 220) {
 
   const msg = document.createElement('div');
   msg.className = 'chat-msg chat-msg-user';
-  const label = document.createElement('div');
-  label.className = 'chat-msg-label';
-  label.textContent = 'YOU';
+
+  const header = document.createElement('div');
+  header.className = 'chat-msg-header';
+  const lbl = document.createElement('span');
+  lbl.className = 'chat-msg-label';
+  lbl.textContent = 'YOU';
+  header.appendChild(lbl);
+  header.appendChild(createTimestamp());
+  msg.appendChild(header);
+
   const textEl = document.createElement('div');
   textEl.className = 'chat-msg-text';
-  msg.appendChild(label);
   msg.appendChild(textEl);
   el.appendChild(msg);
   scrollToBottom();
@@ -147,6 +235,7 @@ export async function appendUserWordByWord(text, interval = 220) {
     await wait(interval);
   }
   scrollToBottom();
+  lastMsgType = 'user';
   return msg;
 }
 
@@ -157,13 +246,24 @@ export function appendRadio(unit, text, time) {
 
   const msg = document.createElement('div');
   msg.className = 'chat-msg chat-msg-radio';
-  msg.innerHTML = `
-    <div class="chat-msg-label">DISPATCH UPDATE · ${time}</div>
-    <div class="chat-msg-text">${escapeHtml(text)}</div>
-  `;
+
+  const header = document.createElement('div');
+  header.className = 'chat-msg-header';
+  const lbl = document.createElement('span');
+  lbl.className = 'chat-msg-label';
+  lbl.textContent = `DISPATCH · ${time}`;
+  header.appendChild(lbl);
+  header.appendChild(createTimestamp());
+  msg.appendChild(header);
+
+  const textEl = document.createElement('div');
+  textEl.className = 'chat-msg-text';
+  textEl.innerHTML = escapeHtml(text);
+  msg.appendChild(textEl);
 
   el.appendChild(msg);
   scrollToBottom();
+  lastMsgType = 'radio';
 
   // Increment radio count
   state.set({ radioCount: (state.get('radioCount') || 0) + 1 });
@@ -194,11 +294,25 @@ export function appendSaraWithContent(text, html, options = {}) {
 
   const msg = document.createElement('div');
   msg.className = 'chat-msg chat-msg-sara';
-  msg.innerHTML = `
-    <div class="chat-msg-label">SARA</div>
-    <div class="chat-msg-text">${escapeHtml(text)}</div>
-  `;
+
+  const header = document.createElement('div');
+  header.className = 'chat-msg-header';
+  if (lastMsgType !== 'sara') {
+    const lbl = document.createElement('span');
+    lbl.className = 'chat-msg-label';
+    lbl.textContent = 'SARA';
+    header.appendChild(lbl);
+  }
+  header.appendChild(createTimestamp());
+  msg.appendChild(header);
+
+  const textEl = document.createElement('div');
+  textEl.className = 'chat-msg-text';
+  textEl.innerHTML = escapeHtml(text);
+  msg.appendChild(textEl);
+
   el.appendChild(msg);
+  lastMsgType = 'sara';
 
   // Append rich content block
   if (html) {
@@ -235,6 +349,8 @@ export function clear() {
   chatGeneration++;
   const el = chatEl();
   if (el) el.innerHTML = '';
+  lastMsgType = null;
+  timestampEls.length = 0;
 }
 
 /** Smooth scroll to bottom */
