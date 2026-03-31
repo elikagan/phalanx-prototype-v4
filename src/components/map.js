@@ -1000,7 +1000,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     }
 
     // Color: blue if recommended, black otherwise
-    const dotColor = isRecommended ? '#407CF5' : '';
+    const dotColor = isRecommended ? '#407CF5' : null;
 
     // Calculate heading toward incident (if we have one)
     let headingDeg = 0;
@@ -1014,14 +1014,13 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     }
 
     const shortName = drone.name.replace(/^Delta\s+/i, '');
-    const isDimmed = isReroutable && !isRecommended;
-    const dotDimClass = isDimmed ? ' fleet-drone-dot-dim' : '';
-    const svgSize = isDimmed ? 13 : 16;
-    const dotSize = isDimmed ? 26 : 32;
+    const dotDimClass = '';
+    const svgSize = 16;
+    const dotSize = 32;
     const marker = L.marker(drone.coordinates, {
       icon: L.divIcon({
         className: 'fleet-drone-marker',
-        html: `<div class="fleet-drone-dot${dotDimClass}" style="--dot-color:${dotColor}">
+        html: `<div class="fleet-drone-dot${dotDimClass}"${dotColor ? ` style="--dot-color:${dotColor}"` : ''}>
           <svg viewBox="0 0 24 24" width="${svgSize}" height="${svgSize}" xmlns="http://www.w3.org/2000/svg" style="transform:rotate(${Math.round(headingDeg)}deg)">
             <path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/>
           </svg>
@@ -1030,12 +1029,13 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
         iconAnchor: [dotSize / 2, dotSize / 2],
       }),
       zIndexOffset: isReroutable ? 850 : 700,
-      interactive: isReroutable,
+      interactive: true,
     });
     droneCluster.addLayer(marker);
 
+    // Permanent name label below marker
     marker.bindTooltip(shortName, {
-      permanent: false,
+      permanent: true,
       direction: 'bottom',
       offset: [0, 4],
       className: 'marker-permanent-label',
@@ -1045,15 +1045,18 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       marker.on('click', () => onSelect?.(drone));
     }
 
+    // Hover popup with detail (can't use tooltip — already bound as permanent label)
     const statusLabel = isSurveillance ? `Surveillance — ${drone.patrol || 'patrol'}`
       : 'Offline';
-    const tooltip = L.tooltip({
-      direction: 'top',
-      offset: [0, -20],
-      className: 'map-tooltip',
+    const popupContent = `<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`;
+    marker.bindPopup(popupContent, {
+      className: 'map-tooltip-popup',
+      closeButton: false,
+      offset: [0, -16],
+      autoPan: false,
     });
-    tooltip.setContent(`<strong>${drone.name}</strong><br>${statusLabel} · ${drone.battery}% battery${drone.distanceFromIncident != null ? '<br>' + drone.distanceFromIncident + ' km from incident' : ''}`);
-    marker.bindTooltip(tooltip);
+    marker.on('mouseover', function() { this.openPopup(); });
+    marker.on('mouseout', function() { this.closePopup(); });
 
     // Route line from drone to incident (skipped when caller draws its own route)
     if (incidentCoords && isReroutable && !skipRouteLines) {
@@ -1135,8 +1138,8 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     droneCluster.addLayer(marker);
 
     // Permanent label below marker
-    marker.bindTooltip(group.base || 'Base', {
-      permanent: false,
+    marker.bindTooltip(`${baseName} · ${count}`, {
+      permanent: true,
       direction: 'bottom',
       offset: [0, 4],
       className: 'marker-permanent-label',
@@ -1160,13 +1163,6 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       <div class="base-popup-divider"></div>
       ${popupRows}
     </div>`;
-
-    // Hover tooltip — quick label
-    marker.bindTooltip(`${baseName} · ${count} drones`, {
-      direction: 'top',
-      offset: [0, -20],
-      className: 'map-tooltip',
-    });
 
     // Click popup — full details, stays open until click elsewhere
     marker.bindPopup(popupContent, {

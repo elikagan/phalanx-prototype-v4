@@ -778,6 +778,35 @@
   border-top-color: rgba(24, 27, 32, 0.92);
 }
 
+/* Popup styled as tooltip (for markers that need both permanent label + hover detail) */
+.map-tooltip-popup .leaflet-popup-content-wrapper {
+  background: rgba(24, 27, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: #EDEFF2;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.map-tooltip-popup .leaflet-popup-content {
+  margin: 8px 12px;
+}
+
+.map-tooltip-popup .leaflet-popup-content strong {
+  color: #EDEFF2;
+  font-weight: 600;
+}
+
+.map-tooltip-popup .leaflet-popup-tip {
+  background: rgba(24, 27, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: none;
+  border-left: none;
+}
+
 /* ── Base Popup — click-to-open drone base card ── */
 .base-popup-container .leaflet-popup-content-wrapper {
   background: rgba(20, 22, 28, 0.95);
