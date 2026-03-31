@@ -931,6 +931,14 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       ${popupRows}
     </div>`;
 
+    // Hover tooltip — quick label
+    marker.bindTooltip(`${baseName} · ${count} drones`, {
+      direction: 'top',
+      offset: [0, -20],
+      className: 'map-tooltip',
+    });
+
+    // Click popup — full details, stays open until click elsewhere
     marker.bindPopup(popupContent, {
       className: 'base-popup-container',
       offset: [0, -16],
@@ -939,6 +947,10 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       minWidth: 160,
       maxWidth: 220,
     });
+
+    // Hide tooltip when popup is open so they don't overlap
+    marker.on('popupopen', () => marker.closeTooltip());
+    marker.on('click', () => marker.closeTooltip());
 
     fleetMarkers.push(marker);
     bounds.push(group.coords);
