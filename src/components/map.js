@@ -1000,7 +1000,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     }
 
     // Color: blue if recommended, black otherwise
-    const dotColor = isRecommended ? '#407CF5' : '#1c1c1f';
+    const dotColor = isRecommended ? '#407CF5' : '';
 
     // Calculate heading toward incident (if we have one)
     let headingDeg = 0;
