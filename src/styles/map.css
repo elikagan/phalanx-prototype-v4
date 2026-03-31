@@ -528,7 +528,7 @@
   opacity: 0.65;
 }
 
-/* Fleet base dot — drone base with stacked card effect */
+/* Fleet base dot — single square marker */
 .fleet-base-dot {
   width: 30px;
   height: 30px;
@@ -538,34 +538,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
   position: relative;
   cursor: pointer;
   transition: border-color 0.15s ease-out, background 0.15s ease-out;
-}
-
-.fleet-base-dot::before,
-.fleet-base-dot::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 5px;
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
-  background: rgba(24, 26, 32, 0.7);
-  z-index: -1;
-}
-
-.fleet-base-dot::before {
-  top: 3px;
-  left: 3px;
-}
-
-.fleet-base-dot::after {
-  top: 6px;
-  left: 6px;
-  border-color: rgba(255, 255, 255, 0.04);
-  background: rgba(20, 22, 28, 0.5);
 }
 
 .fleet-base-dot:hover {

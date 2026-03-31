@@ -785,7 +785,7 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     }
 
     const statusLabel = isSurveillance ? `Surveillance — ${drone.patrol || 'patrol'}`
-      : isMission ? `In Mission (${drone.operator})`
+      : isMission ? 'In Mission'
       : 'Offline';
     const tooltip = L.tooltip({
       direction: 'top',
