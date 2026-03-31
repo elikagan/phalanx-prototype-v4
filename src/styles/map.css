@@ -846,7 +846,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 2px 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-ui);
   font-size: 11px;
 }
 
