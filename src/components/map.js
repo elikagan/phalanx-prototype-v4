@@ -901,35 +901,44 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
       icon: L.divIcon({
         className: 'fleet-drone-marker',
         html: `<div class="fleet-base-dot">
-          <span class="material-symbols-outlined base-marker-icon">home</span>
+          <svg class="base-marker-icon" viewBox="0 0 24 24" width="16" height="16"><path d="M12 4 L3 18 L6 16.5 L12 15 L18 16.5 L21 18 Z" fill="#fff" stroke="none"/></svg>
           <span class="base-count">${count}</span>
         </div>
-        <div class="fleet-drone-label">${group.base || 'Home Base'}</div>`,
+        <div class="fleet-drone-label">${group.base || 'Base'}</div>`,
         iconSize: [120, 48],
         iconAnchor: [20, 20],
       }),
       zIndexOffset: 600,
-      interactive: false,
+      interactive: true,
     }).addTo(map);
 
-    // Tooltip with ready vs charging breakdown
-    let tooltipContent = `<strong>${group.base || 'Home Base'}</strong>`;
-    if (ready.length > 0) {
-      const readyNames = ready.map(d => `${d.name.replace(/^Delta\s+/i, '')} (${d.battery}%)`).join(', ');
-      tooltipContent += `<br>✓ ${ready.length} ready for launch<br><span class="tooltip-detail">${readyNames}</span>`;
+    // Build popup content with drone status rows
+    const baseName = group.base || 'Home Base';
+    let popupRows = '';
+    for (const d of ready) {
+      const shortName = d.name.replace(/^Delta\s+/i, '');
+      popupRows += `<div class="base-popup-row"><span class="base-popup-status ready"></span><span class="base-popup-name">${shortName}</span><span class="base-popup-bat">${d.battery}%</span><span class="base-popup-state">Ready</span></div>`;
     }
-    if (charging.length > 0) {
-      const chargingNames = charging.map(d => `${d.name.replace(/^Delta\s+/i, '')} (${d.battery}%)`).join(', ');
-      tooltipContent += `<br>⚡ ${charging.length} charging<br><span class="tooltip-detail">${chargingNames}</span>`;
+    for (const d of charging) {
+      const shortName = d.name.replace(/^Delta\s+/i, '');
+      popupRows += `<div class="base-popup-row"><span class="base-popup-status charging"></span><span class="base-popup-name">${shortName}</span><span class="base-popup-bat">${d.battery}%</span><span class="base-popup-state">Charging</span></div>`;
     }
 
-    const tooltip = L.tooltip({
-      direction: 'top',
-      offset: [0, -20],
-      className: 'map-tooltip',
+    const popupContent = `<div class="base-popup">
+      <div class="base-popup-header">${baseName}</div>
+      <div class="base-popup-summary">${ready.length} ready · ${charging.length} charging</div>
+      <div class="base-popup-divider"></div>
+      ${popupRows}
+    </div>`;
+
+    marker.bindPopup(popupContent, {
+      className: 'base-popup-container',
+      offset: [0, -16],
+      closeButton: false,
+      autoPan: true,
+      minWidth: 160,
+      maxWidth: 220,
     });
-    tooltip.setContent(tooltipContent);
-    marker.bindTooltip(tooltip);
 
     fleetMarkers.push(marker);
     bounds.push(group.coords);
