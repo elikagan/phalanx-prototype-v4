@@ -888,9 +888,13 @@ function setupAnalysisScreen() {
       </div>
     </div>` : ''}`;
 
+  const reassignHint = availableDrones.length > 1
+    ? `<div class="chat-hint">${availableDrones.length} drones available — select a different drone on the map to reassign.</div>`
+    : '';
+
   chat.appendSaraWithContent(
     `I've analyzed ${SARA_ANALYSIS.transcriptsAnalyzed} dispatch recordings for this incident. ${closestDrone ? `${closestDrone.name} is the closest drone at ${distKm?.toFixed(1)} km, ETA ${etaStr}.` : 'No drones currently available.'}`,
-    profileHtml,
+    profileHtml + reassignHint,
     {
       choices: closestDrone ? [
         { label: `Deploy ${shortName}`, className: 'btn-deploy', action: () => {
@@ -902,10 +906,6 @@ function setupAnalysisScreen() {
       ] : [],
     }
   );
-
-  if (availableDrones.length > 1) {
-    chat.appendSystem(`${availableDrones.length} drones available — select a different drone on the map to reassign.`);
-  }
 }
 
 function setupDroneMapScreen() {

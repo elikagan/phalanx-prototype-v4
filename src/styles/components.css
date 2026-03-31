@@ -528,6 +528,13 @@ details.card > summary { padding: 4px 0; }
   letter-spacing: 0.5px;
 }
 
+/* === Inline hint text (above action buttons) === */
+.chat-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
 /* === System Notes (deemphasized status updates in chat) === */
 .chat-msg-system {
   margin-right: auto;
