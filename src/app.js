@@ -753,6 +753,7 @@ async function setupIncidentMapScreen() {
     skipFitBounds: true,
     incidents: INCIDENTS,
     onIncidentSelect: handleIncidentClick,
+    skipOrbitZones: true,
   });
 
   // Fit all markers with max zoom 12 so the full metro spread is visible

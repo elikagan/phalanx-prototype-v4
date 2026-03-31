@@ -982,7 +982,7 @@ function buildDronePopup(drone, incidentLookup = new Map()) {
 // ── Fleet Drone Markers ───────────────────────────────────
 // Three types: surveillance (airborne), in-mission (assigned), standby (ground/home base)
 
-export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false, incidents = [], onIncidentSelect = null, recommendedDroneId = null, skipRouteLines = false } = {}) {
+export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBounds = false, incidents = [], onIncidentSelect = null, recommendedDroneId = null, skipRouteLines = false, skipOrbitZones = false } = {}) {
   clearFleetMarkers();
   if (!map) return;
 
@@ -1019,9 +1019,10 @@ export function showFleetDrones(drones, incidentCoords, onSelect, { skipFitBound
     const isReroutable = isSurveillance; // surveillance drones can be sent to incidents
     const isRecommended = recommendedDroneId && drone.id === recommendedDroneId;
 
-    // Assigned drones are represented by the drone badge on the incident marker.
-    // Still draw the orbit zone, but skip the separate drone marker.
+    // Assigned drones — badge on incident marker is sufficient. Skip separate marker.
     if (isAssigned && incidentLookup.has(drone.assignedIncident)) {
+      // Draw orbit zone + perimeter drone on detail views, skip on fleet overview
+      if (skipOrbitZones) continue;
       const assignedInc = incidentLookup.get(drone.assignedIncident);
       const targetCoords = assignedInc.coordinates;
 
