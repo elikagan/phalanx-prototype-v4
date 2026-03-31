@@ -92,12 +92,15 @@
   background: var(--border);
 }
 
-.topbar-status {
-  font-size: 12px;
-  color: var(--text-muted);
+/* === Breadcrumb Navigation === */
+.topbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: badge-in 250ms var(--ease-out) both;
 }
 
-.topbar-incident-badge {
+.breadcrumb-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -107,57 +110,91 @@
   font-size: 11px;
   font-weight: 500;
   background: var(--bg-card);
-  animation: badge-in 250ms var(--ease-out) both;
 }
 
-.topbar-incident-badge .incident-priority {
+.breadcrumb-pill .incident-priority {
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.5px;
 }
 
-.topbar-incident-badge .incident-type {
+.breadcrumb-pill .incident-type {
   color: var(--text-primary);
+}
+
+.breadcrumb-pill .topbar-drone-icon {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.breadcrumb-pill .drone-name {
+  color: var(--text-primary);
+}
+
+/* Clickable breadcrumb segments */
+.breadcrumb-link {
+  cursor: pointer;
+  transition: all var(--dur-micro) var(--ease-out);
+}
+
+.breadcrumb-link:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+}
+
+.breadcrumb-link .incident-type,
+.breadcrumb-link .drone-name {
+  color: var(--text-secondary);
+}
+
+.breadcrumb-link:hover .incident-type,
+.breadcrumb-link:hover .drone-name {
+  color: var(--text-primary);
+}
+
+/* Current (last) breadcrumb — not clickable, brighter */
+.breadcrumb-current {
+  cursor: default;
+}
+
+/* Inner pill separator (dot between incident and drone) */
+.breadcrumb-pill-sep {
+  color: var(--text-muted);
+  margin: 0 2px;
+  font-size: 11px;
+}
+
+/* Clickable incident portion inside combined pill */
+.breadcrumb-link-inner {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 2px;
+  padding: 0 2px;
+  transition: all var(--dur-micro) var(--ease-out);
+}
+
+.breadcrumb-link-inner .incident-type {
+  color: var(--text-secondary);
+}
+
+.breadcrumb-link-inner:hover .incident-type {
+  color: var(--text-primary);
+}
+
+/* Chevron separator */
+.breadcrumb-sep {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1;
+  user-select: none;
 }
 
 @keyframes badge-in {
   from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.topbar-drone-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 8px 2px 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  font-size: 11px;
-  font-weight: 500;
-  background: var(--bg-card);
-  animation: badge-in 250ms var(--ease-out) both;
-}
-
-/* Link incident + drone badges into one compound pill */
-.topbar-incident-badge:has(+ .topbar-drone-badge) {
-  border-right: none;
-  border-radius: var(--r-sm) 0 0 var(--r-sm);
-}
-
-.topbar-incident-badge + .topbar-drone-badge {
-  border-left: 1px solid var(--border-subtle);
-  border-radius: 0 var(--r-sm) var(--r-sm) 0;
-  margin-left: -12px;
-}
-
-.topbar-drone-badge .topbar-drone-icon {
-  flex-shrink: 0;
-  color: var(--accent);
-}
-
-.topbar-drone-badge .drone-name {
-  color: var(--text-primary);
 }
 
 .topbar-center {
