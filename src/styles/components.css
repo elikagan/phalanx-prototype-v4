@@ -1,11 +1,19 @@
 /* === Design System Utilities === */
 .section-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 10px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 6px;
   font-weight: 500;
+}
+
+.section-label-icon {
+  font-size: 13px;
+  opacity: 0.7;
 }
 
 .data-grid {

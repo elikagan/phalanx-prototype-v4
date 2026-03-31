@@ -870,7 +870,7 @@ function setupAnalysisScreen() {
 
   const profileHtml = `
     <div class="card card-compact mb-8">
-      <div class="section-label">Target Profile</div>
+      <div class="section-label"><span class="material-symbols-outlined section-label-icon">target</span>Target Profile</div>
       <div class="data-grid">
         <span class="data-label">Vehicle</span><span class="data-value">${t.vehicle} · <span class="mono">${t.plate}</span></span>
         <span class="data-label">Last seen</span><span class="data-value">${t.lastSeen} · ${t.lastSeenTime}</span>
@@ -880,7 +880,7 @@ function setupAnalysisScreen() {
     </div>
     ${closestDrone ? `
     <div class="card card-compact mb-8 card-recommended">
-      <div class="section-label">Recommended Drone</div>
+      <div class="section-label"><span class="material-symbols-outlined section-label-icon">flight</span>Recommended Drone</div>
       <div class="data-grid">
         <span class="data-label">Drone</span><span class="data-value">${closestDrone.name}</span>
         <span class="data-label">ETA</span><span class="data-value">${distKm?.toFixed(1)} km · ${etaStr}</span>
@@ -990,7 +990,7 @@ function setupBriefingScreen() {
   const b = MISSION_BRIEFING;
   const briefingHtml = `
     <div class="card card-compact">
-      <div class="section-label">Mission Plan</div>
+      <div class="section-label"><span class="material-symbols-outlined section-label-icon">assignment</span>Mission Plan</div>
       <div class="data-grid">
         <span class="data-label">Target</span><span class="data-value">${b.target}</span>
         <span class="data-label">Last known</span><span class="data-value">${b.lastKnown} · ${b.direction}</span>
@@ -1293,7 +1293,7 @@ async function setupLiveSceneScreen() {
   chat.appendSaraWithContent(
     `Live feed from ${drone?.name || 'Unknown Drone'} on scene at ${inc?.type || 'Incident'} #${incNumber}.`,
     `<div class="card card-compact mb-8">
-      <div class="section-label">Scene Status</div>
+      <div class="section-label"><span class="material-symbols-outlined section-label-icon">radio_button_checked</span>Scene Status</div>
       <div class="data-grid">
         <span class="data-label">Incident</span><span class="data-value">I${inc?.priority || '1'} ${inc?.type} #${incNumber} · ${inc?.location}</span>
         <span class="data-label">Drone</span><span class="data-value">${drone?.name} · ${drone?.battery}% · 85m AGL</span>
