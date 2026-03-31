@@ -801,13 +801,20 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
         </div>`
       : '';
 
+    // Build label HTML embedded in the marker (not a tooltip — prevents Leaflet repositioning)
+    const droneShort = linkedDrone ? linkedDrone.name.replace(/^Delta\s+/i, '') : '';
+    const labelContent = linkedDrone
+      ? `<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber} · <span style="color:#8ab4f8">${droneShort}</span>`
+      : `<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber}`;
+
     const marker = L.marker(inc.coordinates, {
       icon: L.divIcon({
         className: 'incident-map-marker',
         html: `<div class="incident-dot${activeClass}" style="--dot-color:${dotColor}">
           <span class="material-symbols-outlined">${inc.icon || 'location_on'}</span>
           ${droneBadge}
-        </div>`,
+        </div>
+        <div class="incident-map-label">${labelContent}</div>`,
         iconSize: [40, 40],
         iconAnchor: [20, 20],
       }),
@@ -828,18 +835,6 @@ export function showIncidents(incidents, onSelect, { skipFitBounds = false, assi
       document.querySelector(`.incident-card-compact[data-id="${inc.id}"]`)?.classList.remove('incident-card-hover');
       const el = marker.getElement();
       if (el) el.querySelector('.incident-dot')?.classList.remove('incident-dot-highlight');
-    });
-
-    // Permanent label below marker
-    const droneShort = linkedDrone ? linkedDrone.name.replace(/^Delta\s+/i, '') : '';
-    const labelText = linkedDrone
-      ? `<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber} · <span style="color:#8ab4f8">${droneShort}</span>`
-      : `<span class="incident-label-id incident-label-i${inc.priority}">I${inc.priority}</span> ${inc.type} #${incNumber}`;
-    marker.bindTooltip(labelText, {
-      permanent: true,
-      direction: 'bottom',
-      offset: [0, 4],
-      className: 'marker-permanent-label',
     });
 
     incidentMarkers.push(marker);
