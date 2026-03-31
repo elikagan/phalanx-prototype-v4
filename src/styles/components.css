@@ -93,7 +93,6 @@
   color: var(--text-ghost);
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-family: var(--font-mono);
 }
 
 .incident-meta-text {
@@ -452,7 +451,6 @@ details.card > summary { padding: 4px 0; }
 }
 
 .chat-msg-time {
-  font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-ghost);
   white-space: nowrap;
@@ -472,7 +470,6 @@ details.card > summary { padding: 4px 0; }
 }
 
 .chat-msg-radio .chat-msg-label {
-  font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-ghost);
   letter-spacing: 1px;
@@ -623,7 +620,6 @@ details.card > summary { padding: 4px 0; }
 }
 
 .incident-number {
-  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
   margin-left: -2px;
@@ -633,7 +629,6 @@ details.card > summary { padding: 4px 0; }
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-family: var(--font-mono);
   font-size: 10px;
   color: var(--accent);
   margin-left: auto;
@@ -659,7 +654,6 @@ details.card > summary { padding: 4px 0; }
 }
 
 .incident-compact-meta {
-  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-ghost);
   white-space: nowrap;
@@ -704,7 +698,6 @@ details.card > summary { padding: 4px 0; }
 }
 
 .incident-card .incident-time {
-  font-family: var(--font-mono);
   font-size: 11px;
   color: var(--text-muted);
   margin-bottom: 6px;
